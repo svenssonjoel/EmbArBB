@@ -31,8 +31,8 @@ import Foreign.Ptr
 
 -- Question: Why is there no mapM defined on Data.Map ? 
 
-------------------------------------------------------------------------------
--- 78 dashes 
+----------------------------------------------------------------------------
+-- 76 dashes 
 
 
 {- only integers at the moment -} 
@@ -70,7 +70,7 @@ body (Lam f) = body f
 apply :: Function -> Function -> Function
 apply (Lam x) (E y) = apply' x y 0                    
   where apply' (E x) y i    = E (substitute x i y)
-        apply' (Lam  x) y i = Lam (apply' x  y (i+1))
+        apply' (Lam  x) y i = Lam (apply' x y (i+1))
 apply f x = error ("apply: " ++ show f) 
  
 applyList :: Function -> [Function] -> Function
@@ -111,8 +111,8 @@ instance Eq Function where
   (==) = undefined 
 
 instance Num Function where 
-  (+) a b = apply (apply ((Lam (Lam (E ( Var 0 :+: Var 1))))) a) b 
-  (*) a b = apply (apply ((Lam (Lam (E ( Var 0 :+: Var 1))))) a) b 
+  (+) (E a) (E b) = Lam (Lam (E ( a :+: b)))
+  (*) (E a) (E b) = Lam (Lam (E ( a :+: b))) 
   abs = undefined 
   signum = undefined 
   
@@ -215,7 +215,7 @@ instance Storable UserArray where
 
 ------------------------------------------------------------------------------
 -- Few Examples
-zWith op i1 i2 = return$ Map (Lam (Lam ((op (E (Var 0))) (E (Var 1))))) [i1,i2] 
+zWith op i1 i2 = return$ Map (op (E (Var 0)) (E (Var 1))) [i1,i2] 
 addReduce i = return$ AddReduce i
 mulReduce i = return$ MulReduce i 
 mymap f i = return$ Map f i 
@@ -250,6 +250,12 @@ incr as = do
 inout :: Storable b => b -> MyState b Array 
 inout as = input as 
     
+           
+zipWithPlus :: Storable b => b -> b -> MyState b Array            
+zipWithPlus as bs = do
+  as' <- input as 
+  bs' <- input bs 
+  zWith (+) as' bs' 
     
 -- Ok ? 
 fun f = Lam$ incrAll$  f (E (Var (-1)))
@@ -282,7 +288,7 @@ eval (Map f uas) m = UA (dimensions (head inputs)) (fixup (generalMap f inputDat
 eval (Sort a) m = UA (dimensions a') (List.sort (contents a'))
   where 
     a' = eval a m 
-eval a _ = error$ show a
+
         
 fixup = map (\(E e) -> evalExp e)        
 
@@ -298,6 +304,7 @@ evalExp _ = error "evalExp: not yet implemented"
 
 
 -- generalMap: correct for 1D,2D,3D. 
+generalMap :: Function -> [[Int32]] -> [Function] 
 generalMap f xs | nub xs ==  [[]] = [] 
 generalMap f xs = applyList f (map (E . Lit . head) xs) : 
                   generalMap f (map tail xs)  
@@ -490,16 +497,6 @@ typeOfArray arr = do
      
 
 ------------------------------------------------------------------------------
-
---uploadArrays :: Map.Map Int UserArray -> ArBB.EmitArbb (Map.Map Int ArBB.Variable)
---uploadArrays m = do 
---  liftIO$ putStrLn "uploading Arrays" 
---  l' <- mapM (\(k,v) -> do v' <- uploadArray v
---                           return (k,v') ) l 
---  return$ Map.fromList l'
---  where l = Map.toList m     
-
-
 uploadArrays :: Map.Map Int UserArray -> ArBB.EmitArbb (Map.Map Int ArBBArray) 
 uploadArrays  m = do 
   liftIO$ putStrLn "uploading Arrays" 
@@ -583,3 +580,23 @@ testSort = eval arr m
     (arr,(i,m)) = runMyState$ Garb.sort (UA (dim1 8) [7,6,5,4,3,2,1,0])
     
 testSortArBB = runArBB$ Garb.sort (UA (dim1 8) [7,6,5,4,3,2,1,0])
+
+
+testSum = eval arr m 
+  where 
+    (arr,(i,m)) = runMyState$ Garb.sum (UA (dim1 8) [0..7])
+    
+testSumArBB = runArBB$ Garb.sum (UA (dim1 8) [0..7])
+
+testDotP = eval arr m 
+  where 
+    (arr, (i,m)) = runMyState$ Garb.dotProd (UA (dim1 8) [0..7]) (UA (dim1 8) (replicate 8 1))         
+    
+testDotArBB = runArBB$ Garb.dotProd (UA (dim1 8) [0..7]) (UA (dim1 8) (replicate 8 1))         
+
+    
+testZPlus = eval arr m 
+  where 
+    (arr, (i,m)) = runMyState$ Garb.zipWithPlus (UA (dim1 8) [0..7]) (UA (dim1 8) (replicate 8 1))         
+    
+testZPlusArBB = runArBB$ Garb.zipWithPlus (UA (dim1 8) [0..7]) (UA (dim1 8) (replicate 8 1))         
