@@ -1,5 +1,6 @@
 {-# LANGUAGE MultiParamTypeClasses,
-             ScopedTypeVariables #-} 
+             ScopedTypeVariables, 
+             GADTs #-} 
 module Garb where 
 
 
@@ -12,6 +13,8 @@ import Data.Int
 
 import Text.Show.Functions
 
+import System.IO.Unsafe
+import Data.IORef
 
 import qualified Intel.ArbbVM as ArBB
 import qualified Intel.ArbbVM.Convenience as ArBB
@@ -36,6 +39,14 @@ import Foreign.Ptr
 
 type Label = Word32
 
+{-# NOINLINE counter #-}
+counter = unsafePerformIO (newIORef 0) 
+
+newLabel :: () -> Word32
+newLabel () = unsafePerformIO $ do 
+  p <- readIORef counter
+  writeIORef counter (p+1)
+  return p 
 
 
 
@@ -50,19 +61,19 @@ data Value = IntVal Int
              
  
 data Exp = Lit Int32 --- Value     -- One of the supported value types
-         | Var Id        -- De Bruijn index (ok? I am on thin ice here) 
-         | BinOp Op Exp Exp  
-         | UnOp  Op Exp  
+         | Var Label Id        -- De Bruijn index (ok? I am on thin ice here) 
+         | BinOp Label Op Exp Exp  
+         | UnOp  Label Op Exp  
            
          -- Index into 0D, 1D, 2D, 3D Array   
          -- May need another rep of arrays here.
          -- In the ArBB backend and array here will just be a "ArBB.Variable" 
          -- These should not be "arrays" they should be indices into some Map 
          -- that holds ArBB Variables in the ArBB case.
-         | Index0 Array
-         | Index1 Array Exp
-         | Index2 Array Exp Exp 
-         | Index3 Array Exp Exp Exp 
+         | Index0 Label Array
+         | Index1 Label Array Exp
+         | Index2 Label Array Exp Exp 
+         | Index3 Label Array Exp Exp Exp 
            deriving Show
                     
 data Op = Add 
@@ -99,18 +110,18 @@ applyList f x = error ("applyList: " ++ show x ++ " " ++ show f )
 --        
 substitute :: Exp -> Id -> Exp -> Exp         
 substitute (Lit a) i e = Lit a                         
-substitute (Var j) i e | j < i = Var j
-                       | j > i = Var (j-1) 
-                       | j == i = e
+substitute (Var l j) i e | j < i = Var l j
+                         | j > i = Var l (j-1) 
+                         | j == i = e
 
-substitute (BinOp op e1 e2) i e = BinOp op (substitute e1 i e) (substitute e2 i e)
+substitute (BinOp l op e1 e2) i e = BinOp l op (substitute e1 i e) (substitute e2 i e)
 -- substitute (e1 :*: e2) i e = substitute e1 i e :*: substitute e2 i e
-substitute (Index0 a) _ _ = Index0 a
-substitute (Index1 a e0) i e = Index1 a (substitute e0 i e) 
-substitute (Index2 a e0 e1) i e = Index2 a (substitute e0 i e) (substitute e1 i e)
-substitute (Index3 a e0 e1 e2) i e = Index3 a (substitute e0 i e) (substitute e1 i e) (substitute e2 i e) 
+substitute (Index0 l a) _ _ = Index0 l a
+substitute (Index1 l a e0) i e = Index1 l a (substitute e0 i e) 
+substitute (Index2 l a e0 e1) i e = Index2 l a (substitute e0 i e) (substitute e1 i e)
+substitute (Index3 l a e0 e1 e2) i e = Index3 l a (substitute e0 i e) (substitute e1 i e) (substitute e2 i e) 
 
-                         
+{-                         
 add = Lam (Lam (E (BinOp Add (Var 0) (Var 1)))) 
 
 mul = Lam (Lam (E (BinOp Mul (Var 0) (Var 1))))
@@ -121,15 +132,15 @@ comp f g = Lam (apply f (apply g (E (Var 0))))
 
 addone = apply add (E (Lit 1))
 multwo = apply mul (E (Lit 2))
-
+-} 
 ------------------------------------------------------------------------------ 
 -- Experiment
 instance Eq Function where 
   (==) = undefined 
 
 instance Num Function where 
-  (+) (E a) (E b) = E (BinOp Add a b)
-  (*) (E a) (E b) = E (BinOp Mul a b)
+  (+) (E a) (E b) = E (BinOp (newLabel ()) Add a b)
+  (*) (E a) (E b) = E (BinOp (newLabel ()) Mul a b)
 
   abs = undefined 
   signum = undefined 
@@ -140,8 +151,8 @@ instance Eq Exp where
   (==) = undefined -- compare labels here
 
 instance Num Exp where 
-  (+) (a) (b) = BinOp Add a b
-  (*) (a) (b) = BinOp Mul a b
+  (+) (a) (b) = BinOp (newLabel ()) Add a b
+  (*) (a) (b) = BinOp (newLabel ()) Mul a b
 
   abs = undefined 
   signum = undefined 
@@ -193,8 +204,16 @@ data Array = Input Id
              -- Function arity must match number of arrays in list 
            | Map Function [Array]  
            | Sort Array 
-          
              deriving Show 
+                      
+data Arr = Arr Id                       
+                      
+data AC a where   
+   ACInput     :: Arr -> AC Arr  
+   ACAddReduce :: AC Arr -> AC Arr  
+   ACMulReduce :: AC Arr -> AC Arr 
+   ACMap       :: Function -> [AC Arr] -> AC Arr
+   ACSort      :: AC Arr -> AC Arr
              
 
 {- User level arrays. currently just a list of elements and a shape descriptor -}                   
@@ -245,20 +264,24 @@ instance Storable UserArray where
 
 ------------------------------------------------------------------------------
 -- Few Examples
-toBinFunction f = f (E (Var 0)) (E (Var 1))
-expFunToBinFun f = Lam (Lam (E (f (Var 0) (Var 1))))
-    
-zWith op i1 i2 = return$ Map (op (E (Var 0)) (E (Var 1))) [i1,i2] 
-zWith' op i1 i2 = return$ Map (expFunToBinFun op) [i1,i2] 
+toBinFunction f = f (E (Var (newLabel ()) 0)) (E (Var (newLabel ()) 1))
+expFunToBinFun f = Lam (Lam (E (f (Var (newLabel ()) 0) (Var (newLabel ()) 1))))
+expFunToUnFun  f = Lam (E (f (Var (newLabel ()) 0)))    
+                   
+-- zWith op i1 i2 = return$ Map (op (E (Var (newLabel ()) 0)) (E (Var (newLabel ()) 1))) [i1,i2] 
+zWith op i1 i2 = return$ Map (expFunToBinFun op) [i1,i2] 
+
 addReduce i = return$ AddReduce i
 mulReduce i = return$ MulReduce i 
-mymap f i = return$ Map f i 
+
+mymap f i = return$ Map (expFunToUnFun f) i 
+
 
 dotProd :: Storable b => b -> b -> MyState b Array 
 dotProd as bs = do  
   i1 <- input as
   i2 <- input bs 
-  im <-  zWith' (*) i1 i2 
+  im <-  zWith (*) i1 i2 
   addReduce im 
   
 sum :: Storable b => b -> MyState b Array 
@@ -279,7 +302,7 @@ prod as = do
 incr :: Storable b => b -> MyState b Array     
 incr as = do 
   i <- input as
-  mymap (fun (+1)) [i] 
+  mymap (+1) [i] 
   
 inout :: Storable b => b -> MyState b Array 
 inout as = input as 
@@ -292,17 +315,17 @@ zipWithPlus as bs = do
   zWith (+) as' bs' 
     
 -- Ok ? 
-fun f = Lam$ incrAll$  f (E (Var (-1)))
+fun f = Lam$ incrAll$  f (E (Var (newLabel ()) (-1)))
     
 incrAll (Lam x) = Lam (incrAll x) 
 incrAll (E e)   = E (incrAll' e) 
   where 
-    incrAll' (Var id) = Var (id+1) 
-    incrAll' (BinOp op e1 e2) = BinOp op (incrAll' e1) (incrAll' e2)
+    incrAll' (Var l id) = Var l (id+1) 
+    incrAll' (BinOp l op e1 e2) = BinOp l op (incrAll' e1) (incrAll' e2)
 --    incrAll' (e1 :*: e2) = incrAll' e1 :*: incrAll' e2
-    incrAll' (Index1 a e0) = Index1 a (incrAll' e0) 
-    incrAll' (Index2 a e0 e1) = Index2 a (incrAll' e0) (incrAll' e1) 
-    incrAll' (Index3 a e0 e1 e2) = Index3 a (incrAll' e0) (incrAll' e1) (incrAll' e2) 
+    incrAll' (Index1 l a e0) = Index1 l a (incrAll' e0) 
+    incrAll' (Index2 l a e0 e1) = Index2 l a (incrAll' e0) (incrAll' e1) 
+    incrAll' (Index3 l a e0 e1 e2) = Index3 l a (incrAll' e0) (incrAll' e1) (incrAll' e2) 
     incrAll' a = a 
     
     
@@ -330,10 +353,10 @@ fixup = map (\(E e) -> evalExp e)
 -- evalOp op a b = evalExp (op (Lit a) (Lit b)) 
 
 evalExp (Lit a) = a 
-evalExp (Var i) = -1 -- error "evalExp: variables not yet implemented" 
-evalExp (BinOp op e1 e2) = evalBinOp op (evalExp e1) (evalExp e2) 
+evalExp (Var l i) = -1 -- error "evalExp: variables not yet implemented" 
+evalExp (BinOp l op e1 e2) = evalBinOp op (evalExp e1) (evalExp e2) 
 -- evalExp (e1 :*: e2) = (evalExp e1) * (evalExp e2)
-evalExp (Index0 a) = error "evalExp: Indexing not yet implemented"
+evalExp (Index0 l a) = error "evalExp: Indexing not yet implemented"
 evalExp _ = error "evalExp: not yet implemented" 
 
 evalBinOp Add a1 a2 = a1 + a2 
@@ -477,17 +500,17 @@ genFun f = do
 --  to call a function. 
 functionBody :: Exp -> [ArBB.Variable] -> ArBB.EmitArbb ArBB.Variable
 functionBody (Lit i) _ = ArBB.int32_ i 
-functionBody (Var ix) env = return (env !! ix) 
+functionBody (Var l ix) env = return (env !! ix) 
 
 -- TODO: Bit repetitive! fix. 
-functionBody (BinOp Add e1 e2) env = do  
+functionBody (BinOp l Add e1 e2) env = do  
   v1 <- functionBody e1 env 
   v2 <- functionBody e2 env 
   s  <- ArBB.getScalarType_ ArBB.ArbbI32
   r  <- ArBB.createLocal_ s "res"
   ArBB.op_ ArBB.ArbbOpAdd [r] [v1,v2]
   return r
-functionBody (BinOp Mul e1 e2) env = do   
+functionBody (BinOp l Mul e1 e2) env = do   
   v1 <- functionBody e1 env 
   v2 <- functionBody e2 env 
   s  <- ArBB.getScalarType_ ArBB.ArbbI32
@@ -496,10 +519,10 @@ functionBody (BinOp Mul e1 e2) env = do
   return r
 
 -- Index into arrays (This is broken!)
-functionBody (Index0 arr) _ = undefined
-functionBody (Index1 arr e1) _ = undefined 
-functionBody (Index2 arr e1 e2) _ = undefined 
-functionBody (Index3 arr e1 e2 e3) _ = undefined 
+functionBody (Index0 l arr) _ = undefined
+functionBody (Index1 l arr e1) _ = undefined 
+functionBody (Index2 l arr e1 e2) _ = undefined 
+functionBody (Index3 l arr e1 e2 e3) _ = undefined 
 
 
 -----------------------------------------------------------------------------
