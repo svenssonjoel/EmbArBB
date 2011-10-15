@@ -136,6 +136,18 @@ instance Num Function where
   
   fromInteger a = (E (Lit (fromInteger a)))
 
+instance Eq Exp where 
+  (==) = undefined -- compare labels here
+
+instance Num Exp where 
+  (+) (a) (b) = BinOp Add a b
+  (*) (a) (b) = BinOp Mul a b
+
+  abs = undefined 
+  signum = undefined 
+  
+  fromInteger a = Lit$ fromInteger a
+
 
 ------------------------------------------------------------------------------
 -- Dimensions 
@@ -237,7 +249,7 @@ toBinFunction f = f (E (Var 0)) (E (Var 1))
 expFunToBinFun f = Lam (Lam (E (f (Var 0) (Var 1))))
     
 zWith op i1 i2 = return$ Map (op (E (Var 0)) (E (Var 1))) [i1,i2] 
-zWith' op i1 i2 = return$ Map (toBinFunction op) [i1,i2] 
+zWith' op i1 i2 = return$ Map (expFunToBinFun op) [i1,i2] 
 addReduce i = return$ AddReduce i
 mulReduce i = return$ MulReduce i 
 mymap f i = return$ Map f i 
@@ -246,7 +258,7 @@ dotProd :: Storable b => b -> b -> MyState b Array
 dotProd as bs = do  
   i1 <- input as
   i2 <- input bs 
-  im <-  zWith (*) i1 i2 
+  im <-  zWith' (*) i1 i2 
   addReduce im 
   
 sum :: Storable b => b -> MyState b Array 
@@ -324,7 +336,9 @@ evalExp (BinOp op e1 e2) = evalBinOp op (evalExp e1) (evalExp e2)
 evalExp (Index0 a) = error "evalExp: Indexing not yet implemented"
 evalExp _ = error "evalExp: not yet implemented" 
 
-evalBinOp Add a1 a2 = undefined
+evalBinOp Add a1 a2 = a1 + a2 
+evalBinOp Mul a1 a2 = a1 * a2
+evalBinOp Sub a1 a2 = a1 - a2 
 
 -- generalMap: correct for 1D,2D,3D. 
 generalMap :: Function -> [[Int32]] -> [Function] 
