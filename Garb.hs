@@ -34,12 +34,25 @@ import Foreign.Ptr
 ----------------------------------------------------------------------------
 -- 76 dashes 
 
+type Label = Word32
 
-{- only integers at the moment -} 
-data Exp = Lit Int32 
-         | Var Id  -- De Bruijn index ( ok? I am on thin ice here) 
-         | Exp :+: Exp 
-         | Exp :*: Exp 
+
+
+
+----------------------------------------------------------------------------
+--
+
+
+data Value = IntVal Int 
+           | FloatVal Float 
+           | DoubleVal Double
+             deriving (Eq,Show) 
+             
+ 
+data Exp = Lit Int32 --- Value     -- One of the supported value types
+         | Var Id        -- De Bruijn index (ok? I am on thin ice here) 
+         | BinOp Op Exp Exp  
+         | UnOp  Op Exp  
            
          -- Index into 0D, 1D, 2D, 3D Array   
          -- May need another rep of arrays here.
@@ -50,9 +63,13 @@ data Exp = Lit Int32
          | Index1 Array Exp
          | Index2 Array Exp Exp 
          | Index3 Array Exp Exp Exp 
-
            deriving Show
                     
+data Op = Add 
+        | Sub  
+        | Mul 
+          deriving (Eq, Show) 
+ 
 
 ------------------------------------------------------------------------------
 -- Represent functions (to be mapped etc) 
@@ -86,19 +103,19 @@ substitute (Var j) i e | j < i = Var j
                        | j > i = Var (j-1) 
                        | j == i = e
 
-substitute (e1 :+: e2) i e = substitute e1 i e :+: substitute e2 i e
-substitute (e1 :*: e2) i e = substitute e1 i e :*: substitute e2 i e
+substitute (BinOp op e1 e2) i e = BinOp op (substitute e1 i e) (substitute e2 i e)
+-- substitute (e1 :*: e2) i e = substitute e1 i e :*: substitute e2 i e
 substitute (Index0 a) _ _ = Index0 a
 substitute (Index1 a e0) i e = Index1 a (substitute e0 i e) 
 substitute (Index2 a e0 e1) i e = Index2 a (substitute e0 i e) (substitute e1 i e)
 substitute (Index3 a e0 e1 e2) i e = Index3 a (substitute e0 i e) (substitute e1 i e) (substitute e2 i e) 
 
                          
-add = Lam (Lam (E ((:+:) (Var 0) (Var 1))))                          
+add = Lam (Lam (E (BinOp Add (Var 0) (Var 1)))) 
 
-mul = Lam (Lam (E ((:*:) (Var 0) (Var 1))))                          
+mul = Lam (Lam (E (BinOp Mul (Var 0) (Var 1))))
 
-square = Lam (E ((:*:) (Var 0) (Var 0)))
+square = Lam (E (BinOp Mul (Var 0) (Var 0)))
     
 comp f g = Lam (apply f (apply g (E (Var 0))))
 
@@ -111,8 +128,9 @@ instance Eq Function where
   (==) = undefined 
 
 instance Num Function where 
-  (+) (E a) (E b) = Lam (Lam (E ( a :+: b)))
-  (*) (E a) (E b) = Lam (Lam (E ( a :+: b))) 
+  (+) (E a) (E b) = E (BinOp Add a b)
+  (*) (E a) (E b) = E (BinOp Mul a b)
+
   abs = undefined 
   signum = undefined 
   
@@ -215,7 +233,11 @@ instance Storable UserArray where
 
 ------------------------------------------------------------------------------
 -- Few Examples
+toBinFunction f = f (E (Var 0)) (E (Var 1))
+expFunToBinFun f = Lam (Lam (E (f (Var 0) (Var 1))))
+    
 zWith op i1 i2 = return$ Map (op (E (Var 0)) (E (Var 1))) [i1,i2] 
+zWith' op i1 i2 = return$ Map (toBinFunction op) [i1,i2] 
 addReduce i = return$ AddReduce i
 mulReduce i = return$ MulReduce i 
 mymap f i = return$ Map f i 
@@ -264,8 +286,8 @@ incrAll (Lam x) = Lam (incrAll x)
 incrAll (E e)   = E (incrAll' e) 
   where 
     incrAll' (Var id) = Var (id+1) 
-    incrAll' (e1 :+: e2) = incrAll' e1 :+: incrAll' e2
-    incrAll' (e1 :*: e2) = incrAll' e1 :*: incrAll' e2
+    incrAll' (BinOp op e1 e2) = BinOp op (incrAll' e1) (incrAll' e2)
+--    incrAll' (e1 :*: e2) = incrAll' e1 :*: incrAll' e2
     incrAll' (Index1 a e0) = Index1 a (incrAll' e0) 
     incrAll' (Index2 a e0 e1) = Index2 a (incrAll' e0) (incrAll' e1) 
     incrAll' (Index3 a e0 e1 e2) = Index3 a (incrAll' e0) (incrAll' e1) (incrAll' e2) 
@@ -293,15 +315,16 @@ eval (Sort a) m = UA (dimensions a') (List.sort (contents a'))
 fixup = map (\(E e) -> evalExp e)        
 
 
-evalOp op a b = evalExp (op (Lit a) (Lit b)) 
+-- evalOp op a b = evalExp (op (Lit a) (Lit b)) 
 
 evalExp (Lit a) = a 
 evalExp (Var i) = -1 -- error "evalExp: variables not yet implemented" 
-evalExp (e1 :+: e2) = (evalExp e1) + (evalExp e2) 
-evalExp (e1 :*: e2) = (evalExp e1) * (evalExp e2)
+evalExp (BinOp op e1 e2) = evalBinOp op (evalExp e1) (evalExp e2) 
+-- evalExp (e1 :*: e2) = (evalExp e1) * (evalExp e2)
 evalExp (Index0 a) = error "evalExp: Indexing not yet implemented"
 evalExp _ = error "evalExp: not yet implemented" 
 
+evalBinOp Add a1 a2 = undefined
 
 -- generalMap: correct for 1D,2D,3D. 
 generalMap :: Function -> [[Int32]] -> [Function] 
@@ -443,14 +466,14 @@ functionBody (Lit i) _ = ArBB.int32_ i
 functionBody (Var ix) env = return (env !! ix) 
 
 -- TODO: Bit repetitive! fix. 
-functionBody (e1 :+: e2) env = do  
+functionBody (BinOp Add e1 e2) env = do  
   v1 <- functionBody e1 env 
   v2 <- functionBody e2 env 
   s  <- ArBB.getScalarType_ ArBB.ArbbI32
   r  <- ArBB.createLocal_ s "res"
   ArBB.op_ ArBB.ArbbOpAdd [r] [v1,v2]
   return r
-functionBody (e1 :*: e2) env = do   
+functionBody (BinOp Mul e1 e2) env = do   
   v1 <- functionBody e1 env 
   v2 <- functionBody e2 env 
   s  <- ArBB.getScalarType_ ArBB.ArbbI32
