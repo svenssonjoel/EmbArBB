@@ -660,3 +660,8 @@ testZPlus = eval arr m
     (arr, (i,m)) = runMyState$ Garb.zipWithPlus (UA (dim1 8) [0..7]) (UA (dim1 8) (replicate 8 1))         
     
 testZPlusArBB = runArBB$ Garb.zipWithPlus (UA (dim1 8) [0..7]) (UA (dim1 8) (replicate 8 1))         
+
+
+
+---------------------------------------------------------------------------
+-- Do again but for AC Arr
