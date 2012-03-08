@@ -1,4 +1,5 @@
 * EmbArBB 
+  + very sketchy!
   Embedded language for data-parallel programming targetting Intel ArBB.
   + Uses the Haskell/ArBB bindings (svenssonjoel/arbb-vm.git on github) 
  

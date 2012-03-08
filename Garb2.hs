@@ -59,7 +59,7 @@ data Value = IntVal Int
            | DoubleVal Double
              deriving (Eq,Show) 
              
- 
+-- TODO: Typed exps or the Value approach above
 data Exp = Lit Int32 --- Value     -- One of the supported value types
          | Var Label Id        -- De Bruijn index (ok? I am on thin ice here) 
          | BinOp Label Op Exp Exp  
@@ -70,10 +70,10 @@ data Exp = Lit Int32 --- Value     -- One of the supported value types
          -- In the ArBB backend and array here will just be a "ArBB.Variable" 
          -- These should not be "arrays" they should be indices into some Map 
          -- that holds ArBB Variables in the ArBB case.
-         | Index0 Label Array
-         | Index1 Label Array Exp
-         | Index2 Label Array Exp Exp 
-         | Index3 Label Array Exp Exp Exp 
+     --    | Index0 Label Array
+     --    | Index1 Label Array Exp
+     --    | Index2 Label Array Exp Exp 
+     --    | Index3 Label Array Exp Exp Exp 
            deriving Show
                     
 data Op = Add 
@@ -116,10 +116,10 @@ substitute (Var l j) i e | j < i = Var l j
 
 substitute (BinOp l op e1 e2) i e = BinOp l op (substitute e1 i e) (substitute e2 i e)
 -- substitute (e1 :*: e2) i e = substitute e1 i e :*: substitute e2 i e
-substitute (Index0 l a) _ _ = Index0 l a
-substitute (Index1 l a e0) i e = Index1 l a (substitute e0 i e) 
-substitute (Index2 l a e0 e1) i e = Index2 l a (substitute e0 i e) (substitute e1 i e)
-substitute (Index3 l a e0 e1 e2) i e = Index3 l a (substitute e0 i e) (substitute e1 i e) (substitute e2 i e) 
+--substitute (Index0 l a) _ _ = Index0 l a
+--substitute (Index1 l a e0) i e = Index1 l a (substitute e0 i e) 
+--substitute (Index2 l a e0 e1) i e = Index2 l a (substitute e0 i e) (substitute e1 i e)
+--substitute (Index3 l a e0 e1 e2) i e = Index3 l a (substitute e0 i e) (substitute e1 i e) (substitute e2 i e) 
 
 {-                         
 add = Lam (Lam (E (BinOp Add (Var 0) (Var 1)))) 
@@ -196,16 +196,7 @@ type Id = Int -- identification (Index into Map)
               -- or a De Bruijn index.. 
 
 ------------------------------------------------------------------------------
--- The AST 
-data Array = Input Id 
-           | AddReduce Array 
-           | MulReduce Array
-             -- ArBB style Map, (generalized Map,ZipWith functionality) 
-             -- Function arity must match number of arrays in list 
-           | Map Function [Array]  
-           | Sort Array 
-             deriving Show 
-                      
+-- The AST                       
 data Arr a = Arr Id                       
                       
 data AC a where   
@@ -232,9 +223,7 @@ type MyState b a = State (Int,Map.Map Int b) a
 data SomeFixedArrayRepresentation = SFAR (Ptr ()) Dim ArBB.ScalarType
 
 -- with (MyState a) as above, Storable has methods to turn "things" into "SomeFixedArrayRepresentation"
-class Storable b where 
-  input :: b -> MyState b Array 
-  
+
 class StorableAC b where 
   inputAC :: b -> MyState b (AC (Arr Int32))
 
@@ -259,13 +248,6 @@ putMap m = do
 runMyState a = runState a (0,Map.empty)
 
 -- for use with the interpreter
-instance Storable UserArray where 
-  input arr = do 
-    id <- getID
-    m  <- getMap 
-    putMap (Map.insert id arr m) 
-    putID  (id+1);
-    return$ Input id
 
 instance StorableAC UserArray where 
   inputAC arr = do 
@@ -283,87 +265,6 @@ toBinFunction f = f (E (Var (newLabel ()) 0)) (E (Var (newLabel ()) 1))
 expFunToBinFun f = Lam (Lam (E (f (Var (newLabel ()) 0) (Var (newLabel ()) 1))))
 expFunToUnFun  f = Lam (E (f (Var (newLabel ()) 0)))    
                    
--- zWith op i1 i2 = return$ Map (op (E (Var (newLabel ()) 0)) (E (Var (newLabel ()) 1))) [i1,i2] 
-zWith op i1 i2 = return$ Map (expFunToBinFun op) [i1,i2] 
-
-addReduce i = return$ AddReduce i
-mulReduce i = return$ MulReduce i 
-
-mymap f i = return$ Map (expFunToUnFun f) i 
-
-
-dotProd :: Storable b => b -> b -> MyState b Array 
-dotProd as bs = do  
-  i1 <- input as
-  i2 <- input bs 
-  im <-  zWith (*) i1 i2 
-  addReduce im 
-  
-sum :: Storable b => b -> MyState b Array 
-sum as = do 
-  i <- input as 
-  addReduce i
-  
-sort :: Storable b => b -> MyState b Array   
-sort as = do 
-  i <- input as
-  return (Sort i) 
-  
-prod :: Storable b => b -> MyState b Array   
-prod as = do 
-  i <- input as
-  mulReduce i
-     
-incr :: Storable b => b -> MyState b Array     
-incr as = do 
-  i <- input as
-  mymap (+1) [i] 
-  
-inout :: Storable b => b -> MyState b Array 
-inout as = input as 
-    
-           
-zipWithPlus :: Storable b => b -> b -> MyState b Array            
-zipWithPlus as bs = do
-  as' <- input as 
-  bs' <- input bs 
-  zWith (+) as' bs' 
-    
--- Ok ? 
-fun f = Lam$ incrAll$  f (E (Var (newLabel ()) (-1)))
-    
-incrAll (Lam x) = Lam (incrAll x) 
-incrAll (E e)   = E (incrAll' e) 
-  where 
-    incrAll' (Var l id) = Var l (id+1) 
-    incrAll' (BinOp l op e1 e2) = BinOp l op (incrAll' e1) (incrAll' e2)
---    incrAll' (e1 :*: e2) = incrAll' e1 :*: incrAll' e2
-    incrAll' (Index1 l a e0) = Index1 l a (incrAll' e0) 
-    incrAll' (Index2 l a e0 e1) = Index2 l a (incrAll' e0) (incrAll' e1) 
-    incrAll' (Index3 l a e0 e1 e2) = Index3 l a (incrAll' e0) (incrAll' e1) (incrAll' e2) 
-    incrAll' a = a 
-    
-    
-        
-        
-------------------------------------------------------------------------------
--- Evaluate   
-  
-eval :: Array -> Map.Map Int UserArray -> UserArray 
-eval (Input i) m = fromJust (Map.lookup i m) 
-eval (AddReduce ua) m = fold (+) 0 (eval ua m)
-eval (MulReduce ua) m = fold (*) 1 (eval ua m) 
-
-eval (Map f uas) m = UA (dimensions (head inputs)) (fixup (generalMap f inputData))                                                                   
-  where inputs = map (\x -> eval x m) uas
-        inputData = map contents inputs 
-eval (Sort a) m = UA (dimensions a') (List.sort (contents a'))
-  where 
-    a' = eval a m 
-
-        
-fixup = map (\(E e) -> evalExp e)        
-
 
 -- evalOp op a b = evalExp (op (Lit a) (Lit b)) 
 
@@ -371,7 +272,7 @@ evalExp (Lit a) = a
 evalExp (Var l i) = -1 -- error "evalExp: variables not yet implemented" 
 evalExp (BinOp l op e1 e2) = evalBinOp op (evalExp e1) (evalExp e2) 
 -- evalExp (e1 :*: e2) = (evalExp e1) * (evalExp e2)
-evalExp (Index0 l a) = error "evalExp: Indexing not yet implemented"
+--evalExp (Index0 l a) = error "evalExp: Indexing not yet implemented"
 evalExp _ = error "evalExp: not yet implemented" 
 
 evalBinOp Add a1 a2 = a1 + a2 
@@ -420,9 +321,9 @@ flatten3 as = concatMap flatten2 as
 
 
 
-run :: MyState UserArray Array -> UserArray
-run prg = let (a,(i,m)) = runMyState prg
-          in  eval a m
+--run :: MyState UserArray Array -> UserArray
+--run prg = let (a,(i,m)) = runMyState prg
+--          in  eval a m
 
 
 
@@ -442,66 +343,13 @@ run (incr (UA (dim1 10) [0..9]))
 data ArBBArray = ArBBArray { dim     :: Dim,
                              eltType :: ArBB.ScalarType, 
                              var     :: ArBB.Variable }  
-
-------------------------------------------------------------------------------
--- 
-
-
-------------------------------------------------------------------------------
--- TODO: Implement
--- TODO: Re-implement not using "imm-mode"
-evalArBBImm:: Array -> Map.Map Int ArBBArray -> ArBB.EmitArbb ArBBArray
-evalArBBImm (Input i) m = do 
-  liftIO$ putStrLn "evalArBBImm: input node!"
-  case (Map.lookup i m) of 
-    Just v -> return v
-    Nothing -> error "evalArBBImm: BUG BUG BUG"
-evalArBBImm (AddReduce a) m = do 
-  liftIO$ putStrLn "evalArBBImm: AddReduce node!"
-  arr <- evalArBBImm a m
-  it    <- typeOfArray arr
-  v <- newArBBArray (decrement (dim arr)) (eltType arr)
-  rt <- typeOfArray v
-  fun <- ArBB.funDef_ "folder" [rt] [it] $ \ out inp -> do 
-    ArBB.opDynamic_ ArBB.ArbbOpAddReduce out inp 
-    
-  ArBB.execute_ fun [var v] [var arr]
-  return$ v 
-evalArBBImm (Map _ []) _ = error "evalArBBImm: something very wrong"  
-evalArBBImm (Map f as) m = do 
-  liftIO$ putStrLn "evalArBBImm: Map node"
-  arrs <- mapM (\a -> evalArBBImm a m) as
-  f' <- genFun f 
-  v <- newArBBArray (dim (head arrs)) (eltType (head arrs)) -- wrong!!
-  rt <- typeOfArray v
-  its <- mapM typeOfArray arrs
-       
-  mapper <- ArBB.funDef_ "mapper" [rt] its $ \ out inp -> do 
-    ArBB.map_ f' out inp 
-
-  ArBB.execute_ mapper [var v] (map var arrs) 
-  return v
-  
-evalArBBImm (Sort a) m = do 
-  liftIO$ putStrLn "evalArBBImm: Sort node" 
-  arr <- evalArBBImm a m 
-  v   <- newArBBArray (dim arr) (eltType arr)
-  rt  <- typeOfArray v
-  it  <- typeOfArray arr
-  fun <- ArBB.funDef_ "sorter" [rt] [it] $ \ out inp -> do 
-    d <- ArBB.usize_ 0
-    ArBB.op_ ArBB.ArbbOpSort out (inp ++ [d])
-    
-  ArBB.execute_ fun [var v] [var arr]  
-  return v
-  
   
 -----------------------------------------------------------------------------
 -- Generate ArBB function from "Function" 
 genFun :: Function -> ArBB.EmitArbb ArBB.ConvFunction   
 genFun f = do 
   s <- ArBB.getScalarType_ ArBB.ArbbI32  -- out type (CHEAT) 
-  let its = replicate (arity f) s       -- in  type (CHEAT)
+  let its = replicate (arity f) s        -- in  type (CHEAT)
   fun <- ArBB.funDef_ "generated" [s] its $ \ [out] inp -> do 
     r <- functionBody (body f) inp 
     ArBB.copy_ out r
@@ -534,10 +382,10 @@ functionBody (BinOp l Mul e1 e2) env = do
   return r
 
 -- Index into arrays (This is broken!)
-functionBody (Index0 l arr) _ = undefined
-functionBody (Index1 l arr e1) _ = undefined 
-functionBody (Index2 l arr e1 e2) _ = undefined 
-functionBody (Index3 l arr e1 e2 e3) _ = undefined 
+--functionBody (Index0 l arr) _ = undefined
+--functionBody (Index1 l arr e1) _ = undefined 
+--functionBody (Index2 l arr e1 e2) _ = undefined 
+--functionBody (Index3 l arr e1 e2 e3) _ = undefined 
 
 
 -----------------------------------------------------------------------------
@@ -607,14 +455,7 @@ uploadArray arr@(UA dim d) = do
       return v
 
 ------------------------------------------------------------------------------
--- Run using ArBB 
-
-runArBB :: MyState UserArray Array -> IO UserArray 
-runArBB prg = let (a, (i,m)) = runMyState prg
-               in  ArBB.arbbSession$ do m' <- uploadArrays m 
-                                        res <- evalArBBImm a m' 
-                                        readBack res
-
+-- read values back 
 readBack :: ArBBArray -> ArBB.EmitArbb UserArray 
 readBack arr =  
   let v = var arr
@@ -633,54 +474,6 @@ readBack arr =
 
                                
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-----------------------------------------------------------------------------
--- Tiny examples
-
-testSort = eval arr m
-  where 
-    (arr,(i,m)) = runMyState$ Garb.sort (UA (dim1 8) [7,6,5,4,3,2,1,0])
-    
-testSortArBB = runArBB$ Garb.sort (UA (dim1 8) [7,6,5,4,3,2,1,0])
-
-
-testSum = eval arr m 
-  where 
-    (arr,(i,m)) = runMyState$ Garb.sum (UA (dim1 8) [0..7])
-    
-testSumArBB = runArBB$ Garb.sum (UA (dim1 8) [0..7])
-
-testDotP = eval arr m 
-  where 
-    (arr, (i,m)) = runMyState$ Garb.dotProd (UA (dim1 8) [0..7]) (UA (dim1 8) (replicate 8 1))         
-    
-testDotArBB = runArBB$ Garb.dotProd (UA (dim1 8) [0..7]) (UA (dim1 8) (replicate 8 1))         
-
-    
-testZPlus = eval arr m 
-  where 
-    (arr, (i,m)) = runMyState$ Garb.zipWithPlus (UA (dim1 8) [0..7]) (UA (dim1 8) (replicate 8 1))         
-    
-testZPlusArBB = runArBB$ Garb.zipWithPlus (UA (dim1 8) [0..7]) (UA (dim1 8) (replicate 8 1))         
-
-
-
----------------------------------------------------------------------------
--- Do again but for AC Arr
-
 ------------------------------------------------------------------------------
 -- Evaluate   
 
@@ -696,8 +489,11 @@ evalAC (ACSort a) m = UA (dimensions a') (List.sort (contents a'))
   where 
     a' = evalAC a m 
 
-        
--- fixup = map (\(E e) -> evalExp e)        
+ 
+fixup = map (\(E e) -> evalExp e)        
+
+       
+
 runArBB_AC :: MyState UserArray (AC (Arr Int32)) -> IO UserArray 
 runArBB_AC prg = let (a, (i,m)) = runMyState prg
                  in  ArBB.arbbSession$ do m' <- uploadArrays m 
