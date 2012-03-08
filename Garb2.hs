@@ -61,7 +61,7 @@ data Value = IntVal Int
              
 -- TODO: Typed exps or the Value approach above
 data Exp = Lit Int32 --- Value     -- One of the supported value types
-         | Var Label Id        -- De Bruijn index (ok? I am on thin ice here) 
+         | Var Label Id            -- De Bruijn index (ok? I am on thin ice here) 
          | BinOp Label Op Exp Exp  
          | UnOp  Label Op Exp  
            
