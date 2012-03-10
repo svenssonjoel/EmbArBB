@@ -203,6 +203,11 @@ data AC a where
    ACInput     :: Arr e -> AC (Arr e)
    ACAddReduce :: AC (Arr e) -> AC (Arr e)
    ACMulReduce :: AC (Arr e) -> AC (Arr e) 
+   ACRotate    :: AC (Arr e) -> Exp -> AC (Arr e)
+   ACRotateRev :: AC (Arr e) -> Exp -> AC (Arr e)
+   -- Do no call it ZipWith. 
+   -- In ArBB all scalar binary ops are "overloaded" on arrays.. 
+   ACZipWith   :: (Exp -> Exp -> Exp) -> AC (Arr e) -> AC (Arr e) -> AC (Arr e) 
    -- TODO: encode function type also 
    -- TODO: the different input arrays can potentially have different type
    ACMap       :: Function -> [AC (Arr e)] -> AC (Arr e)
@@ -550,6 +555,7 @@ sortAC :: StorableAC b => b -> MyState b (AC (Arr Int32))
 sortAC as = do 
   i <- inputAC as
   return (ACSort i)     
+  
     
 testSortAC = evalAC arr m
   where 
@@ -557,3 +563,23 @@ testSortAC = evalAC arr m
 
 
 testSortArBB_AC = runArBB_AC$ Garb.sortAC (UA (dim1 8) [7,6,5,4,3,2,1,0])
+
+-- TODO: Generate ArBB function from something 
+--       like this. 
+crossProd :: AC (Arr Int32) -> AC (Arr Int32) -> AC (Arr Int32) 
+crossProd a b = r
+  where 
+    a' = ACRotate a (Lit 1) 
+    b' = ACRotateRev b (Lit 1) 
+    lprods = ACZipWith (*) a' b' 
+    a'' = ACRotate a' (Lit 1) 
+    b'' = ACRotateRev b (Lit 1) 
+    rprods = ACZipWith (*) a'' b''
+    r   = ACZipWith (-) lprods rprods
+-- TODO: But later it should look like 
+{-
+crossProd :: AC (Arr Int32) -> AC (Arr Int32) -> AC (Arr Int32) 
+crossProd a b = (a <<. 1) *.  (b >>. 1) -.   
+                (a <<. 2) *.  (b >>. 2) 
+ 
+-} 
