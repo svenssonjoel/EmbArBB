@@ -7,7 +7,7 @@ module Garb where
 import Control.Monad.State.Strict
 import qualified Data.Map as Map
 import Data.Maybe
-import Data.Word
+import Data.Word 
 import Data.List as List
 import Data.Int
 
@@ -23,6 +23,10 @@ import Foreign.Marshal.Array
 import Foreign.Marshal.Utils
 import Foreign.Ptr
 
+-- import qualified Data.Vector as Vector
+import qualified Data.Vector.Storable as V 
+
+import System.IO.Unsafe
 
 {- 
   TODO: Make it run on ArBB
@@ -47,17 +51,15 @@ newLabel () = unsafePerformIO $ do
   p <- readIORef counter
   writeIORef counter (p+1)
   return p 
-
-
-
+  
 ----------------------------------------------------------------------------
 --
 
 
-data Value = IntVal Int 
-           | FloatVal Float 
-           | DoubleVal Double
-             deriving (Eq,Show) 
+--data Value = IntVal Int 
+--           | FloatVal Float 
+--           | DoubleVal Double
+--             deriving (Eq,Show) 
              
 -- TODO: Typed exps or the Value approach above
 data Exp = Lit Int32 --- Value     -- One of the supported value types
@@ -79,6 +81,7 @@ data Exp = Lit Int32 --- Value     -- One of the supported value types
 data Op = Add 
         | Sub  
         | Mul 
+        | Div 
           deriving (Eq, Show) 
  
 
@@ -200,13 +203,16 @@ type Id = Int -- identification (Index into Map)
 data Arr a = Arr Id                       
                       
 data AC a where   
-   ACInput     :: Arr e -> AC (Arr e)
+   ACInput     :: V.Vector e -> AC (Arr e)
    ACAddReduce :: AC (Arr e) -> AC (Arr e)
    ACMulReduce :: AC (Arr e) -> AC (Arr e) 
+   
    -- TODO: encode function type also 
    -- TODO: the different input arrays can potentially have different type
    ACMap       :: Function -> [AC (Arr e)] -> AC (Arr e)
    ACSort      :: AC (Arr e) -> AC (Arr e)
+   
+type ACVector = AC (Arr Int32)
              
 
 {- User level arrays. currently just a list of elements and a shape descriptor -}                   
@@ -224,8 +230,8 @@ data SomeFixedArrayRepresentation = SFAR (Ptr ()) Dim ArBB.ScalarType
 
 -- with (MyState a) as above, Storable has methods to turn "things" into "SomeFixedArrayRepresentation"
 
-class StorableAC b where 
-  inputAC :: b -> MyState b (AC (Arr Int32))
+--class StorableAC b where 
+--  inputAC :: b -> MyState b (AC (Arr Int32))
 
 
 
@@ -249,13 +255,13 @@ runMyState a = runState a (0,Map.empty)
 
 -- for use with the interpreter
 
-instance StorableAC UserArray where 
-  inputAC arr = do 
-    id <- getID
-    m  <- getMap 
-    putMap (Map.insert id arr m) 
-    putID  (id+1);
-    return$ ACInput (Arr id)
+--instance StorableAC UserArray where 
+--  inputAC arr = do 
+--    id <- getID
+--    m  <- getMap 
+--    putMap (Map.insert id arr m) 
+--    putID  (id+1);
+--    return$ ACInput (Arr id)
 
 
 
@@ -454,6 +460,33 @@ uploadArray arr@(UA dim d) = do
       -- How do I wait until it is certain that the data is copied ? 
       return v
 
+
+uploadArrayVector :: V.Vector Int32 -> ArBB.EmitArbb ArBBArray 
+uploadArrayVector vector = do -- arr@(UA dim d) = do 
+  v <- uploadArray' vector
+  return (ArBBArray (One dim) ArBB.ArbbI32 v) 
+  where 
+    dim = V.length vector 
+    uploadArray' :: V.Vector Int32 -> ArBB.EmitArbb ArBB.Variable 
+    uploadArray' vector = do               
+      -- bin <- ArBB.getBindingNull_
+      t   <- ArBB.getScalarType_ ArBB.ArbbI32
+      dt  <- ArBB.getDenseType_ t (dimsToInt (One dim))
+      g   <- ArBB.createGlobal_nobind_ dt "in" -- bin
+      v   <- ArBB.variableFromGlobal_ g
+      s   <- mapM ArBB.usize_ (sizes (One dim))
+      ArBB.opDynamicImm_ ArBB.ArbbOpAlloc [v] s
+      ptr <- ArBB.mapToHost_ v [1] ArBB.ArbbWriteOnlyRange
+
+      liftIO$ putStrLn$ "uploading " ++ show (size (One dim)) ++ " elements"
+      liftIO$ V.unsafeWith vector $ \input ->
+            copyBytes ptr (castPtr input) (size (One dim) * 4)
+      -- How do I wait until it is certain that the data is copied ? 
+      return v
+
+
+
+
 ------------------------------------------------------------------------------
 -- read values back 
 readBack :: ArBBArray -> ArBB.EmitArbb UserArray 
@@ -471,41 +504,69 @@ readBack arr =
            return$ UA d dat
   
 
+readBackVector :: ArBBArray -> ArBB.EmitArbb (V.Vector Int32) 
+readBackVector arr =  
+  let v = var arr
+      d = dim arr 
+  in case (dimsToInt d) of     
+         0 -> error "Only arrays, currently" 
+           -- do 
+           --i <- ArBB.readScalar_ v
+           --return (UA d [i])
+         x -> do 
+           liftIO$ putStrLn$ "reading back " ++ show (size d) ++ " elements"
+           ptr  <- ArBB.mapToHost_ v [1] ArBB.ArbbReadOnlyRange
+          
+           dat  <- liftIO$ peekArray (size d) (castPtr ptr)
+           let vec = V.fromList dat -- Gah ! 
+           return vec --UA d dat
+
+
 
                                
 
 ------------------------------------------------------------------------------
 -- Evaluate   
 
-evalAC :: AC (Arr Int32) -> Map.Map Int UserArray -> UserArray 
-evalAC (ACInput (Arr id)) m = fromJust (Map.lookup id m) 
-evalAC (ACAddReduce ua) m = fold (+) 0 (evalAC ua m)
-evalAC (ACMulReduce ua) m = fold (*) 1 (evalAC ua m) 
+evalAC :: ACVector -> UserArray 
+evalAC (ACInput vector) = let dat = V.toList vector 
+                          in UA (One (length dat)) dat
+evalAC (ACAddReduce ua) = fold (+) 0 (evalAC ua)
+evalAC (ACMulReduce ua) = fold (*) 1 (evalAC ua) 
 
-evalAC (ACMap f uas) m = UA (dimensions (head inputs)) (fixup (generalMap f inputData))                                                                   
-  where inputs = map (\x -> evalAC x m) uas
+evalAC (ACMap f uas) = UA (dimensions (head inputs)) (fixup (generalMap f inputData))                                                                   
+  where inputs = map (\x -> evalAC x) uas
         inputData = map contents inputs 
-evalAC (ACSort a) m = UA (dimensions a') (List.sort (contents a'))
+evalAC (ACSort a) = UA (dimensions a') (List.sort (contents a'))
   where 
-    a' = evalAC a m 
+    a' = evalAC a  
 
  
 fixup = map (\(E e) -> evalExp e)        
 
        
 
-runArBB_AC :: MyState UserArray (AC (Arr Int32)) -> IO UserArray 
-runArBB_AC prg = let (a, (i,m)) = runMyState prg
-                 in  ArBB.arbbSession$ do m' <- uploadArrays m 
-                                          res <- evalArBBImm_AC a m' 
-                                          readBack res
+--runArBB_AC :: MyState UserArray (AC (Arr Int32)) -> IO UserArray 
+--runArBB_AC prg = let (a, (i,m)) = runMyState prg
+--                 in  ArBB.arbbSession$ do m' <- uploadArrays m 
+--                                          res <- evalArBBImm_AC a m' 
+--                                          readBack res
                                           
-evalArBBImm_AC :: AC (Arr Int32) -> Map.Map Int ArBBArray -> ArBB.EmitArbb ArBBArray
-evalArBBImm_AC (ACInput (Arr id)) m = do 
-  liftIO$ putStrLn "evalArBBImm: input node!"
-  case (Map.lookup id m) of 
-    Just v -> return v
-    Nothing -> error "evalArBBImm: BUG BUG BUG"
+        
+runArBB :: ACVector -> V.Vector Int32
+runArBB prg = do 
+   unsafePerformIO$ ArBB.arbbSession$ 
+     do res <- evalArBBImm_AC prg 
+        readBackVector res
+
+        
+evalArBBImm_AC :: ACVector  -> ArBB.EmitArbb ArBBArray
+evalArBBImm_AC (ACInput vector)  = uploadArrayVector vector 
+-- do 
+--  liftIO$ putStrLn "evalArBBImm: input node!"
+--  case (Map.lookup id m) of 
+--    Just v -> return v
+--    Nothing -> error "evalArBBImm: BUG BUG BUG"
 {-    
 evalArBBImm_AC (AddReduce a) m = do 
   liftIO$ putStrLn "evalArBBImm: AddReduce node!"
@@ -533,9 +594,9 @@ evalArBBImm_AC (Map f as) m = do
   ArBB.execute_ mapper [var v] (map var arrs) 
   return v
  -} 
-evalArBBImm_AC (ACSort a) m = do 
+evalArBBImm_AC (ACSort a) = do 
   liftIO$ putStrLn "evalArBBImm: Sort node" 
-  arr <- evalArBBImm_AC a m 
+  arr <- evalArBBImm_AC a 
   v   <- newArBBArray (dim arr) (eltType arr)
   rt  <- typeOfArray v
   it  <- typeOfArray arr
@@ -545,15 +606,19 @@ evalArBBImm_AC (ACSort a) m = do
     
   ArBB.execute_ fun [var v] [var arr]  
   return v
+
 ----------------------------------------------------------------------------
-sortAC :: StorableAC b => b -> MyState b (AC (Arr Int32)) 
-sortAC as = do 
-  i <- inputAC as
-  return (ACSort i)     
+sortAC :: V.Vector Int32 -> ACVector
+sortAC as =  
+  let i = ACInput as
+  in ACSort i
     
-testSortAC = evalAC arr m
+testSortAC = evalAC arr 
   where 
-    (arr,(i,m)) = runMyState$ Garb.sortAC (UA (dim1 8) [7,6,5,4,3,2,1,0])
+    arr = Garb.sortAC (V.fromList [7,6,5,4,3,2,1,0])
 
-
-testSortArBB_AC = runArBB_AC$ Garb.sortAC (UA (dim1 8) [7,6,5,4,3,2,1,0])
+testSortArBB =
+  ArBB.arbbSession$ do res <- evalArBBImm_AC a -- m' 
+                       readBack res
+  where 
+    a = Garb.sortAC (V.fromList ((reverse [0..4095])++[0..4095]))
