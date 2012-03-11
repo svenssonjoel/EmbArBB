@@ -1,6 +1,7 @@
 {-# LANGUAGE MultiParamTypeClasses,
              ScopedTypeVariables, 
-             GADTs #-} 
+             GADTs,  
+             FlexibleInstances #-} 
 module Garb where 
 
 
@@ -18,6 +19,7 @@ import Data.IORef
 
 import qualified Intel.ArbbVM as ArBB
 import qualified Intel.ArbbVM.Convenience as ArBB
+import qualified Intel.ArbbVM.Type as ArBB
 
 import Foreign.Marshal.Array
 import Foreign.Marshal.Utils
@@ -62,21 +64,31 @@ newLabel () = unsafePerformIO $ do
 --             deriving (Eq,Show) 
              
 -- TODO: Typed exps or the Value approach above
-data Exp = Lit Int32 --- Value     -- One of the supported value types
-         | Var Label Id            -- De Bruijn index (ok? I am on thin ice here) 
-         | BinOp Label Op Exp Exp  
-         | UnOp  Label Op Exp  
+
+class V.Storable a => Scalar a where
+  typeOf :: a -> ArBB.ScalarType
+  sizeOf :: a -> Int 
+
+instance Scalar Int32 where 
+  typeOf _ = ArBB.ArbbI32 
+  sizeOf a = ArBB.size (typeOf a)
+
+instance Scalar Word32 where 
+  typeOf _ = ArBB.ArbbU32
+  sizeOf a = ArBB.size  (typeOf a)
+
+
+-- Scalar expression language
+data Exp a where 
+   Lit :: Scalar a => a -> Exp a 
+   Var :: Label -> Id -> Exp a   -- De Bruijn index (ok? I am on thin ice here) 
+   BinOp :: Label -> Op -> Exp a -> Exp a -> Exp a   
+   UnOp  :: Label -> Op -> Exp a -> Exp a  
            
-         -- Index into 0D, 1D, 2D, 3D Array   
-         -- May need another rep of arrays here.
-         -- In the ArBB backend and array here will just be a "ArBB.Variable" 
-         -- These should not be "arrays" they should be indices into some Map 
-         -- that holds ArBB Variables in the ArBB case.
-     --    | Index0 Label Array
-     --    | Index1 Label Array Exp
-     --    | Index2 Label Array Exp Exp 
-     --    | Index3 Label Array Exp Exp Exp 
-           deriving Show
+   -- ?? 
+   Index0 :: Label -> ACVector a -> Exp a  
+   Index1 :: Label -> ACVector a -> Exp Int32 -> Exp a 
+
                     
 data Op = Add 
         | Sub  
@@ -84,76 +96,29 @@ data Op = Add
         | Div 
           deriving (Eq, Show) 
  
-
-------------------------------------------------------------------------------
--- Represent functions (to be mapped etc) 
--- As it is now this allows no nested parallelism. 
-data Function = Lam Function                     
-              | E Exp 
-                deriving Show                  
-                                                  
-arity (E a) = 0
-arity (Lam x) = 1 + arity x
-
-body (E a) = a 
-body (Lam f) = body f
-
-apply :: Function -> Function -> Function
-apply (Lam x) (E y) = apply' x y 0                    
-  where apply' (E x) y i    = E (substitute x i y)
-        apply' (Lam  x) y i = Lam (apply' x y (i+1))
-apply f x = error ("apply: " ++ show f) 
- 
-applyList :: Function -> [Function] -> Function
-applyList (E x) [] = E x                                                                                         
-applyList (Lam f) (x:xs) = applyList (apply (Lam f) x) xs
-applyList f x = error ("applyList: " ++ show x ++ " " ++ show f )
-
 ------------------------------------------------------------------------------
 --        
-substitute :: Exp -> Id -> Exp -> Exp         
-substitute (Lit a) i e = Lit a                         
-substitute (Var l j) i e | j < i = Var l j
-                         | j > i = Var l (j-1) 
-                         | j == i = e
+--substitute :: Exp a -> Id -> Exp b -> Exp c   -- ?      
+--substitute (Lit a) i e = Lit a                         
+--substitute (Var l j) i e | j < i = Var l j
+--                         | j > i = Var l (j-1) 
+--                         | j == i = e
 
-substitute (BinOp l op e1 e2) i e = BinOp l op (substitute e1 i e) (substitute e2 i e)
+--substitute (BinOp l op e1 e2) i e = BinOp l op (substitute e1 i e) (substitute e2 i e)
 -- substitute (e1 :*: e2) i e = substitute e1 i e :*: substitute e2 i e
 --substitute (Index0 l a) _ _ = Index0 l a
 --substitute (Index1 l a e0) i e = Index1 l a (substitute e0 i e) 
 --substitute (Index2 l a e0 e1) i e = Index2 l a (substitute e0 i e) (substitute e1 i e)
 --substitute (Index3 l a e0 e1 e2) i e = Index3 l a (substitute e0 i e) (substitute e1 i e) (substitute e2 i e) 
 
-{-                         
-add = Lam (Lam (E (BinOp Add (Var 0) (Var 1)))) 
 
-mul = Lam (Lam (E (BinOp Mul (Var 0) (Var 1))))
+instance Show (Exp a) where 
+  show _ = "expr"
 
-square = Lam (E (BinOp Mul (Var 0) (Var 0)))
-    
-comp f g = Lam (apply f (apply g (E (Var 0))))
-
-addone = apply add (E (Lit 1))
-multwo = apply mul (E (Lit 2))
--} 
------------------------------------------------------------------------------- 
--- Experiment
-instance Eq Function where 
-  (==) = undefined 
-
-instance Num Function where 
-  (+) (E a) (E b) = E (BinOp (newLabel ()) Add a b)
-  (*) (E a) (E b) = E (BinOp (newLabel ()) Mul a b)
-
-  abs = undefined 
-  signum = undefined 
-  
-  fromInteger a = (E (Lit (fromInteger a)))
-
-instance Eq Exp where 
+instance Eq (Exp a) where 
   (==) = undefined -- compare labels here
 
-instance Num Exp where 
+instance Num (Exp Int32) where 
   (+) (a) (b) = BinOp (newLabel ()) Add a b
   (*) (a) (b) = BinOp (newLabel ()) Mul a b
 
@@ -166,7 +131,7 @@ instance Num Exp where
 ------------------------------------------------------------------------------
 -- Dimensions 
   
-{- Support only one, two and threeD arrays, as in ArBB -} 
+{- Support only zero, one, two and threeD arrays, as in ArBB -} 
 data Dim = Zero 
          | One Int
          | Two Int Int 
@@ -207,18 +172,16 @@ data AC a where
    ACAddReduce :: AC (Arr e) -> AC (Arr e)
    ACMulReduce :: AC (Arr e) -> AC (Arr e) 
 
-   ACRotate    :: AC (Arr e) -> Exp -> AC (Arr e)
-   ACRotateRev :: AC (Arr e) -> Exp -> AC (Arr e)
-   -- Do no call it ZipWith. 
-   -- In ArBB all scalar binary ops are "overloaded" on arrays.. 
-   ACZipWith   :: (Exp -> Exp -> Exp) -> AC (Arr e) -> AC (Arr e) -> AC (Arr e) 
-
-   -- TODO: encode function type also 
-   -- TODO: the different input arrays can potentially have different type
-   ACMap       :: Function -> [AC (Arr e)] -> AC (Arr e)
+   ACRotate    :: AC (Arr e) -> Exp Word32 -> AC (Arr e)
+   ACRotateRev :: AC (Arr e) -> Exp Word32 -> AC (Arr e)
+   
+   ACLiftBinOp :: Op -> AC (Arr e) -> AC (Arr e) -> AC (Arr e) 
+   ACLiftUnOp  :: Op -> AC (Arr e) -> AC (Arr e) 
+   
+   
    ACSort      :: AC (Arr e) -> AC (Arr e)
    
-type ACVector = AC (Arr Int32)
+type ACVector a = AC (Arr a)
              
 
 {- User level arrays. currently just a list of elements and a shape descriptor -}                   
@@ -226,57 +189,6 @@ data UserArray = UA {dimensions :: Dim,
                      contents   :: [Int32]}
                deriving Show 
 
-                  
--- This should be something like 
---   MyState a   = State (Int,Map.Map Int SomeFixedArrayRepresentation) a
-type MyState b a = State (Int,Map.Map Int b) a
-
--- Just a thought 
-data SomeFixedArrayRepresentation = SFAR (Ptr ()) Dim ArBB.ScalarType
-
--- with (MyState a) as above, Storable has methods to turn "things" into "SomeFixedArrayRepresentation"
-
---class StorableAC b where 
---  inputAC :: b -> MyState b (AC (Arr Int32))
-
-
-
-getID :: MyState b Int 
-getID = get >>= (return . fst) 
-
-getMap :: MyState b (Map.Map Int b) 
-getMap = get >>= (return . snd) 
-
-putID :: Int -> MyState b () 
-putID i = do   
-  (_,m) <- get
-  put (i,m) 
-  
-putMap :: Map.Map Int b -> MyState b ()
-putMap m = do 
-  (i,_) <- get
-  put (i,m)
-         
-runMyState a = runState a (0,Map.empty)
-
--- for use with the interpreter
-
---instance StorableAC UserArray where 
---  inputAC arr = do 
---    id <- getID
---    m  <- getMap 
---    putMap (Map.insert id arr m) 
---    putID  (id+1);
---    return$ ACInput (Arr id)
-
-
-
-------------------------------------------------------------------------------
--- Few Examples
-toBinFunction f = f (E (Var (newLabel ()) 0)) (E (Var (newLabel ()) 1))
-expFunToBinFun f = Lam (Lam (E (f (Var (newLabel ()) 0) (Var (newLabel ()) 1))))
-expFunToUnFun  f = Lam (E (f (Var (newLabel ()) 0)))    
-                   
 
 -- evalOp op a b = evalExp (op (Lit a) (Lit b)) 
 
@@ -292,10 +204,10 @@ evalBinOp Mul a1 a2 = a1 * a2
 evalBinOp Sub a1 a2 = a1 - a2 
 
 -- generalMap: correct for 1D,2D,3D. 
-generalMap :: Function -> [[Int32]] -> [Function] 
-generalMap f xs | nub xs ==  [[]] = [] 
-generalMap f xs = applyList f (map (E . Lit . head) xs) : 
-                  generalMap f (map tail xs)  
+--generalMap :: Function -> [[Int32]] -> [Function] 
+--generalMap f xs | nub xs ==  [[]] = [] 
+--generalMap f xs = applyList f (map (E . Lit . head) xs) : 
+--                  generalMap f (map tail xs)  
 
 
 fold :: (Int32 -> Int32 -> Int32) -> Int32 -> UserArray -> UserArray 
@@ -329,23 +241,6 @@ chop' n xs = (take n xs) : chop' n (drop n xs)
 flatten1 = id                       
 flatten2 as = concatMap flatten1 as 
 flatten3 as = concatMap flatten2 as
-------------------------------------------------------------------------------
-
-
-
---run :: MyState UserArray Array -> UserArray
---run prg = let (a,(i,m)) = runMyState prg
---          in  eval a m
-
-
-
-{- Examples 
-
-run (Garb.sum (UA (dim1 10) [0..9]))
-
-run (incr (UA (dim1 10) [0..9]))
--} 
-
 
 
 
@@ -358,23 +253,23 @@ data ArBBArray = ArBBArray { dim     :: Dim,
   
 -----------------------------------------------------------------------------
 -- Generate ArBB function from "Function" 
-genFun :: Function -> ArBB.EmitArbb ArBB.ConvFunction   
-genFun f = do 
-  s <- ArBB.getScalarType_ ArBB.ArbbI32  -- out type (CHEAT) 
-  let its = replicate (arity f) s        -- in  type (CHEAT)
-  fun <- ArBB.funDef_ "generated" [s] its $ \ [out] inp -> do 
-    r <- functionBody (body f) inp 
-    ArBB.copy_ out r
-   -- ArBB.op_ ArBB.ArbbOpMul out inp
-  return fun
+--genFun :: Function -> ArBB.EmitArbb ArBB.ConvFunction   
+--genFun f = do 
+--  s <- ArBB.getScalarType_ ArBB.ArbbI32  -- out type (CHEAT) 
+--  let its = replicate (arity f) s        -- in  type (CHEAT)
+--  fun <- ArBB.funDef_ "generated" [s] its $ \ [out] inp -> do 
+--    r <- functionBody (body f) inp 
+--    ArBB.copy_ out r
+--   -- ArBB.op_ ArBB.ArbbOpMul out inp
+--  return fun
          
     
 -- Expression to function body, 
 -- Any "Arrays" that may occur here will be "global".
 --  This will at least be true while "Map" is the only way 
 --  to call a function. 
-functionBody :: Exp -> [ArBB.Variable] -> ArBB.EmitArbb ArBB.Variable
-functionBody (Lit i) _ = ArBB.int32_ i 
+functionBody :: Exp Word32 -> [ArBB.Variable] -> ArBB.EmitArbb ArBB.Variable
+functionBody (Lit i) _ = ArBB.isize_ (fromIntegral i) 
 functionBody (Var l ix) env = return (env !! ix) 
 
 -- TODO: Bit repetitive! fix. 
@@ -399,7 +294,10 @@ functionBody (BinOp l Mul e1 e2) env = do
 --functionBody (Index2 l arr e1 e2) _ = undefined 
 --functionBody (Index3 l arr e1 e2 e3) _ = undefined 
 
-
+arBBOp Mul = ArBB.ArbbOpMul 
+arBBOp Add = ArBB.ArbbOpAdd
+arBBOp Sub = ArBB.ArbbOpSub
+arBBOp Div = ArBB.ArbbOpDiv
 -----------------------------------------------------------------------------
 -- return a new (global)  variable   
 -- TODO: When doing the non-immediate mode these will be local variables
@@ -534,40 +432,72 @@ readBackVector arr =
 ------------------------------------------------------------------------------
 -- Evaluate   
 
-evalAC :: ACVector -> UserArray 
+evalAC :: ACVector Int32 -> UserArray 
 evalAC (ACInput vector) = let dat = V.toList vector 
                           in UA (One (length dat)) dat
 evalAC (ACAddReduce ua) = fold (+) 0 (evalAC ua)
 evalAC (ACMulReduce ua) = fold (*) 1 (evalAC ua) 
 
-evalAC (ACMap f uas) = UA (dimensions (head inputs)) (fixup (generalMap f inputData))                                                                   
-  where inputs = map (\x -> evalAC x) uas
-        inputData = map contents inputs 
+--evalAC (ACMap f uas) = UA (dimensions (head inputs)) (fixup (generalMap f inputData))                                                                   
+--  where inputs = map (\x -> evalAC x) uas
+--        inputData = map contents inputs 
 evalAC (ACSort a) = UA (dimensions a') (List.sort (contents a'))
   where 
     a' = evalAC a  
-
- 
-fixup = map (\(E e) -> evalExp e)        
-
-       
-
---runArBB_AC :: MyState UserArray (AC (Arr Int32)) -> IO UserArray 
---runArBB_AC prg = let (a, (i,m)) = runMyState prg
---                 in  ArBB.arbbSession$ do m' <- uploadArrays m 
---                                          res <- evalArBBImm_AC a m' 
---                                          readBack res
-                                          
-        
-runArBB :: ACVector -> V.Vector Int32
+    
+    
+----------------------------------------------------------------------------                                          
+-- RunArBB
+runArBB :: ACVector Int32 -> V.Vector Int32
 runArBB prg = do 
    unsafePerformIO$ ArBB.arbbSession$ 
      do res <- evalArBBImm_AC prg 
         readBackVector res
 
+-- evalArBB_Expr 
         
-evalArBBImm_AC :: ACVector  -> ArBB.EmitArbb ArBBArray
+evalArBBImm_AC :: ACVector Int32 -> ArBB.EmitArbb ArBBArray
 evalArBBImm_AC (ACInput vector)  = uploadArrayVector vector 
+evalArBBImm_AC (ACRotate vector d) =  do 
+  liftIO$ putStrLn "evalArBBImm: Rotate node" 
+  arr <- evalArBBImm_AC vector 
+  v   <- newArBBArray (dim arr) (eltType arr)
+  rt  <- typeOfArray v
+  it  <- typeOfArray arr
+  fun <- ArBB.funDef_ "rotator" [rt] [it] $ \ out inp -> do 
+    d' <- functionBody d []  
+    ArBB.opDynamic_ ArBB.ArbbOpRotate out (inp ++ [d'])
+    
+  ArBB.execute_ fun [var v] [var arr]  
+  return v
+evalArBBImm_AC (ACRotateRev vector d) =  do 
+  liftIO$ putStrLn "evalArBBImm: Rotate node" 
+  arr <- evalArBBImm_AC vector 
+  v   <- newArBBArray (dim arr) (eltType arr)
+  rt  <- typeOfArray v
+  it  <- typeOfArray arr
+  fun <- ArBB.funDef_ "rotator" [rt] [it] $ \ out inp -> do 
+    d' <- functionBody d []  
+    ArBB.opDynamic_ ArBB.ArbbOpRotateReverse out (inp ++ [d'])
+    
+  ArBB.execute_ fun [var v] [var arr]  
+  return v
+evalArBBImm_AC (ACLiftBinOp op v1 v2) =  do 
+  liftIO$ putStrLn "evalArBBImm: Rotate node" 
+  a1  <- evalArBBImm_AC v1 
+  a2  <- evalArBBImm_AC v2
+  v   <- newArBBArray (dim a1) (eltType a1)
+  rt  <- typeOfArray v
+  it1  <- typeOfArray a1
+  it2  <- typeOfArray a2  -- much cheating !
+  fun <- ArBB.funDef_ "lifter" [rt] [it1,it2] $ \ out inp -> do 
+    ArBB.op_ (arBBOp op) out inp
+    
+  ArBB.execute_ fun [var v] [var a1,var a2]  
+  return v
+  
+
+
 -- do 
 --  liftIO$ putStrLn "evalArBBImm: input node!"
 --  case (Map.lookup id m) of 
@@ -615,7 +545,7 @@ evalArBBImm_AC (ACSort a) = do
 
 ----------------------------------------------------------------------------
 
-sortAC :: V.Vector Int32 -> ACVector
+sortAC :: V.Vector Int32 -> ACVector Int32
 sortAC as =  
   let i = ACInput as
   in ACSort i
@@ -626,23 +556,54 @@ testSortAC = evalAC arr
 
 
 testSortArBB = runArBB a
---  ArBB.arbbSession$ do res <- evalArBBImm_AC a -- m' 
- --               readBack res
   where 
     a = Garb.sortAC (V.fromList ((reverse [0..4095])++[0..4095]))
 
 -- TODO: Generate ArBB function from something 
 --       like this. 
-crossProd :: AC (Arr Int32) -> AC (Arr Int32) -> AC (Arr Int32) 
+crossProd :: ACVector Int32 -> ACVector Int32 -> ACVector Int32 
 crossProd a b = r
   where 
     a' = ACRotate a (Lit 1) 
     b' = ACRotateRev b (Lit 1) 
-    lprods = ACZipWith (*) a' b' 
+    lprods = ACLiftBinOp Mul a' b' 
     a'' = ACRotate a' (Lit 1) 
     b'' = ACRotateRev b (Lit 1) 
-    rprods = ACZipWith (*) a'' b''
-    r   = ACZipWith (-) lprods rprods
+    rprods = ACLiftBinOp Mul a'' b'' 
+    r   = ACLiftBinOp Sub lprods rprods 
+    
+
+
+
+---------------------------------------------------------------------------- 
+-- Testing Testing 
+testCrossArBB = runArBB a
+  where 
+    a = Garb.crossProd (ACInput (V.fromList [1,2,3])) 
+                       (ACInput (V.fromList [3,2,1]))
+
+
+testRotate1 = runArBB a
+  where 
+    a = ACRotate (ACInput (V.fromList [1,2,3])) (Lit 1) 
+ 
+testRotate2 = runArBB a
+  where 
+    a = ACRotateRev (ACInput (V.fromList [1,2,3])) (Lit 1) 
+
+testRotate3 = runArBB a
+  where 
+    a = ACRotate (ACRotate (ACInput (V.fromList [1,2,3])) (Lit 1)) (Lit 1)
+
+
+testLift = runArBB a
+  where 
+    a = ACLiftBinOp Add (ACInput (V.fromList [1,1,1])) 
+                        (ACInput (V.fromList [2,3,4]))
+ 
+
+
+
 -- TODO: But later it should look like 
 {-
 crossProd :: AC (Arr Int32) -> AC (Arr Int32) -> AC (Arr Int32) 
