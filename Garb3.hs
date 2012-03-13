@@ -86,41 +86,41 @@ data Literal = LitInt8   Int8
 data Variable = Variable String 
               deriving (Eq, Show)
                
-data DExp = Lit Label Literal  
-          | Var Label Variable 
-          | Let (Variable,DExp) DExp  
-          | BinOp Label Op DExp DExp
-          | UnOp Label Op DExp 
+-- Labeled Expression
+data LExp = LLit Label Literal  
+          | LVar Label Variable 
+          | LBinOp Label Op LExp LExp
+          | LUnOp Label Op LExp 
             
             -- Index into Vectors 
-          | Index0 Label DExp 
-          | Index1 Label DExp DExp -- label vector index
+          | LIndex0 Label LExp 
+          | LIndex1 Label LExp LExp -- label vector index
             
             -- Operations on dense  
-          | AddReduce Label DExp 
-          | MulReduce Label DExp 
+          | LAddReduce Label LExp 
+          | LMulReduce Label LExp 
             
-          | Rotate Label DExp 
-          | RotateRev Label DExp 
+          | LRotate Label LExp LExp 
+          | LRotateRev Label LExp LExp
             
-          | Sort Label DExp 
+          | LSort Label LExp 
           deriving (Show, Eq)
    
-getLabel (Sort l _) = l 
-getLabel (Rotate l _) = l 
-getLabel (RotateRev l _) = l
-getLabel (MulReduce l _) = l
-getLabel (AddReduce l _) = l 
-getLabel (Index1 l _ _) = l 
-getLabel (Index0 l _) = l 
-getLabel (UnOp l _ _) = l 
-getLabel (BinOp l _ _ _) = l 
-getLabel (Var l _) = l 
-getLabel (Lit l _) = l 
-getLabel (Let _ _) = error "getLabel"
+getLabel (LSort l _) = l 
+getLabel (LRotate l _ _) = l 
+getLabel (LRotateRev l _ _) = l
+getLabel (LMulReduce l _) = l
+getLabel (LAddReduce l _) = l 
+getLabel (LIndex1 l _ _) = l 
+getLabel (LIndex0 l _) = l 
+getLabel (LUnOp l _ _) = l 
+getLabel (LBinOp l _ _ _) = l 
+getLabel (LVar l _) = l 
+getLabel (LLit l _) = l 
+
 
                    
-data Exp a = E DExp
+data Exp a = E LExp
 
 type ACVector a = Exp (V.Vector a)    
 
@@ -129,6 +129,28 @@ data Op = Add
         | Mul 
         | Div 
           deriving (Eq, Show) 
+                   
+                   
+---------------------------------------------------------------------------- 
+-- DAG
+type NodeID = Word32
+
+data Node = NLit Literal
+          | NVar Variable 
+          | NBinOp Op NodeID NodeID 
+          | NUnOp  Op NodeID 
+            
+          | NIndex0 NodeID
+          | NIndex1 NodeID NodeID 
+            
+          | NAddReduce NodeID
+          | NMulReduce NodeID 
+          
+          | NRotate NodeID NodeID 
+          | NRotateRev NodeID NodeID 
+          deriving (Eq,Show)
+
+type DAG = Map.Map NodeID Node
  
 ------------------------------------------------------------------------------
 --        
@@ -153,13 +175,13 @@ instance Eq (Exp a) where
   (==) = undefined -- compare labels here
 
 instance Num (Exp Int32) where 
-  (+) (E a) (E b) = E $ BinOp (newLabel ()) Add a b
-  (*) (E a) (E b) = E $ BinOp (newLabel ()) Mul a b
+  (+) (E a) (E b) = E $ LBinOp (newLabel ()) Add a b
+  (*) (E a) (E b) = E $ LBinOp (newLabel ()) Mul a b
 
   abs = undefined 
   signum = undefined 
   
-  fromInteger a = E $ Lit (newLabel ()) $ LitInt32 $ fromInteger a
+  fromInteger a = E $ LLit (newLabel ()) $ LitInt32 $ fromInteger a
 
 
 ------------------------------------------------------------------------------
@@ -197,29 +219,6 @@ size = foldl (+) 0 .  sizes
 type Id = Int -- identification (Index into Map)            
               -- or a De Bruijn index.. 
 
-------------------------------------------------------------------------------
--- The AST                       
-
--- data Arr a = Arr Id                       
-                      
-
-{- 
-data AC a where   
-   ACInput     :: V.Vector e -> AC (Arr e)
-   ACAddReduce :: AC (Arr e) -> AC (Arr e)
-   ACMulReduce :: AC (Arr e) -> AC (Arr e) 
-
-   ACRotate    :: AC (Arr e) -> Exp Word32 -> AC (Arr e)
-   ACRotateRev :: AC (Arr e) -> Exp Word32 -> AC (Arr e)
-   
-   ACLiftBinOp :: Op -> AC (Arr e) -> AC (Arr e) -> AC (Arr e) 
-   ACLiftUnOp  :: Op -> AC (Arr e) -> AC (Arr e) 
-   
-   
-   ACSort      :: AC (Arr e) -> AC (Arr e)
-   
-type ACVector a = AC (Arr a)
--}             
 
 {- User level arrays. currently just a list of elements and a shape descriptor -}                   
 data UserArray = UA {dimensions :: Dim, 
@@ -469,44 +468,45 @@ readBackVector arr =
 ------------------------------------------------------------------------------
 --   
              
-type Reify a = State (Map.Map Label  Variable, Integer) a  
+type DAGMaker a = State DAG a  
              
-runReify r = evalState r (Map.empty, 0) 
+runDAGMaker lexpr = execState lexpr Map.empty
                
-compile c = runReify (compileTest c)              
+compile c = runDAGMaker (compileTest c)              
 
-compileTest :: (ACVector Int32 -> ACVector Int32) -> Reify DExp
-compileTest f = findSharing res
+compileTest :: (ACVector Int32 -> ACVector Int32) -> DAGMaker NodeID
+compileTest f = constructDAG res 
   where 
     (E res) = f input
-    input = E (Var (newLabel ()) (Variable "Input"))
+    input = E (LVar (newLabel ()) (Variable "Input"))
     
-findSharing (AddReduce l i) = 
-  do     
-    (m,nextId) <- get
-    let lab = getLabel i
-    case Map.lookup lab m of  
-      Nothing -> 
-        do 
-          let v  = Variable ("v" ++ show nextId)
-              m' = Map.insert lab v m 
-          put (m',nextId+1) 
-          i' <- findSharing i
-          return $ Let (v,i') (AddReduce l (Var (-1) v)) 
-      (Just v) -> 
-        return $ AddReduce l (Var (-1) v)
-findSharing bop@(BinOp l op a b) = 
-  do
-    a' <- findSharing a 
-    b' <- findSharing b 
-    return $ BinOp l op a' b'
-findSharing (Var l v) = return$ Var l v 
-findSharing e = error (show e) 
+constructDAG :: LExp -> DAGMaker NodeID 
+constructDAG (LVar l v) = 
+  do 
+    m <- get 
+    let m' = Map.insert l (NVar v) m 
+    put m'
+    return l 
+constructDAG (LAddReduce l input) = do     
+  m <- get 
+  case Map.lookup l m  of 
+    (Just nid) -> return (getLabel input) -- (bit messy, use a biMap after all ?) 
+    Nothing    -> 
+      do 
+        input' <- constructDAG input 
+        m' <- get 
+        let m'' = Map.insert l (NAddReduce input') m'
+        put m''
+        return l
+
+  
+  
+    
     
 t1 :: ACVector Int32 -> ACVector Int32 
-t1 (E input) = E $ AddReduce (newLabel ()) input 
+t1 (E input) = E $ LAddReduce (newLabel ()) input 
 
-t2 (E input) = E $ BinOp (newLabel ()) Add input input
+t2 (E input) = E $ LBinOp (newLabel ()) Add input input
 
 t3 input = t2 (t1 input)
            
