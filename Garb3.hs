@@ -470,7 +470,7 @@ readBackVector arr =
              
 type DAGMaker a = State DAG a  
              
-runDAGMaker lexpr = execState lexpr Map.empty
+runDAGMaker lexpr = runState lexpr Map.empty
                
 compile c = runDAGMaker (compileTest c)              
 
@@ -490,7 +490,7 @@ constructDAG (LVar l v) =
 constructDAG (LAddReduce l input) = do     
   m <- get 
   case Map.lookup l m  of 
-    (Just nid) -> return (getLabel input) -- (bit messy, use a biMap after all ?) 
+    (Just nid) -> return l -- correct now ? 
     Nothing    -> 
       do 
         input' <- constructDAG input 
@@ -498,10 +498,21 @@ constructDAG (LAddReduce l input) = do
         let m'' = Map.insert l (NAddReduce input') m'
         put m''
         return l
+constructDAG (LBinOp l op i1 i2) = do        
+  m <- get 
+  case Map.lookup l m of 
+    (Just nid) -> return l
+    Nothing -> 
+      do 
+        i1' <- constructDAG i1 
+        i2' <- constructDAG i2 
+        m' <- get 
+        let m'' = Map.insert l (NBinOp op i1' i2') m'
+        put m'' 
+        return l
+      
 
   
-  
-    
     
 t1 :: ACVector Int32 -> ACVector Int32 
 t1 (E input) = E $ LAddReduce (newLabel ()) input 
@@ -509,6 +520,76 @@ t1 (E input) = E $ LAddReduce (newLabel ()) input
 t2 (E input) = E $ LBinOp (newLabel ()) Add input input
 
 t3 input = t2 (t1 input)
+
+{- TODO: Types are needed to generate the ArBB code. 
+   TODO: Make the cheat generate runnable code for t1 and t3 
+   TODO: ... 
+-} 
+genArBBFunCheat :: DAG -> NodeID -> ArBB.EmitArbb ArBB.ConvFunction
+genArBBFunCheat dag nod = 
+  do 
+    st <- ArBB.getScalarType_ ArBB.ArbbI32 -- t3 returns a single scalar 
+    dt <- ArBB.getDenseType_ st 1 
+    
+    let rt = st 
+        it = dt 
+
+    ArBB.funDef_ "Cheat" [rt] [it] $ \ [out] inp -> do 
+      v <- genBodyArBB dag nod inp 
+      ArBB.copy_ out v
+
+
+      
+--                                  inputs 
+genBodyArBB :: DAG -> NodeID -> [ArBB.Variable] -> ArBB.EmitArbb ArBB.Variable 
+genBodyArBB dag nod inputs =                           
+  do 
+    case Map.lookup nod dag of 
+      Nothing -> error "genBodyArBB: broken" 
+      (Just node) -> genNode node 
+  where 
+    genNode (NAddReduce nid) = 
+      do
+        v1 <- genBodyArBB dag nid inputs 
+        v  <- newArBBArray Zero (ArBB.ArbbI32)
+        
+        liftIO$ putStrLn "NAddReduce node" 
+        return (var v)
+    genNode (NVar (Variable nom)) = return$ head inputs -- only one input in this cheat. 
+    --genNode whatever = liftIO$ putStrLn$ "hello" -- show whatever
+    
+
+        
+-- Test t1 
+    
+test_t1 = 
+  ArBB.arbbSession$ 
+    do 
+      (ArBBArray _ _ v) <- uploadArrayVector v1 
+      st <- ArBB.getScalarType_ ArBB.ArbbI32 
+      dt <- ArBB.getDenseType_ st 1 
+
+      g  <- ArBB.createGlobal_nobind_ st "res" --st "res" 
+      y  <- ArBB.variableFromGlobal_ g
+        
+      let (start_node,c) = compile t1
+      fun <- genArBBFunCheat c start_node
+
+      str <- ArBB.serializeFunction_ fun
+      liftIO$ putStrLn (ArBB.getCString str)
+      
+      --ArBB.execute_ fun [y] [v] 
+
+      --result <- readBackVector (ArBBArray (One 10) ArBB.ArbbI32 y)
+      --result :: Int32 <- ArBB.readScalar_ y  
+    
+      --liftIO$ putStrLn $ show result
+
+      
+    where v1 = V.fromList [0..9] 
+          
+    
+
            
 {- 
 evalAC :: ACVector Int32 -> UserArray 
