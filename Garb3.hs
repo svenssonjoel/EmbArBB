@@ -1,7 +1,8 @@
 {-# LANGUAGE MultiParamTypeClasses,
              ScopedTypeVariables, 
              GADTs,  
-             FlexibleInstances #-} 
+             FlexibleInstances, 
+             TypeOperators #-} 
 module Garb where 
 
 
@@ -55,10 +56,38 @@ newLabel () = unsafePerformIO $ do
   return p 
   
 ----------------------------------------------------------------------------
+-- Make up an Vector type to use
+  
+-- something like this ? 
+
+  
+data DVector d a = Vector {vectorData  :: V.Vector a, 
+                           vectorShape :: Dim} 
+                   
+                   
+--data DNil                    
+data a :. b = a :. b  
+
+type Dim0 = ()                
+type Dim1 = () :. Dim0 
+type Dim2 = () :. Dim1 
+type Dim3 = () :. Dim2 
+
+
+type Vector = DVector Dim1
+type Vector2D = DVector Dim2               
+type Vector3D = DVector Dim3
+  
+                
+--Testing                
+addReduce :: Num a => Exp (DVector (():.t) a) -> Exp (DVector t a) 
+addReduce (E vec) = E $ LAddReduce (newLabel ()) vec
+
+----------------------------------------------------------------------------   
 --
 
 
--- type ScalarType    = ArBB.ScalarType -- Int8 | Int16 | Int32 -- osv
+
 data ContainerType = Scalar ArBB.ScalarType 
                    | Dense Dimensionality ArBB.ScalarType 
 
@@ -70,12 +99,12 @@ class V.Storable a => Scalar a where
   sizeOf :: a -> Int 
 
 instance Scalar Int32 where 
-  typeOf _ = ArBB.ArbbI32 
+  typeOf _ = ArBB.ArbbI32
   sizeOf a = ArBB.size (typeOf a)
 
 instance Scalar Word32 where 
   typeOf _ = ArBB.ArbbU32
-  sizeOf a = ArBB.size  (typeOf a)
+  sizeOf a = ArBB.size (typeOf a) 
 
   
 data Literal = LitInt8   Int8  
@@ -221,9 +250,9 @@ type Id = Int -- identification (Index into Map)
 
 
 {- User level arrays. currently just a list of elements and a shape descriptor -}                   
-data UserArray = UA {dimensions :: Dim, 
-                     contents   :: [Int32]}
-               deriving Show 
+--data UserArray = UA {dimensions :: Dim, 
+--                     contents   :: [Int32]}
+--               deriving Show 
 
 
 -- evalOp op a b = evalExp (op (Lit a) (Lit b)) 
@@ -246,18 +275,18 @@ data UserArray = UA {dimensions :: Dim,
 --                  generalMap f (map tail xs)  
 
 
-fold :: (Int32 -> Int32 -> Int32) -> Int32 -> UserArray -> UserArray 
-fold op e ua = 
-  case dimsToInt (dimensions ua) of 
-    0 -> error "cannot fold on zero dimensional array" 
-    1 -> UA (decrement (dimensions ua)) 
-            [foldr op e (contents ua)]
-    2 -> let [a,b] = sizes (dimensions ua) 
-         in UA (decrement (dimensions ua))  
-               (flatten1 (map (foldr op e) (chop2 a b (contents ua))))
-    3 -> let [a,b,c] = sizes (dimensions ua) 
-         in UA (decrement (dimensions ua))  
-               (flatten2 (map (map (foldr op e)) (chop3 a b c(contents ua))))
+--fold :: (Int32 -> Int32 -> Int32) -> Int32 -> UserArray -> UserArray 
+--fold op e ua = 
+--  case dimsToInt (dimensions ua) of 
+--    0 -> error "cannot fold on zero dimensional array" 
+--    1 -> UA (decrement (dimensions ua)) 
+--            [foldr op e (contents ua)]
+--    2 -> let [a,b] = sizes (dimensions ua) 
+--         in UA (decrement (dimensions ua))  
+--               (flatten1 (map (foldr op e) (chop2 a b (contents ua))))
+--    3 -> let [a,b,c] = sizes (dimensions ua) 
+--         in UA (decrement (dimensions ua))  
+--               (flatten2 (map (map (foldr op e)) (chop3 a b c(contents ua))))
       
 
             
@@ -366,39 +395,38 @@ typeOfArray arr = do
      
 
 ------------------------------------------------------------------------------
-uploadArrays :: Map.Map Int UserArray -> ArBB.EmitArbb (Map.Map Int ArBBArray) 
-uploadArrays  m = do 
-  liftIO$ putStrLn "uploading Arrays" 
-  l' <- mapM (\(k,v) -> do v' <- uploadArray v
-                           return (k,v') ) l 
-  return$ Map.fromList l'
-  where l = Map.toList m 
+--uploadArrays :: Map.Map Int UserArray -> ArBB.EmitArbb (Map.Map Int ArBBArray) 
+--uploadArrays  m = do 
+--  liftIO$ putStrLn "uploading Arrays" 
+--  l' <- mapM (\(k,v) -> do v' <- uploadArray v
+--                           return (k,v') ) l 
+--  return$ Map.fromList l'
+--  where l = Map.toList m 
 
 
 
 
-
-uploadArray :: UserArray -> ArBB.EmitArbb ArBBArray 
-uploadArray arr@(UA dim d) = do 
-  v <- uploadArray' arr
-  return (ArBBArray dim ArBB.ArbbI32 v) 
-  where 
-    uploadArray' :: UserArray -> ArBB.EmitArbb ArBB.Variable 
-    uploadArray' (UA dim d) = do               
-      -- bin <- ArBB.getBindingNull_
-      t   <- ArBB.getScalarType_ ArBB.ArbbI32
-      dt  <- ArBB.getDenseType_ t (dimsToInt dim)
-      g   <- ArBB.createGlobal_nobind_ dt "in" -- bin
-      v   <- ArBB.variableFromGlobal_ g
-      s   <- mapM ArBB.usize_ (sizes dim)
-      ArBB.opDynamicImm_ ArBB.ArbbOpAlloc [v] s
-      ptr <- ArBB.mapToHost_ v [1] ArBB.ArbbWriteOnlyRange
-
-      liftIO$ putStrLn$ "uploading " ++ show (size dim) ++ " elements"
-      ArBB.withArray_ d $ \input -> do 
-        liftIO$ copyBytes ptr (castPtr input) (size dim * 4)
-      -- How do I wait until it is certain that the data is copied ? 
-      return v
+--uploadArray :: UserArray -> ArBB.EmitArbb ArBBArray 
+--uploadArray arr@(UA dim d) = do 
+--  v <- uploadArray' arr
+--  return (ArBBArray dim ArBB.ArbbI32 v) 
+--  where 
+--    uploadArray' :: UserArray -> ArBB.EmitArbb ArBB.Variable 
+--    uploadArray' (UA dim d) = do               
+--      -- bin <- ArBB.getBindingNull_
+--      t   <- ArBB.getScalarType_ ArBB.ArbbI32
+--      dt  <- ArBB.getDenseType_ t (dimsToInt dim)
+--      g   <- ArBB.createGlobal_nobind_ dt "in" -- bin
+--      v   <- ArBB.variableFromGlobal_ g
+--     s   <- mapM ArBB.usize_ (sizes dim)
+--      ArBB.opDynamicImm_ ArBB.ArbbOpAlloc [v] s
+--      ptr <- ArBB.mapToHost_ v [1] ArBB.ArbbWriteOnlyRange
+--
+--      liftIO$ putStrLn$ "uploading " ++ show (size dim) ++ " elements"
+--      ArBB.withArray_ d $ \input -> do 
+--        liftIO$ copyBytes ptr (castPtr input) (size dim * 4)
+--      -- How do I wait until it is certain that the data is copied ? 
+--      return v
 
 
 uploadArrayVector :: V.Vector Int32 -> ArBB.EmitArbb ArBBArray 
@@ -429,19 +457,19 @@ uploadArrayVector vector = do -- arr@(UA dim d) = do
 
 ------------------------------------------------------------------------------
 -- read values back 
-readBack :: ArBBArray -> ArBB.EmitArbb UserArray 
-readBack arr =  
-  let v = var arr
-      d = dim arr 
-  in case (dimsToInt d) of     
-         0 -> do 
-           i <- ArBB.readScalar_ v
-           return (UA d [i])
-         x -> do 
-           liftIO$ putStrLn$ "reading back " ++ show (size d) ++ " elements"
-           ptr  <- ArBB.mapToHost_ v [1] ArBB.ArbbReadOnlyRange
-           dat  <- liftIO$ peekArray (size d) (castPtr ptr)
-           return$ UA d dat
+--readBack :: ArBBArray -> ArBB.EmitArbb UserArray 
+--readBack arr =  
+--  let v = var arr
+--      d = dim arr 
+--  in case (dimsToInt d) of     
+--         0 -> do 
+--           i <- ArBB.readScalar_ v
+--           return (UA d [i])
+--         x -> do 
+--           liftIO$ putStrLn$ "reading back " ++ show (size d) ++ " elements"
+--           ptr  <- ArBB.mapToHost_ v [1] ArBB.ArbbReadOnlyRange
+--           dat  <- liftIO$ peekArray (size d) (castPtr ptr)
+--           return$ UA d dat
   
 
 readBackVector :: ArBBArray -> ArBB.EmitArbb (V.Vector Int32) 

@@ -418,6 +418,27 @@ readBackVector arr =
            --i <- ArBB.readScalar_ v
            --return (UA d [i])
          x -> do 
+           -- Test, figure out dimensions 
+           st <- ArBB.getScalarType_ ArBB.ArbbI32
+           x' <- ArBB.createGlobal_nobind_ st "res" 
+           x  <- ArBB.variableFromGlobal_ x'
+           y' <- ArBB.createGlobal_nobind_ st "res" 
+           y  <- ArBB.variableFromGlobal_ y'
+           z' <- ArBB.createGlobal_nobind_ st "res" 
+           z  <- ArBB.variableFromGlobal_ z'
+           
+           ArBB.opImm_ ArBB.ArbbOpGetNrows   [x] [v]
+           ArBB.opImm_ ArBB.ArbbOpGetNcols   [y] [v]
+           ArBB.opImm_ ArBB.ArbbOpGetNpages  [z] [v]
+           
+           rx :: Int32 <- ArBB.readScalar_ x
+           ry :: Int32 <- ArBB.readScalar_ y
+           rz :: Int32 <- ArBB.readScalar_ z
+    
+           liftIO$ putStrLn$ "dim" ++ show (rx,ry,rz)
+
+
+           -- end test 
            liftIO$ putStrLn$ "reading back " ++ show (size d) ++ " elements"
            ptr  <- ArBB.mapToHost_ v [1] ArBB.ArbbReadOnlyRange
           
