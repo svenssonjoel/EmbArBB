@@ -65,7 +65,7 @@ data DVector d a = Vector {vectorData  :: V.Vector a,
                            vectorShape :: Dim} 
                    
                    
---data DNil                    
+        
 data a :. b = a :. b  
 
 type Dim0 = ()                
@@ -363,12 +363,13 @@ arBBOp Mul = ArBB.ArbbOpMul
 arBBOp Add = ArBB.ArbbOpAdd
 arBBOp Sub = ArBB.ArbbOpSub
 arBBOp Div = ArBB.ArbbOpDiv
+
 -----------------------------------------------------------------------------
 -- return a new (global)  variable   
 -- TODO: When doing the non-immediate mode these will be local variables
 newArBBArray :: Dim -> ArBB.ScalarType -> ArBB.EmitArbb ArBBArray   
 newArBBArray d s = do 
-  -- bin <- ArBB.getBindingNull_
+  -- <bin <- ArBB.getBindingNull_
   st  <- ArBB.getScalarType_ s -- Type of the elements
   case (dimsToInt d) of 
     
@@ -564,6 +565,7 @@ genArBBFunCheat dag nod =
 
     ArBB.funDef_ "Cheat" [rt] [it] $ \ [out] inp -> do 
       v <- genBodyArBB dag nod inp 
+      -- ArBB.op_ ArBB.ArbbOpCopy [out] [v]
       ArBB.copy_ out v
 
 
@@ -579,10 +581,15 @@ genBodyArBB dag nod inputs =
     genNode (NAddReduce nid) = 
       do
         v1 <- genBodyArBB dag nid inputs 
-        v  <- newArBBArray Zero (ArBB.ArbbI32)
+        -- v@(ArBBArray _ _ v' ) <- newArBBArray Zero (ArBB.ArbbI32)
+        st <- ArBB.getScalarType_ ArBB.ArbbI32
+--        dt <- ArBB.getDenseType_ st 1 
+        imm <- ArBB.createLocal_ st "res" 
+        ArBB.opDynamic_ ArBB.ArbbOpAddReduce [imm] [v1] 
+        
         
         liftIO$ putStrLn "NAddReduce node" 
-        return (var v)
+        return imm
     genNode (NVar (Variable nom)) = return$ head inputs -- only one input in this cheat. 
     --genNode whatever = liftIO$ putStrLn$ "hello" -- show whatever
     
@@ -592,11 +599,16 @@ genBodyArBB dag nod inputs =
     
 test_t1 = 
   ArBB.arbbSession$ 
+   ArBB.withArray_ [0..9 :: Int32] $ \ inp -> 
     do 
-      (ArBBArray _ _ v) <- uploadArrayVector v1 
+      -- (ArBBArray _ _ v) <- uploadArrayVector v1 
       st <- ArBB.getScalarType_ ArBB.ArbbI32 
       dt <- ArBB.getDenseType_ st 1 
 
+      inb <- ArBB.createDenseBinding_ (castPtr inp) 1 [10] [4]
+      gin <- ArBB.createGlobal_ dt "input" inb
+      vin <- ArBB.variableFromGlobal_ gin
+      
       g  <- ArBB.createGlobal_nobind_ st "res" --st "res" 
       y  <- ArBB.variableFromGlobal_ g
         
@@ -606,15 +618,22 @@ test_t1 =
       str <- ArBB.serializeFunction_ fun
       liftIO$ putStrLn (ArBB.getCString str)
       
-      --ArBB.execute_ fun [y] [v] 
+      --reduce <- ArBB.funDef_ "red" [st] [dt] $ \ [out] [inp] -> do       
+      --  ArBB.opDynamic_ ArBB.ArbbOpAddReduce [out] [inp] 
+     
+      
+      ArBB.execute_ fun [y] [vin] 
+      --ArBB.execute_ reduce [y] [vin] 
 
       --result <- readBackVector (ArBBArray (One 10) ArBB.ArbbI32 y)
-      --result :: Int32 <- ArBB.readScalar_ y  
+      result :: Int32 <- ArBB.readScalar_ y  
     
-      --liftIO$ putStrLn $ show result
+      liftIO$ putStrLn $ show result
+
+
 
       
-    where v1 = V.fromList [0..9] 
+    -- where v1 = V.fromList [0..99] 
           
     
 
