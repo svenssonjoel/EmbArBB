@@ -19,10 +19,11 @@ import qualified Data.Map as Map
 ---------------------------------------------------------------------------- 
 --  Testing Testing 
 
-t1 :: Exp (Vector Int32) -> Exp (Vector0D Int32)
+t1 :: Exp (Vector Int32) ->  Exp (Scalar Int32)-- Exp (Vector0D Int32)
 t1 input = addReduce input -- E $ LAddReduce (newLabel ()) input 
 
-t2 (E input) = E $ LBinOp (newLabel ()) Add input input
+t2 :: Exp (Scalar Int32) -> Exp (Scalar Int32) 
+t2 input = input + input -- (E input) = E $ LBinOp (newLabel ()) Add input input
 
 t3 input = t2 (t1 input)
 
