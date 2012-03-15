@@ -74,6 +74,7 @@ type Dim2 = () :. Dim1
 type Dim3 = () :. Dim2 
 
 
+type Vector0D = DVector Dim0  -- hmm nice ?
 type Vector = DVector Dim1
 type Vector2D = DVector Dim2               
 type Vector3D = DVector Dim3
@@ -81,7 +82,12 @@ type Vector3D = DVector Dim3
                 
 --Testing                
 addReduce :: Num a => Exp (DVector (():.t) a) -> Exp (DVector t a) 
-addReduce (E vec) = E $ LAddReduce (newLabel ()) vec
+addReduce (E vec) = E $ LReduce (newLabel ()) Add vec
+
+mulReduce :: Num a => Exp (DVector (():.t) a) -> Exp (DVector t a) 
+mulReduce (E vec) = E $ LReduce (newLabel ()) Mul vec
+
+
 
 ----------------------------------------------------------------------------   
 --
@@ -122,12 +128,15 @@ data LExp = LLit Label Literal
           | LUnOp Label Op LExp 
             
             -- Index into Vectors 
-          | LIndex0 Label LExp 
+            -- Special case (reduction results are arrays, 
+            -- sometimes of length one (a zero dimensional array
+          | LIndex0 Label LExp      
           | LIndex1 Label LExp LExp -- label vector index
             
             -- Operations on dense  
-          | LAddReduce Label LExp 
-          | LMulReduce Label LExp 
+          | LReduce Label Op LExp   -- Not all Ops are valid. 
+         -- | LAddReduce Label LExp 
+         -- | LMulReduce Label LExp 
             
           | LRotate Label LExp LExp 
           | LRotateRev Label LExp LExp
@@ -135,11 +144,12 @@ data LExp = LLit Label Literal
           | LSort Label LExp 
           deriving (Show, Eq)
    
+getLabel :: LExp -> Label                    
 getLabel (LSort l _) = l 
 getLabel (LRotate l _ _) = l 
 getLabel (LRotateRev l _ _) = l
-getLabel (LMulReduce l _) = l
-getLabel (LAddReduce l _) = l 
+getLabel (LReduce l _ _) = l
+--getLabel (LAddReduce l _) = l 
 getLabel (LIndex1 l _ _) = l 
 getLabel (LIndex0 l _) = l 
 getLabel (LUnOp l _ _) = l 
@@ -158,6 +168,11 @@ data Op = Add
         | Mul 
         | Div 
           deriving (Eq, Show) 
+                   
+
+isReduceOp Add = True 
+isReduceOp Mul = True
+isReduceOp _   = False 
                    
                    
 ---------------------------------------------------------------------------- 
@@ -503,7 +518,7 @@ runDAGMaker lexpr = runState lexpr Map.empty
                
 compile c = runDAGMaker (compileTest c)              
 
-compileTest :: (ACVector Int32 -> ACVector Int32) -> DAGMaker NodeID
+compileTest :: (Exp (Vector Int32) -> Exp (Vector0D Int32)) -> DAGMaker NodeID
 compileTest f = constructDAG res 
   where 
     (E res) = f input
@@ -516,7 +531,7 @@ constructDAG (LVar l v) =
     let m' = Map.insert l (NVar v) m 
     put m'
     return l 
-constructDAG (LAddReduce l input) = do     
+constructDAG (LReduce l Add input) = do     
   m <- get 
   case Map.lookup l m  of 
     (Just nid) -> return l -- correct now ? 
@@ -543,8 +558,8 @@ constructDAG (LBinOp l op i1 i2) = do
 
   
     
-t1 :: ACVector Int32 -> ACVector Int32 
-t1 (E input) = E $ LAddReduce (newLabel ()) input 
+t1 :: Exp (Vector Int32) -> Exp (Vector0D Int32)
+t1 input = addReduce input -- E $ LAddReduce (newLabel ()) input 
 
 t2 (E input) = E $ LBinOp (newLabel ()) Add input input
 
