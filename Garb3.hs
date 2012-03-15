@@ -618,13 +618,9 @@ test_t1 =
       str <- ArBB.serializeFunction_ fun
       liftIO$ putStrLn (ArBB.getCString str)
       
-      --reduce <- ArBB.funDef_ "red" [st] [dt] $ \ [out] [inp] -> do       
-      --  ArBB.opDynamic_ ArBB.ArbbOpAddReduce [out] [inp] 
-     
       
       ArBB.execute_ fun [y] [vin] 
-      --ArBB.execute_ reduce [y] [vin] 
-
+      
       --result <- readBackVector (ArBBArray (One 10) ArBB.ArbbI32 y)
       result :: Int32 <- ArBB.readScalar_ y  
     
