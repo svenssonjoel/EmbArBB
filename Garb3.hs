@@ -29,7 +29,7 @@ import Foreign.Ptr
 -- import qualified Data.Vector as Vector
 import qualified Data.Vector.Storable as V 
 
-import System.IO.Unsafe
+
 
 {- 
   TODO: Make it run on ArBB
@@ -161,7 +161,7 @@ getLabel (LLit l _) = l
                    
 data Exp a = E LExp
 
-type ACVector a = Exp (V.Vector a)    
+-- type ACVector a = Exp (V.Vector a)    
 
 data Op = Add 
         | Sub  
