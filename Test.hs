@@ -55,7 +55,7 @@ genBodyArBB dag nod inputs =
       Nothing -> error "genBodyArBB: broken" 
       (Just node) -> genNode node 
   where 
-    genNode (NAddReduce nid) = 
+    genNode (NReduce Add nid) = 
       do
         v1 <- genBodyArBB dag nid inputs 
         -- v@(ArBBArray _ _ v' ) <- newArBBArray Zero (ArBB.ArbbI32)
@@ -65,7 +65,7 @@ genBodyArBB dag nod inputs =
         ArBB.opDynamic_ ArBB.ArbbOpAddReduce [imm] [v1] 
         
         
-        liftIO$ putStrLn "NAddReduce node" 
+        liftIO$ putStrLn "NReduce Add node" 
         return imm
     genNode (NVar (Variable nom)) = return$ head inputs -- only one input in this cheat. 
     --genNode whatever = liftIO$ putStrLn$ "hello" -- show whatever
