@@ -28,6 +28,8 @@ t2 input = input + input -- (E input) = E $ LBinOp (newLabel ()) Add input input
 
 t3 input = t2 (t1 input)
 
+t4 input = t2 (t2 (t3 (input)))
+
 {- TODO: Types are needed to generate the ArBB code. 
    TODO: Make the cheat generate runnable code for t1 and t3 
    TODO: ... 
@@ -103,7 +105,7 @@ test_t1 =
       g  <- ArBB.createGlobal_nobind_ st "res" --st "res" 
       y  <- ArBB.variableFromGlobal_ g
         
-      let (start_node,c) = compile t3
+      let (start_node,c) = compile t4
       fun <- genArBBFunCheat c start_node
 
       str <- ArBB.serializeFunction_ fun

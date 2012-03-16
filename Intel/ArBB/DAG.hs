@@ -23,6 +23,8 @@ data Node = NLit Literal
             
           | NIndex0 NodeID
           | NIndex1 NodeID NodeID 
+          | NIndex2 NodeID NodeID NodeID
+          | NIndex3 NodeID NodeID NodeID NodeID
             
           | NReduce Op NodeID
           

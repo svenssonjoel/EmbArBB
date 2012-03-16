@@ -45,6 +45,8 @@ data LExp = LLit Label Literal
             -- sometimes of length one (a zero dimensional array
           | LIndex0 Label LExp      -- needed ? 
           | LIndex1 Label LExp LExp -- label vector index
+          | LIndex2 Label LExp LExp LExp   
+          | LIndex3 Label LExp LExp LExp LExp 
             
             -- Operations on dense  
           | LReduce Label Op LExp   -- Not all Ops are valid. 
@@ -57,6 +59,12 @@ data LExp = LLit Label Literal
                    
 -- TODO: Figure out how to get the ArBB looping constructs into the Expr 
 --       datatype.
+-- TODO: Figure out how to add Call_a_function capability (ArBB Call and Map). 
+--       - Needs to represent functions, maybe just as names. 
+--       - Functions may have any number of inputs and outputs in ArBB 
+
+--       - Do I need tuples in the LExp type ? (some way to represent many_outputs)
+
                    
 ----------------------------------------------------------------------------                   
 -- Operations (binary, unary, reductions-ops all mixed up) 
