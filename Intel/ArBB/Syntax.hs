@@ -26,12 +26,13 @@ newLabel () = unsafePerformIO $ do
 ---------------------------------------------------------------------------- 
 -- 
 data Literal = LitInt8   Int8  
+             | LitInt16  Int16
              | LitInt32  Int32
              | LitWord32 Word32 
                deriving (Eq,Show)
 
 data Variable = Variable String 
-              deriving (Eq, Show)
+              deriving (Eq, Ord, Show)
                
 -- Labeled Expression
 data LExp = LLit Label Literal  
@@ -47,14 +48,15 @@ data LExp = LLit Label Literal
             
             -- Operations on dense  
           | LReduce Label Op LExp   -- Not all Ops are valid. 
-         -- | LAddReduce Label LExp 
-         -- | LMulReduce Label LExp 
             
           | LRotate Label LExp LExp 
           | LRotateRev Label LExp LExp
             
           | LSort Label LExp 
           deriving (Show, Eq)
+                   
+-- TODO: Figure out how to get the ArBB looping constructs into the Expr 
+--       datatype.
                    
 ----------------------------------------------------------------------------                   
 -- Operations (binary, unary, reductions-ops all mixed up) 

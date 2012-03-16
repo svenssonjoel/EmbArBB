@@ -25,7 +25,6 @@ data Node = NLit Literal
           | NIndex1 NodeID NodeID 
             
           | NReduce Op NodeID
-          -- | NMulReduce NodeID 
           
           | NRotate NodeID NodeID 
           | NRotateRev NodeID NodeID 

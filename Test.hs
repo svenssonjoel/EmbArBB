@@ -12,6 +12,7 @@ import Foreign.Ptr
 
 import Data.Int 
 import Data.Word
+import qualified Data.Map as Map
 
 import qualified Data.Map as Map 
 
@@ -19,7 +20,7 @@ import qualified Data.Map as Map
 ---------------------------------------------------------------------------- 
 --  Testing Testing 
 
-t1 :: Exp (Vector Int32) ->  Exp (Scalar Int32)-- Exp (Vector0D Int32)
+t1 :: Exp (Vector Int32) ->  Exp (Scalar Int32) -- Exp (Vector0D Int32)
 t1 input = addReduce input -- E $ LAddReduce (newLabel ()) input 
 
 t2 :: Exp (Scalar Int32) -> Exp (Scalar Int32) 
@@ -67,6 +68,19 @@ genBodyArBB dag nod inputs =
         
         liftIO$ putStrLn "NReduce Add node" 
         return imm
+    genNode (NBinOp Add n1 n2) = 
+      do 
+        -- If i just do this, will it unshare the computation ? 
+        -- Yes, it does, of course. 
+        v1 <- genBodyArBB dag n1 inputs
+        v2 <- genBodyArBB dag n2 inputs 
+        st <- ArBB.getScalarType_ ArBB.ArbbI32 -- CHEAT 
+    
+        imm <- ArBB.createLocal_ st "res2" 
+        ArBB.op_ ArBB.ArbbOpAdd [imm] [v1,v2] 
+        
+        return imm
+        
     genNode (NVar (Variable nom)) = return$ head inputs -- only one input in this cheat. 
     --genNode whatever = liftIO$ putStrLn$ "hello" -- show whatever
     
@@ -89,12 +103,14 @@ test_t1 =
       g  <- ArBB.createGlobal_nobind_ st "res" --st "res" 
       y  <- ArBB.variableFromGlobal_ g
         
-      let (start_node,c) = compile t1
+      let (start_node,c) = compile t3
       fun <- genArBBFunCheat c start_node
 
       str <- ArBB.serializeFunction_ fun
       liftIO$ putStrLn (ArBB.getCString str)
       
+      liftIO$ putStrLn$ show c
+      liftIO$ putStrLn$ show $ typecheckDAG c (Map.fromList [(Variable "Input",Dense I (ArBB.ArbbI32))])
       
       ArBB.execute_ fun [y] [vin] 
       
