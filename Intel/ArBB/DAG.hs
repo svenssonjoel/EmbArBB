@@ -30,6 +30,11 @@ data Node = NLit Literal
           
           | NRotate NodeID NodeID 
           | NRotateRev NodeID NodeID 
+            
+          | NSort NodeID 
+            
+          | NResIndex NodeID Int 
+          | NCall FunctionName [NodeID] 
           deriving (Eq,Show)
 
 type DAG = Map.Map NodeID Node

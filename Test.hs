@@ -73,7 +73,7 @@ genBodyArBB dag nod inputs =
     genNode (NBinOp Add n1 n2) = 
       do 
         -- If i just do this, will it unshare the computation ? 
-        -- Yes, it does, of course. 
+        -- Yes, it does, but it doesnt matter this is just a test...  
         v1 <- genBodyArBB dag n1 inputs
         v2 <- genBodyArBB dag n2 inputs 
         st <- ArBB.getScalarType_ ArBB.ArbbI32 -- CHEAT 

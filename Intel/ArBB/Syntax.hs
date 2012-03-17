@@ -34,6 +34,8 @@ data Literal = LitInt8   Int8
 data Variable = Variable String 
               deriving (Eq, Ord, Show)
                
+type FunctionName = String
+
 -- Labeled Expression
 data LExp = LLit Label Literal  
           | LVar Label Variable 
@@ -47,7 +49,7 @@ data LExp = LLit Label Literal
           | LIndex1 Label LExp LExp -- label vector index
           | LIndex2 Label LExp LExp LExp   
           | LIndex3 Label LExp LExp LExp LExp 
-            
+
             -- Operations on dense  
           | LReduce Label Op LExp   -- Not all Ops are valid. 
             
@@ -55,6 +57,14 @@ data LExp = LLit Label Literal
           | LRotateRev Label LExp LExp
             
           | LSort Label LExp 
+            
+            
+            -- Will this work? 
+            -- ArBB Functions may compute several results 
+          | LResIndex Label LExp Int 
+            -- Function with correct name and type must exist in some kind of environment
+          | LCall Label FunctionName [LExp]  
+          
           deriving (Show, Eq)
                    
 -- TODO: Figure out how to get the ArBB looping constructs into the Expr 
