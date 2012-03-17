@@ -30,6 +30,21 @@ t3 input = t2 (t1 input)
 
 t4 input = t2 (t2 (t3 (input)))
 
+
+-- TODO: Try to get the crossProd3D function to go through ArBB generation. 
+-- TODO: Need to overload *,+,- on Vectors also .. 
+ 
+crossProd3D :: Exp (Vector Float) -> Exp (Vector Float) -> Exp (Vector Float) 
+crossProd3D v1 v2 = lprods - rprods 
+  where 
+    v1' = rotate v1 1 
+    v2' = rotateRev v2 1
+    v1'' = rotate v1' 1 
+    v2'' = rotateRev v2' 1 
+    lprods = v1' * v2' 
+    rprods = v1'' * v2'' 
+ 
+
 {- TODO: Types are needed to generate the ArBB code. 
    TODO: Make the cheat generate runnable code for t1 and t3 
    TODO: ... 
