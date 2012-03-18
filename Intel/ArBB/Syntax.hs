@@ -6,7 +6,7 @@
 module Intel.ArBB.Syntax where 
 
 
-import Intel.ArBB.Vector 
+-- import Intel.ArBB.Vector -- why ? 
 
 import Data.Int
 import Data.Word 
@@ -28,11 +28,14 @@ newLabel () = unsafePerformIO $ do
 
 ---------------------------------------------------------------------------- 
 -- 
+  
+  
 data Literal = LitInt8   Int8  
              | LitInt16  Int16
              | LitInt32  Int32
              | LitWord32 Word32 
              | LitFloat  Float 
+               
              | LitDouble Double
                deriving (Eq,Show)
 

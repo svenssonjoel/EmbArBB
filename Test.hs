@@ -9,6 +9,8 @@ import qualified Intel.ArbbVM as ArBB
 import qualified Intel.ArbbVM.Convenience as ArBB 
 import Intel.ArbbVM.Convenience (liftIO)
 
+
+
 import Foreign.Marshal.Array
 import Foreign.Marshal.Utils
 import Foreign.Ptr
@@ -143,3 +145,9 @@ test_t1 =
       result :: Int32 <- ArBB.readScalar_ y  
     
       liftIO$ putStrLn $ show result
+
+
+test1 = capture t1
+test2 = capture t2 
+test3 = capture t3
+test4 = capture t4
