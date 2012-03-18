@@ -18,3 +18,6 @@ instance IsScalar Int8 where
   
 instance IsScalar Int32 where 
   scalarType _ = Scalar VM.ArbbI32
+
+instance IsScalar Float where 
+  scalarType _ = Scalar VM.ArbbF32

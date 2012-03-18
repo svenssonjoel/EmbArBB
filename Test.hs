@@ -19,7 +19,7 @@ import Data.Int
 import Data.Word
 import qualified Data.Map as Map
 
-import qualified Data.Map as Map 
+
 
 
 ---------------------------------------------------------------------------- 
@@ -151,3 +151,5 @@ test1 = capture t1
 test2 = capture t2 
 test3 = capture t3
 test4 = capture t4
+
+test5 = capture crossProd3D
