@@ -1,6 +1,6 @@
-
 {-# LANGUAGE TypeOperators #-} 
 
+{- 2012 Joel Svensson -} 
 module Intel.ArBB.Vector where 
 
 import qualified Data.Vector.Storable as V

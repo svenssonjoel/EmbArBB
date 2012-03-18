@@ -1,4 +1,7 @@
+{-# LANGUAGE TypeOperators, 
+             FlexibleInstances #-}
 
+{- 2012 Joel Svensson -} 
 
 module Intel.ArBB.Syntax where 
 
@@ -29,12 +32,40 @@ data Literal = LitInt8   Int8
              | LitInt16  Int16
              | LitInt32  Int32
              | LitWord32 Word32 
+             | LitFloat  Float 
+             | LitDouble Double
                deriving (Eq,Show)
 
 data Variable = Variable String 
               deriving (Eq, Ord, Show)
                
 type FunctionName = String
+
+data Function i o = Function FunctionName 
+
+data a :- b = a :- b 
+infixr :- 
+
+test :: Function (Exp a :- Exp b :- Exp c) (Exp d)
+test = Function "apa" 
+
+--argList :: (Exp a :- b) -> [LExp]
+--argList ArgListNil = [] 
+--argList ((E a) :- b) = a : argList b 
+
+class ArgList a where 
+  argList :: a -> [LExp] 
+
+instance ArgList () where -- needed = 
+  argList () = [] 
+
+instance ArgList (Exp a) where 
+  argList (E a) = [a] 
+
+
+instance ArgList a => ArgList (Exp b :- a) where 
+  argList (E b :- a) = b : argList a 
+
 
 -- Labeled Expression
 data LExp = LLit Label Literal  
@@ -57,8 +88,7 @@ data LExp = LLit Label Literal
           | LRotateRev Label LExp LExp
             
           | LSort Label LExp 
-            
-            
+                        
             -- Will this work? 
             -- ArBB Functions may compute several results 
           | LResIndex Label LExp Int 

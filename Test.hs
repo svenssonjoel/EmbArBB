@@ -1,10 +1,13 @@
 {-# LANGUAGE ScopedTypeVariables #-} 
 
+{- 2012 Joel Svensson -} 
+
 module Test where 
 
 import Intel.ArBB 
-import Intel.ArbbVM as ArBB 
-import Intel.ArbbVM.Convenience as ArBB 
+import qualified Intel.ArbbVM as ArBB 
+import qualified Intel.ArbbVM.Convenience as ArBB 
+import Intel.ArbbVM.Convenience (liftIO)
 
 import Foreign.Marshal.Array
 import Foreign.Marshal.Utils
@@ -43,6 +46,11 @@ crossProd3D v1 v2 = lprods - rprods
     v2'' = rotateRev v2' 1 
     lprods = v1' * v2' 
     rprods = v1'' * v2'' 
+    
+    
+-- Experiment: call a named function 
+callCP3D :: Exp (Vector Float) -> Exp (Vector Float) -> Exp (Vector Float) 
+callCP3D v1 v2 = resIndex (call (Function "crossProd") (v1 :- v2)) 0
  
 
 {- TODO: Types are needed to generate the ArBB code. 
