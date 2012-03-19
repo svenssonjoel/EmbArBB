@@ -13,25 +13,30 @@ import Intel.ArBB.TypeCheck
 import Intel.ArBB.Types
 import Intel.ArBB.Vector 
 import Intel.ArBB.Embeddable
+import Intel.ArBB.WithArBB
 
 import qualified Intel.ArbbVM as VM 
 import qualified Intel.ArbbVM.Convenience as VM
 
-import Control.Monad.State
+import Control.Monad.State hiding (liftIO)
 import qualified Data.Map as Map
 
 ----------------------------------------------------------------------------
 -- 
 
 class Capture a where
-  capture :: a -> VM.EmitArbb VM.ConvFunction  
+  capture :: a -> ArBB FunctionName -- VM.EmitArbb VM.ConvFunction  
   
 instance EmbFun a b => Capture (a -> b) where 
   capture f = 
-    do 
+    do  
+      fn <- getFunName 
       let e = runState (emb f) (0,Map.empty) 
       liftIO$ putStrLn$ show e 
-      VM.funDef_ "name" [] [] $ \ x y -> do return () 
+      fd <- liftVM$ VM.funDef_ fn [] [] $ \ x y -> do return () 
+      addFunction fn fd                                                          
+      return fn                                                         
+      
              
               
   

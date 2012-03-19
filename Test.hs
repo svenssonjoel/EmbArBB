@@ -145,9 +145,9 @@ test_t1 =
       VM.liftIO$ putStrLn $ show result
 
 
-test1 = VM.arbbSession $ capture t1
-test2 = VM.arbbSession $ capture t2 
-test3 = VM.arbbSession $ capture t3
-test4 = VM.arbbSession $ capture t4
+test1 = withArBB $ capture t1
+test2 = withArBB $ capture t2 
+test3 = withArBB $ capture t3
+test4 = withArBB $ capture t4
 
-test5 = VM.arbbSession $ capture crossProd3D
+test5 = withArBB $ capture crossProd3D
