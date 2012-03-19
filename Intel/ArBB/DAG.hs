@@ -61,6 +61,12 @@ constructDAG (LVar l v) =
     let m' = Map.insert l (NVar v) m 
     put m'
     return l 
+constructDAG (LLit l i) = 
+  do 
+    m <- get 
+    let m' = Map.insert l (NLit i) m 
+    put m'
+    return l
 constructDAG (LReduce l op input) = do     
   m <- get 
   case Map.lookup l m  of 
@@ -72,6 +78,30 @@ constructDAG (LReduce l op input) = do
         let m'' = Map.insert l (NReduce op input') m'
         put m''
         return l
+constructDAG (LRotate l i1 i2) = do 
+  m <- get 
+  case Map.lookup l m of 
+    (Just nid) -> return l 
+    Nothing -> 
+      do 
+        i1' <- constructDAG i1
+        i2' <- constructDAG i2
+        m'  <- get 
+        let m'' = Map.insert l (NRotate i1' i2') m' 
+        put m'' 
+        return l
+constructDAG (LRotateRev l i1 i2) = do 
+  m <- get 
+  case Map.lookup l m of 
+    (Just nid) -> return l 
+    Nothing -> 
+      do 
+        i1' <- constructDAG i1
+        i2' <- constructDAG i2
+        m'  <- get 
+        let m'' = Map.insert l (NRotateRev i1' i2') m' 
+        put m'' 
+        return l        
 constructDAG (LBinOp l op i1 i2) = do        
   m <- get 
   case Map.lookup l m of 
@@ -84,4 +114,5 @@ constructDAG (LBinOp l op i1 i2) = do
         let m'' = Map.insert l (NBinOp op i1' i2') m'
         put m'' 
         return l
+        
       

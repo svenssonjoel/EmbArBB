@@ -14,6 +14,7 @@ import Intel.ArBB.Types
 import Intel.ArBB.Vector 
 import Intel.ArBB.Embeddable
 import Intel.ArBB.WithArBB
+import Intel.ArBB.GenArBB
 
 import qualified Intel.ArbbVM as VM 
 import qualified Intel.ArbbVM.Convenience as VM
@@ -23,25 +24,54 @@ import qualified Data.Map as Map
 
 ----------------------------------------------------------------------------
 -- 
+-- TODO: Make the returned "Function" some opaque type (not just a String) 
+capture :: EmbFun a b => (a -> b) -> ArBB FunctionName 
+capture f = 
+  do  
+    fn <- getFunName 
+    let ((e,tins,touts),(_,vt))    = runState (emb f) (0,Map.empty) 
+        (nid,dag) = runDAGMaker (constructDAG e) 
+        tc        = typecheckDAG dag vt
+        --  Now I should have all parts needed to generate the function.
+    
+    liftIO$ putStrLn$ show dag 
+    liftIO$ putStrLn$ show tc
+    liftIO$ putStrLn$ show tins
+    liftIO$ putStrLn$ show touts
+    arbbOuts <- liftVM$ mapM toArBBType touts
+    arbbIns  <- liftVM$ mapM toArBBType tins 
+    
+    (funMap,_) <- get
+    fd <- liftVM$ VM.funDef_ fn arbbOuts arbbIns $ \ os is -> 
+      genBody dag nid tc funMap os is
+                                                                 
+    addFunction fn fd                                                          
+    return fn            
+    
+----------------------------------------------------------------------------
+-- 
+        
+toArBBType (Scalar t) = VM.getScalarType_ t
+toArBBType (Dense I t) = 
+  do 
+    st <- VM.getScalarType_ t
+    VM.getDenseType_ st 1 
+toArBBType (Dense II t) = 
+  do 
+    st <- VM.getScalarType_ t
+    VM.getDenseType_ st 2 
+toArBBType (Dense III t) = 
+  do 
+    st <- VM.getScalarType_ t
+    VM.getDenseType_ st 3
 
-class Capture a where
-  capture :: a -> ArBB FunctionName -- VM.EmitArbb VM.ConvFunction  
-  
-instance EmbFun a b => Capture (a -> b) where 
-  capture f = 
-    do  
-      fn <- getFunName 
-      let e = runState (emb f) (0,Map.empty) 
-      liftIO$ putStrLn$ show e 
-      fd <- liftVM$ VM.funDef_ fn [] [] $ \ x y -> do return () 
-      addFunction fn fd                                                          
-      return fn                                                         
-      
-             
-              
-  
--- TODO: Something like the below but that also keeps track of the types 
--- also (generate the needed input_variable_to_Type_map)
+
+    
+    
+
+----------------------------------------------------------------------------   
+-- 
+    
 type VarGenerator a = State (Integer,VarType) a 
 getVar :: VarGenerator Variable
 getVar = do 
@@ -55,23 +85,32 @@ addType v t =
     (i,m) <- get
     put (i,Map.insert v t m)
               
+----------------------------------------------------------------------------       
+-- 
+
+type IOs = [Type]
+    
 class EmbFun a b where 
-  emb :: (a -> b) -> VarGenerator LExp 
+  emb :: (a -> b) -> VarGenerator (LExp, IOs, IOs) 
   
-instance Embeddable a => EmbFun (Exp a) (Exp b) where 
+  
+-- TODO: What is a good way to make this work with many outputs
+instance (Embeddable b, Embeddable a) => EmbFun (Exp a) (Exp b) where 
   emb f = do 
     v <- getVar 
     let myVar = E (LVar (newLabel ()) v)
         (E e) = f myVar
-        t = typeOf (undefined :: a) 
-    addType v t
-    return e
+        t_in = typeOf (undefined :: a) 
+        t_out = typeOf (undefined :: b)
+    addType v t_in
+    return (e,[t_in],[t_out])
     
 instance (Embeddable a, EmbFun c d) => EmbFun (Exp a) (c -> d) where 
   emb f = do 
     v <- getVar
     let myVar = E (LVar (newLabel ()) v) 
-        t = typeOf (undefined :: a) 
-    addType v t 
-    emb (f (myVar)) 
+        t_in = typeOf (undefined :: a) 
+    addType v t_in 
+    (exp,ins,outs) <- emb (f (myVar)) 
+    return (exp, t_in:ins, outs)
     
