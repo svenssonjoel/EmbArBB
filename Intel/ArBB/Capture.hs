@@ -51,27 +51,7 @@ capture f =
 ----------------------------------------------------------------------------
 -- 
         
-toArBBType (Scalar t) = VM.getScalarType_ t
-toArBBType (Dense I t) = 
-  do 
-    st <- VM.getScalarType_ t
-    VM.getDenseType_ st 1 
-toArBBType (Dense II t) = 
-  do 
-    st <- VM.getScalarType_ t
-    VM.getDenseType_ st 2 
-toArBBType (Dense III t) = 
-  do 
-    st <- VM.getScalarType_ t
-    VM.getDenseType_ st 3
 
-
-    
-    
-
-----------------------------------------------------------------------------   
--- 
-    
 type VarGenerator a = State (Integer,VarType) a 
 getVar :: VarGenerator Variable
 getVar = do 
