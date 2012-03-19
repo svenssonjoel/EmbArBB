@@ -52,10 +52,6 @@ infixr :-
 test :: Function (Exp a :- Exp b :- Exp c) (Exp d)
 test = Function "apa" 
 
---argList :: (Exp a :- b) -> [LExp]
---argList ArgListNil = [] 
---argList ((E a) :- b) = a : argList b 
-
 class ArgList a where 
   argList :: a -> [LExp] 
 

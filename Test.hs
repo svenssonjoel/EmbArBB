@@ -5,11 +5,11 @@
 module Test where 
 
 import Intel.ArBB 
-import qualified Intel.ArbbVM as ArBB 
-import qualified Intel.ArbbVM.Convenience as ArBB 
-import Intel.ArbbVM.Convenience (liftIO)
+import qualified Intel.ArbbVM as VM
+import qualified Intel.ArbbVM.Convenience as VM
+-- import Intel.ArbbVM.Convenience (liftIO)
 
-
+import Intel.ArBB.WithArBB
 
 import Foreign.Marshal.Array
 import Foreign.Marshal.Utils
@@ -18,8 +18,6 @@ import Foreign.Ptr
 import Data.Int 
 import Data.Word
 import qualified Data.Map as Map
-
-
 
 
 ---------------------------------------------------------------------------- 
@@ -59,24 +57,24 @@ callCP3D v1 v2 = resIndex (call (Function "crossProd") (v1 :- v2)) 0
    TODO: Make the cheat generate runnable code for t1 and t3 
    TODO: ... 
 -} 
-genArBBFunCheat :: DAG -> NodeID -> ArBB.EmitArbb ArBB.ConvFunction
+genArBBFunCheat :: DAG -> NodeID -> VM.EmitArbb VM.ConvFunction
 genArBBFunCheat dag nod = 
   do 
-    st <- ArBB.getScalarType_ ArBB.ArbbI32 -- t3 returns a single scalar 
-    dt <- ArBB.getDenseType_ st 1 
+    st <- VM.getScalarType_ VM.ArbbI32 -- t3 returns a single scalar 
+    dt <- VM.getDenseType_ st 1 
     
     let rt = st 
         it = dt 
 
-    ArBB.funDef_ "Cheat" [rt] [it] $ \ [out] inp -> do 
+    VM.funDef_ "Cheat" [rt] [it] $ \ [out] inp -> do 
       v <- genBodyArBB dag nod inp 
       -- ArBB.op_ ArBB.ArbbOpCopy [out] [v]
-      ArBB.copy_ out v
+      VM.copy_ out v
 
 
       
 --                                  inputs 
-genBodyArBB :: DAG -> NodeID -> [ArBB.Variable] -> ArBB.EmitArbb ArBB.Variable 
+genBodyArBB :: DAG -> NodeID -> [VM.Variable] -> VM.EmitArbb VM.Variable 
 genBodyArBB dag nod inputs =                           
   do 
     case Map.lookup nod dag of 
@@ -86,14 +84,14 @@ genBodyArBB dag nod inputs =
     genNode (NReduce Add nid) = 
       do
         v1 <- genBodyArBB dag nid inputs 
-        -- v@(ArBBArray _ _ v' ) <- newArBBArray Zero (ArBB.ArbbI32)
-        st <- ArBB.getScalarType_ ArBB.ArbbI32
---        dt <- ArBB.getDenseType_ st 1 
-        imm <- ArBB.createLocal_ st "res" 
-        ArBB.opDynamic_ ArBB.ArbbOpAddReduce [imm] [v1] 
+        -- v@(ArBBArray _ _ v' ) <- newArBBArray Zero (VM.ArbbI32)
+        st <- VM.getScalarType_ VM.ArbbI32
+--        dt <- VM.getDenseType_ st 1 
+        imm <- VM.createLocal_ st "res" 
+        VM.opDynamic_ VM.ArbbOpAddReduce [imm] [v1] 
         
         
-        liftIO$ putStrLn "NReduce Add node" 
+        VM.liftIO$ putStrLn "NReduce Add node" 
         return imm
     genNode (NBinOp Add n1 n2) = 
       do 
@@ -101,10 +99,10 @@ genBodyArBB dag nod inputs =
         -- Yes, it does, but it doesnt matter this is just a test...  
         v1 <- genBodyArBB dag n1 inputs
         v2 <- genBodyArBB dag n2 inputs 
-        st <- ArBB.getScalarType_ ArBB.ArbbI32 -- CHEAT 
+        st <- VM.getScalarType_ VM.ArbbI32 -- CHEAT 
     
-        imm <- ArBB.createLocal_ st "res2" 
-        ArBB.op_ ArBB.ArbbOpAdd [imm] [v1,v2] 
+        imm <- VM.createLocal_ st "res2" 
+        VM.op_ VM.ArbbOpAdd [imm] [v1,v2] 
         
         return imm
         
@@ -116,40 +114,40 @@ genBodyArBB dag nod inputs =
 -- Test t1 
     
 test_t1 = 
-  ArBB.arbbSession$ 
-   ArBB.withArray_ [0..9 :: Int32] $ \ inp -> 
+  VM.arbbSession$ 
+   VM.withArray_ [0..9 :: Int32] $ \ inp -> 
     do 
       -- (ArBBArray _ _ v) <- uploadArrayVector v1 
-      st <- ArBB.getScalarType_ ArBB.ArbbI32 
-      dt <- ArBB.getDenseType_ st 1 
+      st <- VM.getScalarType_ VM.ArbbI32 
+      dt <- VM.getDenseType_ st 1 
 
-      inb <- ArBB.createDenseBinding_ (castPtr inp) 1 [10] [4]
-      gin <- ArBB.createGlobal_ dt "input" inb
-      vin <- ArBB.variableFromGlobal_ gin
+      inb <- VM.createDenseBinding_ (castPtr inp) 1 [10] [4]
+      gin <- VM.createGlobal_ dt "input" inb
+      vin <- VM.variableFromGlobal_ gin
       
-      g  <- ArBB.createGlobal_nobind_ st "res" --st "res" 
-      y  <- ArBB.variableFromGlobal_ g
+      g  <- VM.createGlobal_nobind_ st "res" --st "res" 
+      y  <- VM.variableFromGlobal_ g
         
       let (start_node,c) = compile t4
       fun <- genArBBFunCheat c start_node
 
-      str <- ArBB.serializeFunction_ fun
-      liftIO$ putStrLn (ArBB.getCString str)
+      str <- VM.serializeFunction_ fun
+      VM.liftIO$ putStrLn (VM.getCString str)
       
-      liftIO$ putStrLn$ show c
-      liftIO$ putStrLn$ show $ typecheckDAG c (Map.fromList [(Variable "Input",Dense I (ArBB.ArbbI32))])
+      VM.liftIO$ putStrLn$ show c
+      VM.liftIO$ putStrLn$ show $ typecheckDAG c (Map.fromList [(Variable "Input",Dense I (VM.ArbbI32))])
       
-      ArBB.execute_ fun [y] [vin] 
+      VM.execute_ fun [y] [vin] 
       
       --result <- readBackVector (ArBBArray (One 10) ArBB.ArbbI32 y)
-      result :: Int32 <- ArBB.readScalar_ y  
+      result :: Int32 <- VM.readScalar_ y  
     
-      liftIO$ putStrLn $ show result
+      VM.liftIO$ putStrLn $ show result
 
 
-test1 = capture t1
-test2 = capture t2 
-test3 = capture t3
-test4 = capture t4
+test1 = VM.arbbSession $ capture t1
+test2 = VM.arbbSession $ capture t2 
+test3 = VM.arbbSession $ capture t3
+test4 = VM.arbbSession $ capture t4
 
-test5 = capture crossProd3D
+test5 = VM.arbbSession $ capture crossProd3D

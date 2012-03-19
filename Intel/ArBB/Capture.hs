@@ -24,13 +24,14 @@ import qualified Data.Map as Map
 -- 
 
 class Capture a where
-  capture :: a -> IO () -- VM.EmitArbb VM.ConvFunction  
+  capture :: a -> VM.EmitArbb VM.ConvFunction  
   
 instance EmbFun a b => Capture (a -> b) where 
   capture f = 
     do 
       let e = runState (emb f) (0,Map.empty) 
-      putStrLn$ show e 
+      liftIO$ putStrLn$ show e 
+      VM.funDef_ "name" [] [] $ \ x y -> do return () 
              
               
   
