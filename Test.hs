@@ -18,6 +18,7 @@ import Foreign.Ptr
 import Data.Int 
 import Data.Word
 import qualified Data.Map as Map
+import Control.Monad.State hiding (liftIO)
 
 
 ---------------------------------------------------------------------------- 
@@ -53,70 +54,37 @@ callCP3D :: Exp (Vector Float) -> Exp (Vector Float) -> Exp (Vector Float)
 callCP3D v1 v2 = resIndex (call (Function "crossProd") (v1 :- v2)) 0
  
 
-{- TODO: Types are needed to generate the ArBB code. 
-   TODO: Make the cheat generate runnable code for t1 and t3 
-   TODO: ... 
--} 
-genArBBFunCheat :: DAG -> NodeID -> VM.EmitArbb VM.ConvFunction
-genArBBFunCheat dag nod = 
+test1 = withArBB $ capture t1
+test2 = withArBB $ capture t2 
+test3 = withArBB $ capture t3
+test4 = withArBB $ capture t4
+
+test5 = 
+  withArBB $ 
   do 
-    st <- VM.getScalarType_ VM.ArbbI32 -- t3 returns a single scalar 
-    dt <- VM.getDenseType_ st 1 
+    f <- capture crossProd3D
     
-    let rt = st 
-        it = dt 
-
-    VM.funDef_ "Cheat" [rt] [it] $ \ [out] inp -> do 
-      v <- genBodyArBB dag nod inp 
-      -- ArBB.op_ ArBB.ArbbOpCopy [out] [v]
-      VM.copy_ out v
-
-
-      
---                                  inputs 
-genBodyArBB :: DAG -> NodeID -> [VM.Variable] -> VM.EmitArbb VM.Variable 
-genBodyArBB dag nod inputs =                           
-  do 
-    case Map.lookup nod dag of 
-      Nothing -> error "genBodyArBB: broken" 
-      (Just node) -> genNode node 
-  where 
-    genNode (NReduce Add nid) = 
-      do
-        v1 <- genBodyArBB dag nid inputs 
-        -- v@(ArBBArray _ _ v' ) <- newArBBArray Zero (VM.ArbbI32)
-        st <- VM.getScalarType_ VM.ArbbI32
---        dt <- VM.getDenseType_ st 1 
-        imm <- VM.createLocal_ st "res" 
-        VM.opDynamic_ VM.ArbbOpAddReduce [imm] [v1] 
-        
-        
-        VM.liftIO$ putStrLn "NReduce Add node" 
-        return imm
-    genNode (NBinOp Add n1 n2) = 
-      do 
-        -- If i just do this, will it unshare the computation ? 
-        -- Yes, it does, but it doesnt matter this is just a test...  
-        v1 <- genBodyArBB dag n1 inputs
-        v2 <- genBodyArBB dag n2 inputs 
-        st <- VM.getScalarType_ VM.ArbbI32 -- CHEAT 
+    (m,_) <- get 
     
-        imm <- VM.createLocal_ st "res2" 
-        VM.op_ VM.ArbbOpAdd [imm] [v1,v2] 
-        
-        return imm
-        
-    genNode (NVar (Variable nom)) = return$ head inputs -- only one input in this cheat. 
-    --genNode whatever = liftIO$ putStrLn$ "hello" -- show whatever
+    let (Just f') = Map.lookup f m 
     
+    str <- liftVM$ VM.serializeFunction_ f'
+    let hstr = VM.getCString str
+    liftIO$ putStrLn hstr
+        
+  
 
-        
--- Test t1 
+test4' = 
+  withArBB $ 
+   do
+     
+    f <- capture t4 
     
-test_t1 = 
-  VM.arbbSession$ 
-   VM.withArray_ [0..9 :: Int32] $ \ inp -> 
-    do 
+    (m,_) <- get 
+    
+    let (Just f') = Map.lookup f m 
+     
+    liftVM$ VM.withArray_ [0..9 :: Int32] $ \ inp -> do 
       -- (ArBBArray _ _ v) <- uploadArrayVector v1 
       st <- VM.getScalarType_ VM.ArbbI32 
       dt <- VM.getDenseType_ st 1 
@@ -128,26 +96,20 @@ test_t1 =
       g  <- VM.createGlobal_nobind_ st "res" --st "res" 
       y  <- VM.variableFromGlobal_ g
         
-      let (start_node,c) = compile t4
-      fun <- genArBBFunCheat c start_node
+      --let (start_node,c) = compile t4
+      --fun <- genArBBFunCheat c start_node
 
-      str <- VM.serializeFunction_ fun
+      str <- VM.serializeFunction_ f'
       VM.liftIO$ putStrLn (VM.getCString str)
+     
+      --VM.liftIO$ putStrLn$ show c
+      --VM.liftIO$ putStrLn$ show $ typecheckDAG c (Map.fromList [(Variable "Input",Dense I (VM.ArbbI32))])
       
-      VM.liftIO$ putStrLn$ show c
-      VM.liftIO$ putStrLn$ show $ typecheckDAG c (Map.fromList [(Variable "Input",Dense I (VM.ArbbI32))])
-      
-      VM.execute_ fun [y] [vin] 
+      VM.execute_ f' [y] [vin] 
       
       --result <- readBackVector (ArBBArray (One 10) ArBB.ArbbI32 y)
       result :: Int32 <- VM.readScalar_ y  
     
-      VM.liftIO$ putStrLn $ show result
+      VM.liftIO$ putStrLn $ show result 
 
-
-test1 = withArBB $ capture t1
-test2 = withArBB $ capture t2 
-test3 = withArBB $ capture t3
-test4 = withArBB $ capture t4
-
-test5 = withArBB $ capture crossProd3D
+      VM.liftIO$ putStrLn "hello" 

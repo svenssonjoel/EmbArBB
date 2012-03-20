@@ -11,6 +11,8 @@ module Intel.ArBB.Syntax where
 import Data.Int
 import Data.Word 
 
+import Intel.ArBB.Data.Int 
+
 import System.IO.Unsafe
 import Data.IORef
 ---------------------------------------------------------------------------- 
@@ -37,6 +39,9 @@ data Literal = LitInt8   Int8
              | LitFloat  Float 
                
              | LitDouble Double
+
+             | LitISize  ISize
+             | LitUSize  USize 
                deriving (Eq,Show)
 
 data Variable = Variable String 

@@ -34,17 +34,19 @@ capture f =
         tc        = typecheckDAG dag vt
         --  Now I should have all parts needed to generate the function.
     
-    liftIO$ putStrLn$ show dag 
-    liftIO$ putStrLn$ show tc
-    liftIO$ putStrLn$ show tins
-    liftIO$ putStrLn$ show touts
+    -- liftIO$ putStrLn$ show dag 
+    -- liftIO$ putStrLn$ show tc
+    -- liftIO$ putStrLn$ show tins
+    -- liftIO$ putStrLn$ show touts
     arbbOuts <- liftVM$ mapM toArBBType touts
     arbbIns  <- liftVM$ mapM toArBBType tins 
     
     (funMap,_) <- get
     fd <- liftVM$ VM.funDef_ fn arbbOuts arbbIns $ \ os is -> 
-      genBody dag nid tc funMap os is
-                                                                 
+      do 
+        v <- genBody dag nid tc funMap is
+        VM.copy_ (head os) v 
+
     addFunction fn fd                                                          
     return fn            
     

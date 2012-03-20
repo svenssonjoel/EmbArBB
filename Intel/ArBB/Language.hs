@@ -6,6 +6,7 @@ module Intel.ArBB.Language where
 
 import Intel.ArBB.Vector 
 import Intel.ArBB.Syntax 
+import Intel.ArBB.Data.Int 
 
 import Data.Int
 import Data.Word
@@ -22,10 +23,10 @@ mulReduce (E vec) = E $ LReduce (newLabel ()) Mul vec
 
 ----------------------------------------------------------------------------
 -- Rotate arrays (example:  [1,2,3] -> [2,3,1]) 
-rotate :: Exp (DVector (():.t) a) -> Exp Word32 -> Exp (DVector (():.t) a) 
+rotate :: Exp (DVector (():.t) a) -> Exp ISize -> Exp (DVector (():.t) a) 
 rotate (E vec) (E steps) = E $ LRotate (newLabel ()) vec steps  
 
-rotateRev :: Exp (DVector (():.t) a) -> Exp Word32 -> Exp (DVector (():.t) a) 
+rotateRev :: Exp (DVector (():.t) a) -> Exp ISize -> Exp (DVector (():.t) a) 
 rotateRev (E vec) (E steps) = E $ LRotateRev (newLabel ()) vec steps  
 
 
@@ -79,6 +80,27 @@ instance Num (Exp Word32) where
   signum = undefined 
   
   fromInteger a = E $ LLit (newLabel ()) $ LitWord32 $ fromInteger a
+  
+instance Num (Exp ISize) where 
+  (+) (E a) (E b) = E $ LBinOp (newLabel ()) Add a b
+  (*) (E a) (E b) = E $ LBinOp (newLabel ()) Mul a b
+  (-) (E a) (E b) = E $ LBinOp (newLabel ()) Sub a b
+
+  abs = undefined 
+  signum = undefined 
+  
+  fromInteger a = E $ LLit (newLabel ()) $ LitISize $ fromInteger a
+  
+  
+instance Num (Exp USize) where 
+  (+) (E a) (E b) = E $ LBinOp (newLabel ()) Add a b
+  (*) (E a) (E b) = E $ LBinOp (newLabel ()) Mul a b
+  (-) (E a) (E b) = E $ LBinOp (newLabel ()) Sub a b
+
+  abs = undefined 
+  signum = undefined 
+  
+  fromInteger a = E $ LLit (newLabel ()) $ LitISize $ fromInteger a
 
 
 ----------------------------------------------------------------------------

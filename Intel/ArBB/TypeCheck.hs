@@ -140,4 +140,6 @@ typecheckNID d n =
     typecheckLiteral (LitInt16 _)  = return$ Just$ Scalar ArBB.ArbbI16
     typecheckLiteral (LitInt32 _)  = return$ Just$ Scalar ArBB.ArbbI32
     typecheckLiteral (LitWord32 _) = return$ Just$ Scalar ArBB.ArbbU32
+    typecheckLiteral (LitISize _)  = return$ Just$ Scalar ArBB.ArbbIsize 
+    typecheckLiteral (LitUSize _)  = return$ Just$ Scalar ArBB.ArbbUsize 
     

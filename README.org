@@ -1,5 +1,15 @@
 * EmbArBB 
   + Embedded language for data-parallel programming targetting Intel ArBB.
-  + very sketchy!
+  + very sketchy! (But improving) 
   + Uses the Haskell/ArBB bindings (svenssonjoel/arbb-vm.git on github) 
+
+
+* Status 
+  + Generates ArBB functions from functions in the embedded language. 
+  + A subset of ArBB functionality is implemented. 
+
+* TODOs 
+  + Improve integration (make it easier to "execute" the generated ArBB functions 
+  + Add functionality
+
 
