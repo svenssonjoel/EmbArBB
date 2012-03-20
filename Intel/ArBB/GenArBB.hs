@@ -61,7 +61,8 @@ genBody' dag nid typem funm os is =
       Nothing -> error "genBody: DAG is broken" 
       (Just node) -> genNode node 
   where 
-    genNode = undefined 
+    genNode :: Node -> Gen ()
+    genNode _ = return ()  
     
     
 
