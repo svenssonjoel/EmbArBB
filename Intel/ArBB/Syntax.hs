@@ -16,7 +16,7 @@ import Intel.ArBB.Data.Int
 import System.IO.Unsafe
 import Data.IORef
 ---------------------------------------------------------------------------- 
--- I think this is refered to as 'gensym'ing
+-- Label creator 
 type Label = Word32
 
 {-# NOINLINE counter #-}
@@ -29,9 +29,7 @@ newLabel () = unsafePerformIO $ do
   return p 
 
 ---------------------------------------------------------------------------- 
--- 
-  
-  
+-- Literals and Variables
 data Literal = LitInt8   Int8  
              | LitInt16  Int16
              | LitInt32  Int32
@@ -47,30 +45,7 @@ data Literal = LitInt8   Int8
 data Variable = Variable String 
               deriving (Eq, Ord, Show)
                
-type FunctionName = String
-
-data Function i o = Function FunctionName 
-
-data a :- b = a :- b 
-infixr :- 
-
-test :: Function (Exp a :- Exp b :- Exp c) (Exp d)
-test = Function "apa" 
-
-class ArgList a where 
-  argList :: a -> [LExp] 
-
-instance ArgList () where -- needed = 
-  argList () = [] 
-
-instance ArgList (Exp a) where 
-  argList (E a) = [a] 
-
-
-instance ArgList a => ArgList (Exp b :- a) where 
-  argList (E b :- a) = b : argList a 
-
-
+---------------------------------------------------------------------------- 
 -- Labeled Expression
 data LExp = LLit Label Literal  
           | LVar Label Variable 
@@ -91,7 +66,8 @@ data LExp = LLit Label Literal
           | LRotate Label LExp LExp 
           | LRotateRev Label LExp LExp
             
-          | LSort Label LExp 
+          | LSort Label LExp LExp 
+          | LSortRank Label LExp LExp -- This one has two outpus !! (how deal with this ?) 
                         
             -- Will this work? 
             -- ArBB Functions may compute several results 
@@ -103,11 +79,7 @@ data LExp = LLit Label Literal
                    
 -- TODO: Figure out how to get the ArBB looping constructs into the Expr 
 --       datatype.
--- TODO: Figure out how to add Call_a_function capability (ArBB Call and Map). 
---       - Needs to represent functions, maybe just as names. 
---       - Functions may have any number of inputs and outputs in ArBB 
 
---       - Do I need tuples in the LExp type ? (some way to represent many_outputs)
 
                    
 ----------------------------------------------------------------------------                   
@@ -126,7 +98,8 @@ isReduceOp _   = False
 -- 
 
 getLabel :: LExp -> Label                    
-getLabel (LSort l _) = l 
+getLabel (LSort l _ _) = l 
+getLabel (LSortRank l _ _) = l 
 getLabel (LRotate l _ _) = l 
 getLabel (LRotateRev l _ _) = l
 getLabel (LReduce l _ _) = l
@@ -141,3 +114,30 @@ getLabel (LLit l _) = l
 -- add a layer of types 
 
 data Exp a = E LExp
+
+----------------------------------------------------------------------------
+-- And functions 
+type FunctionName = String
+
+data Function i o = Function FunctionName 
+
+----------------------------------------------------------------------------
+data a :- b = a :- b 
+infixr :- 
+
+test :: Function (Exp a :- Exp b :- Exp c :- ()) (Exp d)
+test = Function "apa" 
+
+class ArgList a where 
+  argList :: a -> [LExp] 
+
+instance ArgList () where -- needed = 
+  argList () = [] 
+
+instance ArgList (Exp a) where 
+  argList (E a) = [a] 
+
+
+instance ArgList a => ArgList (Exp b :- a) where 
+  argList (E b :- a) = b : argList a 
+

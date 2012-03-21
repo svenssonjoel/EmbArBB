@@ -31,7 +31,8 @@ data Node = NLit Literal
           | NRotate NodeID NodeID 
           | NRotateRev NodeID NodeID 
             
-          | NSort NodeID 
+          | NSort NodeID NodeID 
+          | NSortRank NodeID NodeID 
             
           | NResIndex NodeID Int 
           | NCall FunctionName [NodeID] 
@@ -45,15 +46,10 @@ type DAG = Map.Map NodeID Node
 type DAGMaker a = State DAG a  
              
 runDAGMaker lexpr = runState lexpr Map.empty
-               
-compile c = runDAGMaker (compileTest c)              
-
-compileTest :: (Exp (Vector Int32) -> Exp (Vector0D Int32)) -> DAGMaker NodeID
-compileTest f = constructDAG res 
-  where 
-    (E res) = f input
-    input = E (LVar (newLabel ()) (Variable "Input"))
     
+----------------------------------------------------------------------------
+-- construct DAG
+-- TODO: Clean up and make less CutNPasteish 
 constructDAG :: LExp -> DAGMaker NodeID 
 constructDAG (LVar l v) = 
   do 
@@ -114,5 +110,30 @@ constructDAG (LBinOp l op i1 i2) = do
         let m'' = Map.insert l (NBinOp op i1' i2') m'
         put m'' 
         return l
+constructDAG (LSort l i1 i2) = do 
+  m <- get 
+  case Map.lookup l m of 
+    (Just nid) -> return l
+    Nothing -> 
+      do 
+        i1' <- constructDAG i1 
+        i2' <- constructDAG i2 
+        m' <- get 
+        let m'' = Map.insert l (NSort i1' i2') m' 
+        put m'' 
+        return l 
+constructDAG (LSortRank l i1 i2) = do 
+  m <- get 
+  case Map.lookup l m of 
+    (Just nid) -> return l
+    Nothing -> 
+      do 
+        i1' <- constructDAG i1 
+        i2' <- constructDAG i2 
+        m' <- get 
+        let m'' = Map.insert l (NSortRank i1' i2') m' 
+        put m'' 
+        return l 
         
+
       

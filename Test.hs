@@ -25,10 +25,10 @@ import Control.Monad.State hiding (liftIO)
 --  Testing Testing 
 
 t1 :: Exp (Vector Int32) ->  Exp (Scalar Int32) -- Exp (Vector0D Int32)
-t1 input = addReduce input -- E $ LAddReduce (newLabel ()) input 
+t1 input = addReduce input 
 
 t2 :: Exp (Scalar Int32) -> Exp (Scalar Int32) 
-t2 input = input + input -- (E input) = E $ LBinOp (newLabel ()) Add input input
+t2 input = input + input 
 
 t3 input = t2 (t1 input)
 
@@ -62,7 +62,7 @@ test4 = withArBB $ capture t4
 test5 = 
   withArBB $ 
   do 
-    f <- capture crossProd3D
+    (Function f) <- capture crossProd3D
     
     (m,_) <- get 
     
@@ -78,7 +78,7 @@ test4' =
   withArBB $ 
    do
      
-    f <- capture t4 
+    (Function f) <- capture t4 
     
     (m,_) <- get 
     

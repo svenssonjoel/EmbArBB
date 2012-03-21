@@ -11,5 +11,6 @@
 * TODOs 
   + Improve integration (make it easier to "execute" the generated ArBB functions 
   + Add functionality
-
-
+  + Figure out how to capture functions with many outputs. 
+  + Figure out how to deal with ArBB operations with more than one output (sort_rank) 
+    

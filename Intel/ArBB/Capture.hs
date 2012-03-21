@@ -2,7 +2,9 @@
 
 {-# LANGUAGE ScopedTypeVariables, 
              FlexibleInstances, 
-             MultiParamTypeClasses #-}
+             MultiParamTypeClasses, 
+             TypeFamilies, 
+             TypeOperators #-}
 
 module Intel.ArBB.Capture where 
 
@@ -16,6 +18,7 @@ import Intel.ArBB.Embeddable
 import Intel.ArBB.WithArBB
 import Intel.ArBB.GenArBB
 
+
 import qualified Intel.ArbbVM as VM 
 import qualified Intel.ArbbVM.Convenience as VM
 
@@ -25,7 +28,7 @@ import qualified Data.Map as Map
 ----------------------------------------------------------------------------
 -- 
 -- TODO: Make the returned "Function" some opaque type (not just a String) 
-capture :: EmbFun a b => (a -> b) -> ArBB FunctionName 
+capture :: EmbFun a b => (a -> b) -> ArBB (Function (InType a b) (OutType b))
 capture f = 
   do  
     fn <- getFunName 
@@ -48,8 +51,12 @@ capture f =
         VM.copy_ (head os) v 
 
     addFunction fn fd                                                          
-    return fn            
+    return $ embFun fn f            
     
+    
+embFun :: EmbFun a b => String -> (a -> b) -> Function (InType a b) (OutType b) 
+embFun name f = Function name 
+
 ----------------------------------------------------------------------------
 -- 
         
@@ -73,11 +80,17 @@ addType v t =
 type IOs = [Type]
     
 class EmbFun a b where 
+  type InType a b
+  type OutType b 
+  
   emb :: (a -> b) -> VarGenerator (LExp, IOs, IOs) 
   
   
 -- TODO: What is a good way to make this work with many outputs
 instance (Embeddable b, Embeddable a) => EmbFun (Exp a) (Exp b) where 
+  type InType (Exp a) (Exp b)  = a 
+  type OutType (Exp b) = b
+  
   emb f = do 
     v <- getVar 
     let myVar = E (LVar (newLabel ()) v)
@@ -86,8 +99,12 @@ instance (Embeddable b, Embeddable a) => EmbFun (Exp a) (Exp b) where
         t_out = typeOf (undefined :: b)
     addType v t_in
     return (e,[t_in],[t_out])
+ 
     
 instance (Embeddable a, EmbFun c d) => EmbFun (Exp a) (c -> d) where 
+  type InType (Exp a) (c -> d) = (a :- InType c d) 
+  type OutType (c -> d) = OutType d
+  
   emb f = do 
     v <- getVar
     let myVar = E (LVar (newLabel ()) v) 
@@ -95,4 +112,4 @@ instance (Embeddable a, EmbFun c d) => EmbFun (Exp a) (c -> d) where
     addType v t_in 
     (exp,ins,outs) <- emb (f (myVar)) 
     return (exp, t_in:ins, outs)
-    
+  
