@@ -1,18 +1,26 @@
+{-# LANGUAGE TypeSynonymInstances, 
+             TypeOperators, 
+             ScopedTypeVariables #-}
 {- 2012 Joel Svensson -} 
 
 module Intel.ArBB.WithArBB where 
 
-import Control.Monad.State.Strict 
+import Control.Monad.State.Strict hiding (liftIO) 
 import qualified Data.Map as Map
 
 import qualified Intel.ArbbVM as VM
 import qualified Intel.ArbbVM.Convenience as VM
 
+import qualified Data.Vector.Storable as V 
+import Foreign.ForeignPtr 
+import Foreign.Ptr
+import Foreign.Marshal.Array
 
-
-
-import Intel.ArBB.Syntax (FunctionName)
-
+import Intel.ArBB.Syntax  -- (FunctionName)
+import Intel.ArBB.Vector 
+import Intel.ArBB.Types 
+import Intel.ArBB.GenArBB
+import Intel.ArBB.IsScalar
 
 ----------------------------------------------------------------------------
 --
@@ -43,3 +51,85 @@ withArBB :: ArBB a -> IO a
 withArBB arbb = 
   do 
     VM.arbbSession$  evalStateT arbb (Map.empty,0)
+    
+    
+----------------------------------------------------------------------------
+-- 
+
+serialize :: Function t a -> ArBB String 
+serialize (Function fn)  = 
+  do 
+    (m,_) <- get 
+    case Map.lookup fn m of 
+      Nothing -> error "serialize: Invalid function" 
+      (Just f) ->  
+        do 
+          str <- liftVM$ VM.serializeFunction_ f 
+          return (VM.getCString str)
+          
+          
+----------------------------------------------------------------------------
+--
+
+-- TODO: Lots of cheating going on here ! iron it out. 
+execute :: ArBBIO t => Function t a -> t -> ArBB () 
+execute (Function fn) inputs  = 
+  do 
+    (m,_) <- get 
+    case Map.lookup fn m of 
+      Nothing -> error "execute: Invalid function" 
+      (Just f) -> 
+        do 
+          ins <- arbbULoad inputs 
+          
+          st <- liftVM$ VM.getScalarType_ VM.ArbbF32
+          dt <- liftVM$ VM.getDenseType_ st 1  
+          
+          g  <- liftVM$ VM.createGlobal_nobind_ dt "res" --st "res" 
+          y  <- liftVM$ VM.variableFromGlobal_ g
+
+          liftVM$ VM.execute_ f [y] ins
+          res <- arbbDLoad y
+          liftIO$ putStrLn $ show res
+          
+class ArBBIO a where 
+  arbbULoad :: a -> ArBB [VM.Variable]
+  -- TODO: look at again when supporting multiple outputs 
+  --  arbbDLoad :: VM.Variable -> IO ()         
+  
+instance (V.Storable a, IsScalar a) => ArBBIO (Vector a) where 
+  arbbULoad (Vector dat (One n)) = 
+    do 
+      st <- liftVM$ toArBBType (scalarType (undefined :: a)) 
+      dt <- liftVM$ VM.getDenseType_ st 1 
+      
+      let (fptr,n') = V.unsafeToForeignPtr0 dat
+          ptr = unsafeForeignPtrToPtr fptr
+      
+      inb <- liftVM$ VM.createDenseBinding_ (castPtr ptr) 1 [fromIntegral n] [4] 
+      gin <- liftVM$ VM.createGlobal_ dt "input" inb 
+      vin <- liftVM$ VM.variableFromGlobal_ gin
+      
+      return$ [vin]
+
+-- TODO: The dimensions of the result can be grabbed from ArbbVM
+--       using the opLength etc 
+arbbDLoad v = 
+  do 
+    --st <- liftVM$ toArBBType (scalarType (undefined :: a)) 
+    st <- liftVM$ VM.getScalarType_ VM.ArbbF32
+    dt <- liftVM$ VM.getDenseType_ st 1  
+    
+    ptr <- liftVM$ VM.mapToHost_ v [1] VM.ArbbReadOnlyRange
+    dat <- liftIO$ peekArray 3 (castPtr ptr :: Ptr Float) 
+    liftIO$ putStrLn$ show dat 
+
+
+  
+instance (ArBBIO a, ArBBIO b) => ArBBIO (a :- b) where 
+  arbbULoad (a1 :- rest) = 
+    do 
+      [v] <- arbbULoad a1   -- correct? 
+      vs  <- arbbULoad rest  
+      return $ (v:vs) 
+--  arbbDLoad (a1 :- rest) = undefined 
