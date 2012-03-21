@@ -27,7 +27,6 @@ import qualified Data.Map as Map
 
 ----------------------------------------------------------------------------
 -- 
--- TODO: Make the returned "Function" some opaque type (not just a String) 
 capture :: EmbFun a b => (a -> b) -> ArBB (Function (InType a b) (OutType b))
 capture f = 
   do  
