@@ -16,6 +16,8 @@ import Foreign.ForeignPtr
 import Foreign.Ptr
 import Foreign.Marshal.Array
 
+import Data.Int 
+
 import Intel.ArBB.Syntax  -- (FunctionName)
 import Intel.ArBB.Vector 
 import Intel.ArBB.Types 
@@ -72,7 +74,8 @@ serialize (Function fn)  =
 --
 
 -- TODO: Lots of cheating going on here ! iron it out. 
-execute :: ArBBIO t => Function t a -> t -> ArBB () 
+-- TODO: I cannot get this function to have the type I want          
+execute :: (IsScalar a, V.Storable a, ArBBIO t)  => Function t (DVector Dim1 a) -> t -> ArBB (DVector Dim1 a) 
 execute (Function fn) inputs  = 
   do 
     (m,_) <- get 
@@ -89,13 +92,16 @@ execute (Function fn) inputs  =
           y  <- liftVM$ VM.variableFromGlobal_ g
 
           liftVM$ VM.execute_ f [y] ins
-          res <- arbbDLoad y
+          res <- arbbDLoad' y
+          r@(Vector _ res') <- arbbDLoad y
           liftIO$ putStrLn $ show res
+          liftIO$ putStrLn $ show res'
+          return r
           
 class ArBBIO a where 
   arbbULoad :: a -> ArBB [VM.Variable]
   -- TODO: look at again when supporting multiple outputs 
-  --  arbbDLoad :: VM.Variable -> IO ()         
+  arbbDLoad :: VM.Variable -> ArBB a         
   
 instance (V.Storable a, IsScalar a) => ArBBIO (Vector a) where 
   arbbULoad (Vector dat (One n)) = 
@@ -111,10 +117,24 @@ instance (V.Storable a, IsScalar a) => ArBBIO (Vector a) where
       vin <- liftVM$ VM.variableFromGlobal_ gin
       
       return$ [vin]
+  arbbDLoad v = 
+    do 
+      st <- liftVM$ toArBBType (scalarType (undefined :: a)) 
+      dt <- liftVM$ VM.getDenseType_ st 1 
+      
+      size_t <- liftVM$ VM.getScalarType_ VM.ArbbUsize 
+      gs  <- liftVM$ VM.createGlobal_nobind_ size_t "size"
+      s  <- liftVM$ VM.variableFromGlobal_ gs
+      
+      liftVM$ VM.opImm_ VM.ArbbOpLength [s] [v]
+      
+      n :: Int32 <- liftVM$ VM.readScalar_ s  
+      
+      return$ Vector (V.fromList []) (One (fromIntegral n))
 
 -- TODO: The dimensions of the result can be grabbed from ArbbVM
 --       using the opLength etc 
-arbbDLoad v = 
+arbbDLoad' v = 
   do 
     --st <- liftVM$ toArBBType (scalarType (undefined :: a)) 
     st <- liftVM$ VM.getScalarType_ VM.ArbbF32
@@ -132,4 +152,4 @@ instance (ArBBIO a, ArBBIO b) => ArBBIO (a :- b) where
       [v] <- arbbULoad a1   -- correct? 
       vs  <- arbbULoad rest  
       return $ (v:vs) 
---  arbbDLoad (a1 :- rest) = undefined 
+  arbbDLoad v = undefined  -- many outputs? How ? 
