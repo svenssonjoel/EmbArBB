@@ -56,13 +56,27 @@ callCP3D v1 v2 = resIndex (call (Function "crossProd") (v1 :- v2)) 0
  
 
 ----------------------------------------------------------------------------
--- Smal tests 
+-- Small tests 
 test1 = withArBB $ capture t1
 test2 = withArBB $ capture t2 
 test3 = withArBB $ capture t3
-test4 = withArBB $ capture t4
+
+---------------------------------------------------------------------------- 
+test4 = 
+  withArBB $ 
+   do
+     
+    let v1 = Vector (V.fromList [0..9 :: Int32]) (One 10)
+     
+    f <- capture t4 
+    
+    (Vector r dim) <- execute f v1
+    
+    liftIO$ putStrLn$ show r
+ 
 
 
+---------------------------------------------------------------------------
 -- getting serious 
 test5 = 
   -- Run an ArBB session
@@ -82,46 +96,3 @@ test5 =
     
     -- f can be used again and again (jit only once)
     execute f (v2 :- v1) 
-    
-
-  
--- old test
-test4' = 
-  withArBB $ 
-   do
-     
-    (Function f) <- capture t4 
-    
-    (m,_) <- get 
-    
-    let (Just f') = Map.lookup f m 
-     
-    liftVM$ VM.withArray_ [0..9 :: Int32] $ \ inp -> do 
-      -- (ArBBArray _ _ v) <- uploadArrayVector v1 
-      st <- VM.getScalarType_ VM.ArbbI32 
-      dt <- VM.getDenseType_ st 1 
-
-      inb <- VM.createDenseBinding_ (castPtr inp) 1 [10] [4]
-      gin <- VM.createGlobal_ dt "input" inb
-      vin <- VM.variableFromGlobal_ gin
-      
-      g  <- VM.createGlobal_nobind_ st "res" --st "res" 
-      y  <- VM.variableFromGlobal_ g
-        
-      --let (start_node,c) = compile t4
-      --fun <- genArBBFunCheat c start_node
-
-      str <- VM.serializeFunction_ f'
-      VM.liftIO$ putStrLn (VM.getCString str)
-     
-      --VM.liftIO$ putStrLn$ show c
-      --VM.liftIO$ putStrLn$ show $ typecheckDAG c (Map.fromList [(Variable "Input",Dense I (VM.ArbbI32))])
-      
-      VM.execute_ f' [y] [vin] 
-      
-      --result <- readBackVector (ArBBArray (One 10) ArBB.ArbbI32 y)
-      result :: Int32 <- VM.readScalar_ y  
-    
-      VM.liftIO$ putStrLn $ show result 
-
-      VM.liftIO$ putStrLn "hello" 

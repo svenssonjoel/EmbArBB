@@ -1,7 +1,11 @@
-{-# LANGUAGE TypeSynonymInstances, 
+{-# LANGUAGE ScopedTypeVariables, 
+             TypeSynonymInstances, 
              TypeOperators, 
-             ScopedTypeVariables, 
-             FlexibleContexts #-}
+             FlexibleContexts, 
+             MultiParamTypeClasses,
+             FlexibleInstances,
+             OverlappingInstances
+              #-}
 {- 2012 Joel Svensson -} 
 
 module Intel.ArBB.WithArBB where 
@@ -24,6 +28,7 @@ import Intel.ArBB.Vector
 import Intel.ArBB.Types 
 import Intel.ArBB.GenArBB
 import Intel.ArBB.IsScalar
+import Intel.ArBB.Embeddable
 
 ----------------------------------------------------------------------------
 --
@@ -78,34 +83,68 @@ serialize (Function fn)  =
 -- TODO: I cannot get this function to have the type I want. 
 --       Is that even possible ? 
 -- execute :: (ArBBIO a, ArBBIO t)  => Function t a -> t -> ArBB a 
-execute :: (IsScalar a, V.Storable a, ArBBIO t, ArBBIO (DVector t0 a))  
-           => Function t (DVector t0 a) -> t -> ArBB (DVector t0 a) 
-execute (Function fn) inputs  = 
-  do 
-    (m,_) <- get 
-    case Map.lookup fn m of 
-      Nothing -> error "execute: Invalid function" 
-      (Just f) -> 
-        do 
-          ins <- arbbULoad inputs 
-          
-          st <- liftVM$ VM.getScalarType_ VM.ArbbF32
-          dt <- liftVM$ VM.getDenseType_ st 1  
-          
-          g  <- liftVM$ VM.createGlobal_nobind_ dt "res" --st "res" 
-          y  <- liftVM$ VM.variableFromGlobal_ g
+--execute_old :: (IsScalar a, V.Storable a, ArBBIO t, ArBBIO (DVector t0 a))  
+--           => Function t (DVector t0 a) -> t -> ArBB (DVector t0 a) 
+--execute_old 
 
-          liftVM$ VM.execute_ f [y] ins
+class Executable a b where           
+  execute :: Function a b -> a -> ArBB b 
+  
+instance (Embeddable (DVector t b) , ArBBIO a,  
+          ArBBIO (DVector t b), 
+          IsScalar b, V.Storable b) => Executable a (DVector t b) where  
+  execute (Function fn) inputs  = 
+    do 
+      (m,_) <- get 
+      case Map.lookup fn m of 
+        Nothing -> error "execute: Invalid function" 
+        (Just f) -> 
+          do 
+            ins <- arbbULoad inputs 
+          
+            t <- liftVM$ toArBBType (typeOf (undefined :: (DVector t b)))
+          
+            g  <- liftVM$ VM.createGlobal_nobind_ t "res" --st "res" 
+            y  <- liftVM$ VM.variableFromGlobal_ g
+
+            liftVM$ VM.execute_ f [y] ins
          
-          r@(Vector _ res') <- arbbDLoad y
+            r@(Vector _ res') <- arbbDLoad y
                   
-          return r
+            return r
+          
+  
+instance (ArBBIO a, 
+          Num b, IsScalar b, V.Storable b) => Executable a b where 
+  execute (Function fn) inputs  = 
+    do 
+      (m,_) <- get 
+      case Map.lookup fn m of 
+        Nothing -> error "execute: Invalid function" 
+        (Just f) -> 
+          do 
+            ins <- arbbULoad inputs 
+          
+            let (Scalar t) = scalarType (undefined :: b)
+            st <- liftVM$ VM.getScalarType_ t
+      
+            g  <- liftVM$ VM.createGlobal_nobind_ st "res" --st "res" 
+            y  <- liftVM$ VM.variableFromGlobal_ g
+
+            liftVM$ VM.execute_ f [y] ins
+         
+            result <- liftVM$ VM.readScalar_ y
+            
+            return result
+
           
 class ArBBIO a where 
   arbbULoad :: a -> ArBB [VM.Variable]
   -- TODO: look at again when supporting multiple outputs 
   arbbDLoad :: VM.Variable -> ArBB a         
   
+---------------------------------------------------------------------------- 
+-- Base
 instance (V.Storable a, IsScalar a) => ArBBIO (Vector a) where 
   arbbULoad (Vector dat (One n)) = 
     do 
@@ -140,21 +179,18 @@ instance (V.Storable a, IsScalar a) => ArBBIO (Vector a) where
       dat <- liftIO$ peekArray (fromIntegral n) (castPtr ptr) 
       
       return$ Vector (V.fromList dat) (One (fromIntegral n))
-
--- TODO: The dimensions of the result can be grabbed from ArbbVM
---       using the opLength etc 
-arbbDLoad' v = 
-  do 
-    --st <- liftVM$ toArBBType (scalarType (undefined :: a)) 
-    st <- liftVM$ VM.getScalarType_ VM.ArbbF32
-    dt <- liftVM$ VM.getDenseType_ st 1  
-    
-    ptr <- liftVM$ VM.mapToHost_ v [1] VM.ArbbReadOnlyRange
-    dat <- liftIO$ peekArray 3 (castPtr ptr :: Ptr Float) 
-    liftIO$ putStrLn$ show dat 
-
-
   
+instance (Num a, V.Storable a, IsScalar a) => ArBBIO (DVector Dim0 a) where 
+  arbbULoad (Vector dat Zero) = undefined
+       -- This should be simple
+  arbbDLoad v = 
+    do 
+      n  <- liftVM$ VM.readScalar_ v  
+                    
+      return$ Vector (V.fromList [n]) Zero
+
+----------------------------------------------------------------------------
+-- recurse 
 instance (ArBBIO a, ArBBIO b) => ArBBIO (a :- b) where 
   arbbULoad (a1 :- rest) = 
     do 
