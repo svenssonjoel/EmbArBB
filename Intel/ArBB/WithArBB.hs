@@ -1,6 +1,7 @@
 {-# LANGUAGE TypeSynonymInstances, 
              TypeOperators, 
-             ScopedTypeVariables #-}
+             ScopedTypeVariables, 
+             FlexibleContexts #-}
 {- 2012 Joel Svensson -} 
 
 module Intel.ArBB.WithArBB where 
@@ -74,8 +75,11 @@ serialize (Function fn)  =
 --
 
 -- TODO: Lots of cheating going on here ! iron it out. 
--- TODO: I cannot get this function to have the type I want          
-execute :: (IsScalar a, V.Storable a, ArBBIO t)  => Function t (DVector Dim1 a) -> t -> ArBB (DVector Dim1 a) 
+-- TODO: I cannot get this function to have the type I want. 
+--       Is that even possible ? 
+-- execute :: (ArBBIO a, ArBBIO t)  => Function t a -> t -> ArBB a 
+execute :: (IsScalar a, V.Storable a, ArBBIO t, ArBBIO (DVector t0 a))  
+           => Function t (DVector t0 a) -> t -> ArBB (DVector t0 a) 
 execute (Function fn) inputs  = 
   do 
     (m,_) <- get 
@@ -92,10 +96,9 @@ execute (Function fn) inputs  =
           y  <- liftVM$ VM.variableFromGlobal_ g
 
           liftVM$ VM.execute_ f [y] ins
-          res <- arbbDLoad' y
+         
           r@(Vector _ res') <- arbbDLoad y
-          liftIO$ putStrLn $ show res
-          liftIO$ putStrLn $ show res'
+                  
           return r
           
 class ArBBIO a where 
@@ -122,15 +125,21 @@ instance (V.Storable a, IsScalar a) => ArBBIO (Vector a) where
       st <- liftVM$ toArBBType (scalarType (undefined :: a)) 
       dt <- liftVM$ VM.getDenseType_ st 1 
       
+    
       size_t <- liftVM$ VM.getScalarType_ VM.ArbbUsize 
       gs  <- liftVM$ VM.createGlobal_nobind_ size_t "size"
       s  <- liftVM$ VM.variableFromGlobal_ gs
       
+      -- Read size of vector from ArBB using an immediate op
       liftVM$ VM.opImm_ VM.ArbbOpLength [s] [v]
       
       n :: Int32 <- liftVM$ VM.readScalar_ s  
+                    
+      -- now load that number of elements from the VM 
+      ptr <- liftVM$ VM.mapToHost_ v [1] VM.ArbbReadOnlyRange
+      dat <- liftIO$ peekArray (fromIntegral n) (castPtr ptr) 
       
-      return$ Vector (V.fromList []) (One (fromIntegral n))
+      return$ Vector (V.fromList dat) (One (fromIntegral n))
 
 -- TODO: The dimensions of the result can be grabbed from ArbbVM
 --       using the opLength etc 

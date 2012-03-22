@@ -77,7 +77,8 @@ test5 =
         v2 = Vector (V.fromList [1.5,1.8,1.9]) (One 3)
     
     -- execute f with inputs v1 and v2 
-    execute f (v1 :- v2) 
+    (Vector dat n) <- execute f (v1 :- v2) 
+    liftIO$ putStrLn$ show dat
     
     -- f can be used again and again (jit only once)
     execute f (v2 :- v1) 
