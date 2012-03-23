@@ -14,7 +14,8 @@ import Intel.ArBB.Syntax
 import Intel.ArBB.IsScalar
 
 ----------------------------------------------------------------------------
--- Vectors 
+-- | Zero, One, Two or Three dimensional vectors. 
+-- The data payload is stored in a flat Data.Vector
 
 data DVector d a = Vector {vectorData  :: V.Vector a, 
                            vectorShape :: Dim} 
@@ -25,7 +26,7 @@ data Dim = Zero
          | Three Int Int Int 
          deriving Show                    
 
--- Encode Dimensionality in the type of vectors                    
+-- | Encode Dimensionality in the type of vectors                    
 data a :. b = a :. b  
 
 type Dim0 = ()                
@@ -34,7 +35,7 @@ type Dim2 = () :. Dim1
 type Dim3 = () :. Dim2 
 
 
--- Easy to use names. 
+-- | Easy to use names. 
 type Scalar   = DVector Dim0  -- This or the next one? 
 type Vector0D = DVector Dim0  -- hmm nice ?
 type Vector   = DVector Dim1

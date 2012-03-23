@@ -23,7 +23,7 @@ import Foreign.Marshal.Array
 
 import Data.Int 
 
-import Intel.ArBB.Syntax  -- (FunctionName)
+import Intel.ArBB.Syntax  
 import Intel.ArBB.Vector 
 import Intel.ArBB.Types 
 import Intel.ArBB.GenArBB
@@ -31,7 +31,7 @@ import Intel.ArBB.IsScalar
 import Intel.ArBB.Embeddable
 
 ----------------------------------------------------------------------------
---
+-- ArBB Monad 
 
 type ArBBState = (Map.Map FunctionName VM.ConvFunction, Integer)
                             
@@ -47,6 +47,7 @@ getFunName = do
   put (m,i+1) 
   return $ "f" ++ show i 
 
+-- Keeps track of what functions have been JITed so far
 type ArBB a = StateT ArBBState VM.EmitArbb a  
 
 liftIO :: IO a -> ArBB a 
@@ -62,8 +63,7 @@ withArBB arbb =
     
     
 ----------------------------------------------------------------------------
--- 
-
+-- |Get a string representation from a Function. 
 serialize :: Function t a -> ArBB String 
 serialize (Function fn)  = 
   do 
@@ -77,16 +77,7 @@ serialize (Function fn)  =
           
           
 ----------------------------------------------------------------------------
---
-
--- TODO: Lots of cheating going on here ! iron it out. 
--- TODO: I cannot get this function to have the type I want. 
---       Is that even possible ? 
--- execute :: (ArBBIO a, ArBBIO t)  => Function t a -> t -> ArBB a 
---execute_old :: (IsScalar a, V.Storable a, ArBBIO t, ArBBIO (DVector t0 a))  
---           => Function t (DVector t0 a) -> t -> ArBB (DVector t0 a) 
---execute_old 
-
+-- |Executable Function objects
 class Executable a b where           
   execute :: Function a b -> a -> ArBB b 
   

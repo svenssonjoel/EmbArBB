@@ -7,7 +7,6 @@ module Test where
 import Intel.ArBB 
 import qualified Intel.ArbbVM as VM
 import qualified Intel.ArbbVM.Convenience as VM
--- import Intel.ArbbVM.Convenience (liftIO)
 
 import Intel.ArBB.WithArBB
 import Intel.ArBB.Vector
@@ -27,7 +26,7 @@ import Control.Monad.State hiding (liftIO)
 ---------------------------------------------------------------------------- 
 --  Testing Testing 
 
-t1 :: Exp (Vector Int32) ->  Exp (Scalar Int32) -- Exp (Vector0D Int32)
+t1 :: Exp (Vector Int32) ->  Exp (Scalar Int32)
 t1 input = addReduce input 
 
 t2 :: Exp (Scalar Int32) -> Exp (Scalar Int32) 
@@ -74,7 +73,6 @@ test4 =
     
     liftIO$ putStrLn$ show r
  
-
 
 ---------------------------------------------------------------------------
 -- getting serious 
