@@ -3,14 +3,21 @@
   + very sketchy! (But improving) 
   + Uses the Haskell/ArBB bindings (svenssonjoel/arbb-vm.git on github) 
 
-
 * Status 
   + Generates ArBB functions from functions in the embedded language. 
   + A subset of ArBB functionality is implemented. 
 
+* Problems
+  + Right now there are two kinds of Scalars. 
+    Exp a and Exp (DVector Dim0 a) (for scalar a).
+    Should there be only one ? If so, then Exp (DVector Dim0 a) will be the one. 
+
 * TODOs 
-  + Improve integration (make it easier to "execute" the generated ArBB functions 
-  + Add functionality
+  + Add functionality (cover as many as possible of the ops supported by ArBB) 
   + Figure out how to capture functions with many outputs. 
   + Figure out how to deal with ArBB operations with more than one output (sort_rank) 
     
+* Notes
+  + ArBB Supplies the operations Rotate and RotateRev to the programmer. It seems 
+    to me that RotateRev is compiled into a Rotate operation with a negated distance. 
+ 
