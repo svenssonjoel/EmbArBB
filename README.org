@@ -15,7 +15,6 @@
 * TODOs 
   + Add functionality (cover as many as possible of the ops supported by ArBB) 
   + Figure out how to capture functions with many outputs. 
-  + Figure out how to deal with ArBB operations with more than one output (sort_rank) 
     
 * Notes
   + ArBB Supplies the operations Rotate and RotateRev to the programmer. It seems 
