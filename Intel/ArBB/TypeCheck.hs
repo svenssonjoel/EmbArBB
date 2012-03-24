@@ -135,6 +135,16 @@ typecheckNID d n =
         nt <- typecheckNID dag n  -- fix later 
         dt <- typecheckNID dag d 
         return$ Just nt
+    typecheckNode dag (NSortRank n d) = 
+      do 
+        nt <- typecheckNID dag n 
+        dt <- typecheckNID dag d 
+        
+        return$ Just$ Tuple [nt,Dense I ArBB.ArbbUsize]   
+    typecheckNode dag (NResIndex n i) =   
+      do 
+        (Tuple nt) <- typecheckNID dag n 
+        return$ Just$ nt !! i 
       
     typecheckLiteral (LitInt8 _)   = return$ Just$ Scalar ArBB.ArbbI8
     typecheckLiteral (LitInt16 _)  = return$ Just$ Scalar ArBB.ArbbI16

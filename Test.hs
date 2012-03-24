@@ -10,6 +10,7 @@ import qualified Intel.ArbbVM.Convenience as VM
 
 import Intel.ArBB.WithArBB
 import Intel.ArBB.Vector
+import Intel.ArBB.Data.Int
 
 import qualified Data.Vector.Storable as V 
 
@@ -50,9 +51,13 @@ crossProd3D v1 v2 = lprods - rprods
     
     
 -- Experiment: call a named function 
-callCP3D :: Exp (Vector Float) -> Exp (Vector Float) -> Exp (Vector Float) 
-callCP3D v1 v2 = resIndex (call (Function "crossProd") (v1 :- v2)) 0
+--callCP3D :: Exp (Vector Float) -> Exp (Vector Float) -> Exp (Vector Float) 
+--callCP3D v1 v2 = resIndex (call (Function "crossProd") (v1 :- v2)) 0
  
+---------------------------------------------------------------------------- 
+-- getRanks 
+getRanks :: Exp (Vector Float) -> Exp (Vector USize) 
+getRanks v1 = sndPair (sortRank v1 0) 
 
 ----------------------------------------------------------------------------
 -- Small tests 
@@ -94,3 +99,22 @@ test5 =
     
     -- f can be used again and again (jit only once)
     execute f (v2 :- v1) 
+
+
+test6 = 
+  withArBB $  
+  do
+    f <- capture getRanks
+    
+    -- create input
+    let v1 = Vector (V.fromList [1,2,3,4::Float]) (One 4)
+    
+    --str <- serialize f 
+    --liftIO$ putStrLn str
+    
+    -- execute f 
+    (Vector dat n) <- execute f v1
+    liftIO$ putStrLn$ show dat
+    
+   
+

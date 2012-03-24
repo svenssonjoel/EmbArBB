@@ -1,13 +1,21 @@
-
+{-# LANGUAGE GeneralizedNewtypeDeriving #-} 
 module Intel.ArBB.Data.Int where 
 
 import Data.Int
 import Data.Word
 
-data ISize = ISize Int32
-             deriving (Eq, Show) 
-data USize = USize Word32
-             deriving (Eq, Show) 
+import Foreign.Storable
+import Foreign.Ptr
+
+import Intel.ArBB.IsScalar
+import Intel.ArBB.Types
+
+import qualified Intel.ArbbVM as VM 
+
+newtype ISize = ISize Int64
+             deriving (Eq, Show, Storable) 
+newtype USize = USize Word64
+             deriving (Eq, Show, Storable) 
 
 
 instance Num ISize where 
@@ -29,4 +37,6 @@ instance Num USize where
   signum = undefined 
   fromInteger = USize . fromInteger 
   
-
+  
+instance IsScalar USize where 
+  scalarType _ = Scalar VM.ArbbUsize 

@@ -9,6 +9,9 @@ import qualified Intel.ArbbVM.Convenience as VM
 -- What types can we have ? 
 data Type = Scalar VM.ScalarType 
           | Dense Dimensionality VM.ScalarType 
+            
+          -- Tuple types 
+          | Tuple [Type] 
           deriving (Eq,Show)                   
 
 data Dimensionality = I | II | III 

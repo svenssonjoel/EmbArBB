@@ -20,7 +20,7 @@ import Data.Maybe
 import Control.Monad.State
 ---------------------------------------------------------------------------- 
 -- 
-type Gen a = StateT (Map.Map NodeID VM.Variable) VM.EmitArbb a
+type Gen a = StateT (Map.Map NodeID [VM.Variable]) VM.EmitArbb a
 
 
 ----------------------------------------------------------------------------
@@ -30,18 +30,18 @@ genBody :: DAG
            -> NodeIDType 
            -> (Map.Map FunctionName VM.ConvFunction) 
            -> [VM.Variable] 
-           -> VM.EmitArbb VM.Variable 
+           -> VM.EmitArbb [VM.Variable] 
 genBody dag nid typem funm is = evalStateT (genBody' dag nid typem funm is) (Map.empty) 
 
 ----------------------------------------------------------------------------
 -- Helpers 
-visited :: NodeID -> Gen (Maybe VM.Variable) 
+visited :: NodeID -> Gen (Maybe [VM.Variable]) 
 visited nid = 
   do 
     m <- get 
     return$ Map.lookup nid m 
 
-addNode :: NodeID -> VM.Variable -> Gen () 
+addNode :: NodeID -> [VM.Variable] -> Gen () 
 addNode nid v = 
   do 
     m <- get 
@@ -50,11 +50,11 @@ addNode nid v =
     
 
 
-getTypeOfNode :: NodeID -> NodeIDType -> Gen VM.Type 
+getTypeOfNode :: NodeID -> NodeIDType -> Gen [VM.Type] 
 getTypeOfNode n m = 
   let t = fromJust$ Map.lookup n m 
   in 
-   lift $ toArBBType t 
+    lift$ toArBBType t 
 
 
 ----------------------------------------------------------------------------
@@ -64,81 +64,108 @@ genBody' :: DAG
            -> NodeIDType 
            -> (Map.Map FunctionName VM.ConvFunction) 
            -> [VM.Variable] 
-           -> Gen VM.Variable 
+           -> Gen [VM.Variable] 
 genBody' dag nid typem funm is = 
   do 
     m <- get 
     case Map.lookup nid m of 
       (Just v) -> return v 
-      Nothing  -> 
+      Nothing   -> 
           case Map.lookup nid dag of 
             (Just node) -> genNode nid node 
             Nothing -> error "genBody: DAG is broken" 
             
   where 
-    genNode :: NodeID -> Node -> Gen VM.Variable
-    genNode thisNid (NLit l) = genLiteral l 
+    genNode :: NodeID -> Node -> Gen [VM.Variable]
+    genNode thisNid (NLit l) = 
+      do 
+        lift$ VM.liftIO$ putStrLn$  show l
+        v <- genLiteral l 
+        return [v] 
     genNode thisNid (NVar (Variable nom)) = 
       do 
         lift$ VM.liftIO$ putStrLn "Var node" 
-        return$ is !! (read (nom L.\\ "v") :: Int)  -- inputs
+        return$ [is !! (read (nom L.\\ "v") :: Int)]  -- inputs
     
     genNode thisNid (NReduce Add nid) = 
       do
         
-        t <- getTypeOfNode thisNid typem
+        [t] <- getTypeOfNode thisNid typem
         v1 <- genBody' dag nid typem funm is 
         
         imm <- lift$ VM.createLocal_ t "imm"   -- st "res" 
-        lift$ VM.opDynamic_ VM.ArbbOpAddReduce [imm] [v1] 
+        lift$ VM.opDynamic_ VM.ArbbOpAddReduce [imm] v1 
         
         -- memoize the computed var
-        addNode thisNid imm 
+        addNode thisNid [imm] 
         
         lift$ VM.liftIO$ putStrLn "NReduce Add node" 
-        return imm
+        return [imm]
     genNode thisNid (NBinOp op n1 n2) = 
       do 
         v1 <- genBody' dag n1 typem funm is 
         v2 <- genBody' dag n2 typem funm is 
         
-        t <- getTypeOfNode thisNid typem
+        [t] <- getTypeOfNode thisNid typem
         
         imm <- lift $ VM.createLocal_ t "imm" 
-        lift$ VM.op_ (opToArBB op) [imm] [v1,v2] 
+        -- Assume v1,v2 list of length one 
+        lift$ VM.op_ (opToArBB op) [imm] (v1 ++ v2) 
         
         -- memoize the computed var
-        addNode thisNid imm 
+        addNode thisNid [imm] 
         
         lift$ VM.liftIO$ putStrLn "BinOp node" 
-        return imm
+        return [imm]
     genNode thisNid (NRotate n1 n2) = 
       do 
         v1 <- genBody' dag n1 typem funm is 
         v2 <- genBody' dag n2 typem funm is 
         
-        t <- getTypeOfNode thisNid typem 
+        [t] <- getTypeOfNode thisNid typem 
         
         imm <- lift$ VM.createLocal_ t "imm" 
-        lift$ VM.opDynamic_ VM.ArbbOpRotate [imm] [v1,v2]
+        lift$ VM.opDynamic_ VM.ArbbOpRotate [imm] (v1 ++ v2)
         
-        addNode thisNid imm 
+        addNode thisNid [imm] 
         lift$ VM.liftIO$ putStrLn "Rotate node" 
-        return imm
+        return [imm]
     genNode thisNid (NRotateRev n1 n2) = 
       do 
         v1 <- genBody' dag n1 typem funm is 
         v2 <- genBody' dag n2 typem funm is 
         
-        t <- getTypeOfNode thisNid typem 
+        [t] <- getTypeOfNode thisNid typem 
         
         imm <- lift$ VM.createLocal_ t "imm" 
-        lift$ VM.opDynamic_ VM.ArbbOpRotateReverse [imm] [v1,v2]
+        lift$ VM.opDynamic_ VM.ArbbOpRotateReverse [imm] (v1 ++ v2)
         
-        addNode thisNid imm 
+        addNode thisNid [imm] 
         lift$ VM.liftIO$ putStrLn "RotateRev node" 
-        return imm
-    
+        return [imm]
+    genNode thisNid (NSortRank n1 n2) = 
+      do 
+        
+        v1 <- genBody' dag n1 typem funm is 
+        v2 <- genBody' dag n2 typem funm is 
+        
+        [t1,t2] <- getTypeOfNode thisNid typem 
+       
+        imm <- lift$ VM.createLocal_ t1 "imm" 
+        ranks <- lift$ VM.createLocal_ t2 "imm"
+      
+        lift$ VM.op_ VM.ArbbOpSortRank [imm,ranks] (v1 ++ v2)
+        
+        addNode thisNid [imm,ranks] 
+        lift$ VM.liftIO$ putStrLn "SortRank node" 
+        return [imm,ranks]
+    genNode thisNid (NResIndex n i) = 
+      do 
+        vs <- genBody' dag n typem funm is 
+        return$ [vs !! i]
+        
+        
+        
 
         
 genLiteral :: Literal -> Gen VM.Variable
@@ -162,20 +189,39 @@ opToArBB Sub = VM.ArbbOpSub
 ----------------------------------------------------------------------------   
 -- 
         
-    
-toArBBType (Scalar t) = VM.getScalarType_ t
+toArBBType :: Type -> VM.EmitArbb [VM.Type]
+toArBBType (Scalar t) = 
+  do 
+   
+    t' <- VM.getScalarType_ t
+    return [t'] 
 toArBBType (Dense I t) = 
   do 
+   
     st <- VM.getScalarType_ t
-    VM.getDenseType_ st 1 
+    t' <- VM.getDenseType_ st 1 
+    return [t']
 toArBBType (Dense II t) = 
   do 
+   
     st <- VM.getScalarType_ t
-    VM.getDenseType_ st 2 
+    t' <- VM.getDenseType_ st 2 
+    return [t']
 toArBBType (Dense III t) = 
   do 
+   
     st <- VM.getScalarType_ t
-    VM.getDenseType_ st 3
+    t' <- VM.getDenseType_ st 3
+    return [t'] 
+toArBBType (Tuple []) = return [] 
+toArBBType (Tuple (t:ts)) = 
+  do
+   
+    ts' <- toArBBType (Tuple ts) 
+    -- Tuples will not contain tuples ! 
+    [t']  <- toArBBType t
+    return $ t':ts'
+
 
 
     

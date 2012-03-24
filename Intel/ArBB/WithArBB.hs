@@ -93,7 +93,7 @@ instance (Embeddable (DVector t b) , ArBBIO a,
           do 
             ins <- arbbULoad inputs 
           
-            t <- liftVM$ toArBBType (typeOf (undefined :: (DVector t b)))
+            [t] <- liftVM$ toArBBType (typeOf (undefined :: (DVector t b)))
           
             g  <- liftVM$ VM.createGlobal_nobind_ t "res" --st "res" 
             y  <- liftVM$ VM.variableFromGlobal_ g
@@ -139,7 +139,7 @@ class ArBBIO a where
 instance (V.Storable a, IsScalar a) => ArBBIO (Vector a) where 
   arbbULoad (Vector dat (One n)) = 
     do 
-      st <- liftVM$ toArBBType (scalarType (undefined :: a)) 
+      [st] <- liftVM$ toArBBType (scalarType (undefined :: a)) 
       dt <- liftVM$ VM.getDenseType_ st 1 
       
       let (fptr,n') = V.unsafeToForeignPtr0 dat
@@ -152,7 +152,7 @@ instance (V.Storable a, IsScalar a) => ArBBIO (Vector a) where
       return$ [vin]
   arbbDLoad v = 
     do 
-      st <- liftVM$ toArBBType (scalarType (undefined :: a)) 
+      [st] <- liftVM$ toArBBType (scalarType (undefined :: a)) 
       dt <- liftVM$ VM.getDenseType_ st 1 
       
     
@@ -172,7 +172,7 @@ instance (V.Storable a, IsScalar a) => ArBBIO (Vector a) where
       return$ Vector (V.fromList dat) (One (fromIntegral n))
   
 instance (Num a, V.Storable a, IsScalar a) => ArBBIO (DVector Dim0 a) where 
-  arbbULoad (Vector dat Zero) = undefined
+  arbbULoad (Vector dat Zero) = error "upload: not yet supported" -- undefined
        -- This should be simple
   arbbDLoad v = 
     do 
@@ -188,4 +188,4 @@ instance (ArBBIO a, ArBBIO b) => ArBBIO (a :- b) where
       [v] <- arbbULoad a1   -- correct? 
       vs  <- arbbULoad rest  
       return $ (v:vs) 
-  arbbDLoad v = undefined  -- many outputs? How ? 
+  arbbDLoad v = error "not yet supported" --- undefined  -- many outputs? How ? 

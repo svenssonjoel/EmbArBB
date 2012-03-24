@@ -134,6 +134,16 @@ constructDAG (LSortRank l i1 i2) = do
         let m'' = Map.insert l (NSortRank i1' i2') m' 
         put m'' 
         return l 
-        
+constructDAG (LResIndex l e i) = do 
+  m <- get 
+  case Map.lookup l m of 
+    (Just nid) -> return l 
+    Nothing -> 
+      do 
+        e' <- constructDAG e 
+        m' <- get
+        let m'' = Map.insert l (NResIndex e' i) m' 
+        put m''
+        return l    
 
       

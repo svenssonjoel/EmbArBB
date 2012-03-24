@@ -30,6 +30,10 @@ rotateRev :: Exp (DVector (():.t) a) -> Exp ISize -> Exp (DVector (():.t) a)
 rotateRev (E vec) (E steps) = E $ LRotateRev (newLabel ()) vec steps  
 
 
+sortRank :: Exp (Vector a) -> Exp USize -> Exp (Vector a, Vector USize) 
+sortRank (E vec) (E us@(LLit _ (LitUSize l)))  = E $ LSortRank (newLabel ()) vec us
+
+
 ----------------------------------------------------------------------------
 -- Function calling 
 
@@ -39,6 +43,12 @@ call (Function nom) ins = E $ LCall (newLabel ()) nom (argList ins)
 -- TODO: Improve (types ???) but how !!
 resIndex :: Exp a -> Int -> Exp b 
 resIndex (E a) i = E $ LResIndex (newLabel ()) a i 
+
+fstPair :: Exp (a,b) -> Exp a 
+fstPair (E a) = E $ LResIndex (newLabel ()) a 0 
+
+sndPair :: Exp (a,b) -> Exp b
+sndPair (E a) = E $ LResIndex (newLabel ()) a 1 
 
 
 ----------------------------------------------------------------------------
@@ -100,7 +110,7 @@ instance Num (Exp USize) where
   abs = undefined 
   signum = undefined 
   
-  fromInteger a = E $ LLit (newLabel ()) $ LitISize $ fromInteger a
+  fromInteger a = E $ LLit (newLabel ()) $ LitUSize $ fromInteger a
 
 
 ----------------------------------------------------------------------------

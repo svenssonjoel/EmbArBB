@@ -44,10 +44,11 @@ capture f =
     arbbIns  <- liftVM$ mapM toArBBType tins 
     
     (funMap,_) <- get
-    fd <- liftVM$ VM.funDef_ fn arbbOuts arbbIns $ \ os is -> 
+    fd <- liftVM$ VM.funDef_ fn (concat arbbOuts) (concat arbbIns) $ \ os is -> 
       do 
         v <- genBody dag nid tc funMap is
-        VM.copy_ (head os) v 
+        -- CHEATING! try to make it work for real 
+        VM.copy_ (head os) (head v)  
 
     addFunction fn fd                                                          
     return $ embFun fn f            
