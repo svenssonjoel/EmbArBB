@@ -84,14 +84,32 @@ data LExp = LLit Label Literal
                    
 ----------------------------------------------------------------------------                   
 -- Operations (binary, unary, reductions-ops all mixed up) 
-data Op = Add 
-        | Sub  
-        | Mul 
-        | Div 
+data Op = Add | Sub  | Mul | Div 
+        | Max | Min
+        | And | Ior | Xor         
+        | Abs | Acos | Asin | Atan | Ceil
+        | Cos | Cosh | Exp | Exp10
+        | Floor | Ln | Log10 | Log_not
+        | Bit_not | Rcp | Round | Rsqrt
+        | Sin | Sinh | Sqrt | Tan | Tanh
+        | Neg | Bit_and | Atan2
+        | Compare | Equal
+        | Geq | Greater | Bit_or
+        | Leq | Less | Log_and | Log_or 
+        | Lsh | Mod 
+        | Neq | Pow | Rsh 
+        | Bit_xor | Select
+
+          
           deriving (Eq, Show) 
                    
 isReduceOp Add = True 
 isReduceOp Mul = True
+isReduceOp Max = True
+isReduceOp Min = True 
+isReduceOp And = True
+isReduceOp Ior = True 
+isReduceOp Xor = True
 isReduceOp _   = False                    
    
 ----------------------------------------------------------------------------                   

@@ -12,9 +12,10 @@ import Intel.ArBB.Types
 
 import qualified Intel.ArbbVM as VM 
 
-newtype ISize = ISize Int64
+-- TODO: Is ISize 32bit on 32bit platforms and 64bit on 64bit platforms ?
+newtype ISize = ISize Int    
              deriving (Eq, Show, Storable) 
-newtype USize = USize Word64
+newtype USize = USize Word
              deriving (Eq, Show, Storable) 
 
 
