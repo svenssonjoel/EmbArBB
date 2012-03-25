@@ -87,14 +87,15 @@ genBody' dag nid typem funm is =
         lift$ VM.liftIO$ putStrLn "Var node" 
         return$ [is !! (read (nom L.\\ "v") :: Int)]  -- inputs
     
-    genNode thisNid (NReduce Add nid) = 
+    genNode thisNid (NReduce op n1 n2) = 
       do
         
         [t] <- getTypeOfNode thisNid typem
-        v1 <- genBody' dag nid typem funm is 
+        v1 <- genBody' dag n1 typem funm is 
+        v2 <- genBody' dag n2 typem funm is 
         
         imm <- lift$ VM.createLocal_ t "imm"   -- st "res" 
-        lift$ VM.opDynamic_ VM.ArbbOpAddReduce [imm] v1 
+        lift$ VM.opDynamic_ (opToArBBReduceOp op) [imm] (v1 ++ v2) 
         
         -- memoize the computed var
         addNode thisNid [imm] 
@@ -226,3 +227,6 @@ toArBBType (Tuple (t:ts)) =
 
     
     
+opToArBBReduceOp Add = VM.ArbbOpAddReduce
+opToArBBReduceOp Mul = VM.ArbbOpAddReduce
+-- TODO: go on 

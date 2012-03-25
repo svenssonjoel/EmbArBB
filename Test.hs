@@ -28,7 +28,7 @@ import Control.Monad.State hiding (liftIO)
 --  Testing Testing 
 
 t1 :: Exp (Vector Int32) ->  Exp (Scalar Int32)
-t1 input = addReduce input 
+t1 input = addReduce0 input 
 
 t2 :: Exp (Scalar Int32) -> Exp (Scalar Int32) 
 t2 input = input + input 
@@ -49,6 +49,8 @@ crossProd3D v1 v2 = lprods - rprods
     lprods = v1' * v2' 
     rprods = v1'' * v2'' 
     
+dotProd :: Exp (Vector Float) -> Exp (Vector Float) -> Exp (Scalar Float) 
+dotProd v1 v2 = addReduce0 (v1 * v2)
     
 -- Experiment: call a named function 
 --callCP3D :: Exp (Vector Float) -> Exp (Vector Float) -> Exp (Vector Float) 
@@ -117,4 +119,53 @@ test6 =
     liftIO$ putStrLn$ show dat
     
    
+test7 = 
+  withArBB $  
+  do
+    f <- capture dotProd
+    
+    -- create input
+    let v1 = Vector (V.fromList [1,2,3::Float]) (One 3)
+        v2 = Vector (V.fromList [3,2,1::Float]) (One 3)
+    str <- serialize f 
+    liftIO$ putStrLn str
+    
+    -- execute f 
+    (Vector dat n) <- execute f (v1 :- v2)
+    liftIO$ putStrLn$ show dat
+
+
+
+----------------------------------------------------------------------------
+    
+testRotate = 
+  withArBB $  
+  do
+    f <- capture rot
+    g <- capture rotRev
+    
+    -- create input
+    let v1 = Vector (V.fromList [1,2,3::Float]) (One 3)
+        
+    str <- serialize f 
+    liftIO$ putStrLn str
+    
+    str <- serialize g 
+    liftIO$ putStrLn str
+    
+    -- execute f 
+    (Vector dat n) <- execute f v1
+    liftIO$ putStrLn$ "Rotate " ++ show dat
+    
+    -- execute g 
+    (Vector dat n) <- execute g v1
+    liftIO$ putStrLn$ "RotateRev " ++ show dat
+    
+  where 
+    rot :: Exp (Vector Float) -> Exp (Vector Float) 
+    rot v = rotate v 1 
+    rotRev :: Exp (Vector Float) -> Exp (Vector Float)
+    rotRev v = rotateRev v 1 
+    
+
 

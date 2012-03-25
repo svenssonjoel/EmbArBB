@@ -118,12 +118,12 @@ typecheckNID d n =
             let (Dense III scal) = nt1 
             in return$ Just $ Scalar scal 
           else return Nothing                       
-    typecheckNode dag (NReduce op n) = 
+    typecheckNode dag (NReduce op n1 n2) = 
       do 
-        nt <- typecheckNID dag n 
-        
+        nt1 <- typecheckNID dag n1 
+        nt2 <- typecheckNID dag n2
         -- Be more serious later. 
-        return $ decrRank nt 
+        return $ decrRank nt1 
         
     typecheckNode dag (NRotate n d) = 
       do 

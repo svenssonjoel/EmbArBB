@@ -26,7 +26,7 @@ data Node = NLit Literal
           | NIndex2 NodeID NodeID NodeID
           | NIndex3 NodeID NodeID NodeID NodeID
             
-          | NReduce Op NodeID
+          | NReduce Op NodeID NodeID
           
           | NRotate NodeID NodeID 
           | NRotateRev NodeID NodeID 
@@ -36,6 +36,7 @@ data Node = NLit Literal
             
           | NResIndex NodeID Int 
           | NCall FunctionName [NodeID] 
+          | NMap  FunctionName [NodeID]
           deriving (Eq,Show)
 
 type DAG = Map.Map NodeID Node
@@ -63,15 +64,16 @@ constructDAG (LLit l i) =
     let m' = Map.insert l (NLit i) m 
     put m'
     return l
-constructDAG (LReduce l op input) = do     
+constructDAG (LReduce l op input level) = do     
   m <- get 
   case Map.lookup l m  of 
     (Just nid) -> return l -- correct now ? 
     Nothing    -> 
       do 
         input' <- constructDAG input 
+        level' <- constructDAG level
         m' <- get 
-        let m'' = Map.insert l (NReduce op input') m'
+        let m'' = Map.insert l (NReduce op input' level') m'
         put m''
         return l
 constructDAG (LRotate l i1 i2) = do 

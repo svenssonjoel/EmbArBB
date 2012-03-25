@@ -61,7 +61,9 @@ data LExp = LLit Label Literal
           | LIndex3 Label LExp LExp LExp LExp 
 
             -- Operations on dense  
-          | LReduce Label Op LExp   -- Not all Ops are valid. 
+            
+            -- Reduce a level in a dense container
+          | LReduce Label Op LExp LExp   -- Not all Ops are valid. 
             
           | LRotate Label LExp LExp 
           | LRotateRev Label LExp LExp
@@ -74,6 +76,7 @@ data LExp = LLit Label Literal
           | LResIndex Label LExp Int 
             -- Function with correct name and type must exist in some kind of environment
           | LCall Label FunctionName [LExp]  
+          | LMap  Label FunctionName [LExp]   
           
           deriving (Show, Eq)
                    
@@ -120,7 +123,7 @@ getLabel (LSort l _ _) = l
 getLabel (LSortRank l _ _) = l 
 getLabel (LRotate l _ _) = l 
 getLabel (LRotateRev l _ _) = l
-getLabel (LReduce l _ _) = l
+getLabel (LReduce l _ _ _) = l
 getLabel (LIndex1 l _ _) = l 
 getLabel (LIndex0 l _) = l 
 getLabel (LUnOp l _ _) = l 

@@ -14,36 +14,48 @@ import Data.Word
 ---------------------------------------------------------------------------- 
 -- Reductions 
 
-addReduce :: Num a => Exp (DVector (():.t) a) -> Exp (DVector t a) 
-addReduce (E vec) = E $ LReduce (newLabel ()) Add vec
+-- | Reduce along level 0 
+addReduce0 :: Num a => Exp (DVector (():.t) a) -> Exp (DVector t a) 
+addReduce0 (E vec) = E $ LReduce (newLabel ()) Add vec (LLit (newLabel ()) (LitUSize (USize 0)))
 
-mulReduce :: Num a => Exp (DVector (():.t) a) -> Exp (DVector t a) 
-mulReduce (E vec) = E $ LReduce (newLabel ()) Mul vec
+-- | Reduce along level 0 
+mulReduce0 :: Num a => Exp (DVector (():.t) a) -> Exp (DVector t a) 
+mulReduce0 (E vec) = E $ LReduce (newLabel ()) Mul vec (LLit (newLabel ())(LitUSize (USize 0)))
+
+-- | reduce along a specified level 
+addReduce :: Num a => Exp (DVector (():.t) a) -> Exp USize -> Exp (DVector t a) 
+addReduce (E vec) (E lev) = E $ LReduce (newLabel ()) Add vec lev
+
+-- | reduce along a specified level 
+mulReduce :: Num a => Exp (DVector (():.t) a) -> Exp USize -> Exp (DVector t a) 
+mulReduce (E vec) (E lev) = E $ LReduce (newLabel ()) Mul vec lev
 
 
 ----------------------------------------------------------------------------
--- Rotate arrays (example:  [1,2,3] -> [2,3,1]) 
+-- | Rotate the contents of a dense container.
+-- Example: {1,2,3} -> {2,3,1}
 rotate :: Exp (DVector (():.t) a) -> Exp ISize -> Exp (DVector (():.t) a) 
 rotate (E vec) (E steps) = E $ LRotate (newLabel ()) vec steps  
 
+-- | Rotate the contents of a dense container in the reverse direction
+-- Example: {1,2,3} -> {3,1,2} 
 rotateRev :: Exp (DVector (():.t) a) -> Exp ISize -> Exp (DVector (():.t) a) 
 rotateRev (E vec) (E steps) = E $ LRotateRev (newLabel ()) vec steps  
 
-
+-- | Sort the contents of a dense 1D container. Also returns 
+-- a dense container of indices describing from where elements where moved
 sortRank :: Exp (Vector a) -> Exp USize -> Exp (Vector a, Vector USize) 
 sortRank (E vec) (E us@(LLit _ (LitUSize l)))  = E $ LSortRank (newLabel ()) vec us
 
 
 ----------------------------------------------------------------------------
--- Function calling 
-
+-- | Call an ArBB Function 
 call :: ArgList t => Function t (Exp r) -> t -> (Exp r) 
 call (Function nom) ins = E $ LCall (newLabel ()) nom (argList ins) 
 
--- TODO: Improve (types ???) but how !!
-resIndex :: Exp a -> Int -> Exp b 
-resIndex (E a) i = E $ LResIndex (newLabel ()) a i 
 
+----------------------------------------------------------------------------
+-- unpairing. 
 fstPair :: Exp (a,b) -> Exp a 
 fstPair (E a) = E $ LResIndex (newLabel ()) a 0 
 
