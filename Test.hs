@@ -131,8 +131,7 @@ test7 =
     liftIO$ putStrLn str
     
     -- execute f 
-    --(Vector dat n) <- execute2 f (v1 :- v2)
-    dat <-  execute2 f (v1 :- v2)
+    (Vector dat n) <- execute f (v1 :- v2)
     liftIO$ putStrLn$ show dat
 
 
