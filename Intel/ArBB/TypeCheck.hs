@@ -124,6 +124,14 @@ typecheckNID d n =
         nt2 <- typecheckNID dag n2
         -- Be more serious later. 
         return $ decrRank nt1 
+    typecheckNode dag (NScan op n1 n2 n3) = 
+      do 
+        nt1 <- typecheckNID dag n1 
+        nt2 <- typecheckNID dag n2
+        nt3 <- typecheckNID dag n3
+        -- Be more serious later. 
+        
+        return $ Just nt1 
         
     typecheckNode dag (NRotate n d) = 
       do 

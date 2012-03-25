@@ -30,6 +30,28 @@ addReduce (E vec) (E lev) = E $ LReduce (newLabel ()) Add vec lev
 mulReduce :: Num a => Exp (DVector (():.t) a) -> Exp USize -> Exp (DVector t a) 
 mulReduce (E vec) (E lev) = E $ LReduce (newLabel ()) Mul vec lev
 
+---------------------------------------------------------------------------- 
+-- Scans 
+
+-- | Scan across a specified level and direction over a dense container
+addScan :: Num a 
+           => (Exp (DVector t a)) 
+           -> Exp USize 
+           -> Exp USize 
+           -> Exp (DVector t a)
+addScan (E vec) (E dir) (E lev) = 
+  E $ LScan (newLabel ()) Add vec dir lev 
+
+-- | Scan across a specified level and direction over a dense container
+mulScan :: Num a 
+           => (Exp (DVector t a)) 
+           -> Exp USize 
+           -> Exp USize 
+           -> Exp (DVector t a)
+mulScan (E vec) (E dir) (E lev) = 
+  E $ LScan (newLabel ()) Mul vec dir lev 
+
+
 
 ----------------------------------------------------------------------------
 -- | Rotate the contents of a dense container.

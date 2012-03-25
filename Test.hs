@@ -164,8 +164,43 @@ testRotate =
   where 
     rot :: Exp (Vector Float) -> Exp (Vector Float) 
     rot v = rotate v 1 
+    
     rotRev :: Exp (Vector Float) -> Exp (Vector Float)
     rotRev v = rotateRev v 1 
+    
+
+
+
+----------------------------------------------------------------------------
+testScan = 
+  withArBB $  
+  do
+    f <- capture s1
+    g <- capture s2
+    
+    -- create input
+    let v1 = Vector (V.fromList [0..9::Float]) (One 10)
+        
+    str <- serialize f 
+    liftIO$ putStrLn str
+    
+    str <- serialize g 
+    liftIO$ putStrLn str
+    
+    -- execute f 
+    (Vector dat n) <- execute f v1
+    liftIO$ putStrLn$ "s1 " ++ show dat
+    
+    -- execute g 
+    (Vector dat n) <- execute g v1
+    liftIO$ putStrLn$ "s2 " ++ show dat
+    
+  where 
+    s1 :: Exp (Vector Float) -> Exp (Vector Float) 
+    s1 v = addScan v 0 0
+    
+    s2 :: Exp (Vector Float) -> Exp (Vector Float)
+    s2 v = addScan v 1 0 
     
 
 

@@ -100,7 +100,23 @@ genBody' dag nid typem funm is =
         -- memoize the computed var
         addNode thisNid [imm] 
         
-        lift$ VM.liftIO$ putStrLn "NReduce Add node" 
+        lift$ VM.liftIO$ putStrLn "NReduce node" 
+        return [imm]
+    genNode thisNid (NScan op n1 n2 n3) = 
+      do
+        
+        [t] <- getTypeOfNode thisNid typem
+        v1 <- genBody' dag n1 typem funm is 
+        v2 <- genBody' dag n2 typem funm is 
+        v3 <- genBody' dag n3 typem funm is 
+        
+        imm <- lift$ VM.createLocal_ t "imm"   -- st "res" 
+        lift$ VM.op_ (opToArBBScanOp op) [imm] (v1 ++ v2 ++ v3) 
+        
+        -- memoize the computed var
+        addNode thisNid [imm] 
+        
+        lift$ VM.liftIO$ putStrLn "NScan  node" 
         return [imm]
     genNode thisNid (NBinOp op n1 n2) = 
       do 
@@ -184,8 +200,15 @@ genLiteral (LitUSize (USize i)) = lift$ VM.usize_ i
 opToArBB Add = VM.ArbbOpAdd
 opToArBB Mul = VM.ArbbOpMul 
 opToArBB Sub = VM.ArbbOpSub
+-- TODO: go on
 
-    
+opToArBBReduceOp Add = VM.ArbbOpAddReduce
+opToArBBReduceOp Mul = VM.ArbbOpAddReduce
+-- TODO: go on     
+
+opToArBBScanOp Add = VM.ArbbOpAddScan
+opToArBBScanOp Mul = VM.ArbbOpAddScan
+-- TODO: go on     
 
 ----------------------------------------------------------------------------   
 -- 
@@ -227,6 +250,3 @@ toArBBType (Tuple (t:ts)) =
 
     
     
-opToArBBReduceOp Add = VM.ArbbOpAddReduce
-opToArBBReduceOp Mul = VM.ArbbOpAddReduce
--- TODO: go on 

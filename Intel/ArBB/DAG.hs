@@ -27,6 +27,7 @@ data Node = NLit Literal
           | NIndex3 NodeID NodeID NodeID NodeID
             
           | NReduce Op NodeID NodeID
+          | NScan   Op NodeID NodeID NodeID 
           
           | NRotate NodeID NodeID 
           | NRotateRev NodeID NodeID 
@@ -74,6 +75,19 @@ constructDAG (LReduce l op input level) = do
         level' <- constructDAG level
         m' <- get 
         let m'' = Map.insert l (NReduce op input' level') m'
+        put m''
+        return l
+constructDAG (LScan l op input dir level) = do     
+  m <- get 
+  case Map.lookup l m  of 
+    (Just nid) -> return l -- correct now ? 
+    Nothing    -> 
+      do 
+        input' <- constructDAG input 
+        dir'   <- constructDAG dir
+        level' <- constructDAG level
+        m' <- get 
+        let m'' = Map.insert l (NScan op input' dir' level') m'
         put m''
         return l
 constructDAG (LRotate l i1 i2) = do 

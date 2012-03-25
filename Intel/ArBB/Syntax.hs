@@ -64,6 +64,8 @@ data LExp = LLit Label Literal
             
             -- Reduce a level in a dense container
           | LReduce Label Op LExp LExp   -- Not all Ops are valid. 
+            -- Scan across a level and a given direction
+          | LScan Label Op LExp LExp LExp -- Not all Ops are valid.
             
           | LRotate Label LExp LExp 
           | LRotateRev Label LExp LExp
@@ -115,6 +117,15 @@ isReduceOp Ior = True
 isReduceOp Xor = True
 isReduceOp _   = False                    
    
+isScanOp Add = True 
+isScanOp Mul = True
+isScanOp Max = True
+isScanOp Min = True 
+isScanOp And = True
+isScanOp Ior = True 
+isScanOp Xor = True
+isScanOp _   = False                    
+
 ----------------------------------------------------------------------------                   
 -- 
 
