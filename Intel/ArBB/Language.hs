@@ -16,12 +16,14 @@ import Data.Word
 
 -- | Reduce along level 0 
 addReduce0 :: Num a => Exp (DVector (():.t) a) -> Exp (DVector t a) 
-addReduce0 (E vec) = E $ LReduce (newLabel ()) Add vec (LLit (newLabel ()) (LitUSize (USize 0)))
+addReduce0 (E vec) = E $ LReduce (newLabel ()) Add vec zero 
+  where (E zero) = 0 :: Exp USize
 
 -- | Reduce along level 0 
 mulReduce0 :: Num a => Exp (DVector (():.t) a) -> Exp (DVector t a) 
-mulReduce0 (E vec) = E $ LReduce (newLabel ()) Mul vec (LLit (newLabel ())(LitUSize (USize 0)))
-
+mulReduce0 (E vec) = E $ LReduce (newLabel ()) Mul vec zero
+  where (E zero) = 0 :: Exp USize
+                                                                             
 -- | reduce along a specified level 
 addReduce :: Num a => Exp (DVector (():.t) a) -> Exp USize -> Exp (DVector t a) 
 addReduce (E vec) (E lev) = E $ LReduce (newLabel ()) Add vec lev
@@ -67,8 +69,11 @@ rotateRev (E vec) (E steps) = E $ LRotateRev (newLabel ()) vec steps
 -- | Sort the contents of a dense 1D container. Also returns 
 -- a dense container of indices describing from where elements where moved
 sortRank :: Exp (Vector a) -> Exp USize -> Exp (Vector a, Vector USize) 
-sortRank (E vec) (E us@(LLit _ (LitUSize l)))  = E $ LSortRank (newLabel ()) vec us
+sortRank (E vec) (E us)  = E $ LSortRank (newLabel ()) vec us
 
+-- | Sort the contents of a dense 1D container. 
+sort :: Exp (Vector a) -> Exp USize -> Exp (Vector a) 
+sort (E vec) (E us) = E $ LSort (newLabel ()) vec us 
 
 ----------------------------------------------------------------------------
 -- | Call an ArBB Function 
@@ -89,7 +94,7 @@ sndPair (E a) = E $ LResIndex (newLabel ()) a 1
 -- instances 
 
 instance Show (Exp a) where 
-  show _ = "expr"
+  show (E a) = show a
 
 instance Eq (Exp a) where 
   (==) = undefined -- compare labels here

@@ -65,3 +65,4 @@ instance IsScalar a => Embeddable (DVector Dim3 a) where
   typeOf _ = Dense III base 
     where 
       (Scalar base) = scalarType (undefined :: a) 
+

@@ -109,7 +109,7 @@ test6 =
     f <- capture getRanks
     
     -- create input
-    let v1 = Vector (V.fromList [1,2,3,4::Float]) (One 4)
+    let v1 = Vector (V.fromList [4,3,2,1::Float]) (One 4)
     
     --str <- serialize f 
     --liftIO$ putStrLn str
@@ -131,7 +131,8 @@ test7 =
     liftIO$ putStrLn str
     
     -- execute f 
-    (Vector dat n) <- execute f (v1 :- v2)
+    --(Vector dat n) <- execute2 f (v1 :- v2)
+    dat <-  execute2 f (v1 :- v2)
     liftIO$ putStrLn$ show dat
 
 
