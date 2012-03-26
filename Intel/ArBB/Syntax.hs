@@ -33,6 +33,8 @@ newLabel () = unsafePerformIO $ do
 data Literal = LitInt8   Int8  
              | LitInt16  Int16
              | LitInt32  Int32
+             | LitWord8  Word8
+             | LitWord16 Word16
              | LitWord32 Word32 
              | LitFloat  Float 
                

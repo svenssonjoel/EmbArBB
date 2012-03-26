@@ -10,6 +10,7 @@ import Intel.ArBB.Data.Int
 
 import Data.Int
 import Data.Word
+import Data.Bits
 
 ---------------------------------------------------------------------------- 
 -- Reductions 
@@ -125,6 +126,16 @@ instance Num (Exp Float) where
   
   fromInteger a = E $ LLit (newLabel ()) $ LitFloat $ fromInteger a
 
+instance Num (Exp Word8) where 
+  (+) (E a) (E b) = E $ LBinOp (newLabel ()) Add a b
+  (*) (E a) (E b) = E $ LBinOp (newLabel ()) Mul a b
+  (-) (E a) (E b) = E $ LBinOp (newLabel ()) Sub a b
+
+  abs = undefined 
+  signum = undefined 
+  
+  fromInteger a = E $ LLit (newLabel ()) $ LitWord8 $ fromInteger a
+
 
 instance Num (Exp Word32) where 
   (+) (E a) (E b) = E $ LBinOp (newLabel ()) Add a b
@@ -169,3 +180,26 @@ instance Num a => Num (Exp (DVector t a)) where
   signum = undefined 
   
   fromInteger = undefined 
+  
+  
+----------------------------------------------------------------------------
+--Minimal complete definition: .&., .|., xor, 
+-- complement, (shift or (shiftL and shiftR)),  
+-- (rotate or (rotateL and rotateR)), 
+-- bitSize and isSigned.
+
+
+instance Bits (Exp Int32) where  
+  (.&.) (E a) (E b) = E $ LBinOp (newLabel ()) Bit_and a b
+  (.|.) (E a) (E b) = E $ LBinOp (newLabel ()) Bit_or a b
+  xor (E a) (E b) = E $ LBinOp (newLabel ()) Bit_xor a b
+  
+  shiftL (E a) b = E $ LBinOp (newLabel ()) Lsh a dist
+   where 
+     (E dist) = fromIntegral b :: (Exp Word8)   
+  shiftR (E a) b = E $ LBinOp (newLabel ()) Rsh a dist
+   where 
+     (E dist) = fromIntegral b :: (Exp Word8)      
+  complement (E a) = E $ LUnOp (newLabel ()) Bit_not a
+  bitSize _ = 32   
+  isSigned _ = True 

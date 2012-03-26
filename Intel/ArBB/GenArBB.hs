@@ -134,6 +134,20 @@ genBody' dag nid typem funm is =
         
         lift$ VM.liftIO$ putStrLn "BinOp node" 
         return [imm]
+    genNode thisNid (NUnOp op n1) = 
+      do 
+        v1 <- genBody' dag n1 typem funm is 
+        
+        [t] <- getTypeOfNode thisNid typem
+        
+        imm <- lift $ VM.createLocal_ t "imm" 
+        lift$ VM.op_ (opToArBB op) [imm] v1 
+        
+        -- memoize the computed var
+        addNode thisNid [imm] 
+        
+        lift$ VM.liftIO$ putStrLn "UnOp node" 
+        return [imm]
     genNode thisNid (NRotate n1 n2) = 
       do 
         v1 <- genBody' dag n1 typem funm is 
@@ -205,15 +219,76 @@ genLiteral (LitUSize (USize i)) = lift$ VM.usize_ i
 opToArBB Add = VM.ArbbOpAdd
 opToArBB Mul = VM.ArbbOpMul 
 opToArBB Sub = VM.ArbbOpSub
+opToArBB Min = VM.ArbbOpMin
+opToArBB Max = VM.ArbbOpMax
+-- opToArBB And = VM.ArbbOpAnd
+-- opToArBB Ior = VM.ArbbOpIor
+-- opToArBB Xor = VM.ArbbOpXor
+-- opToArBB Abs = VM.ArbbOpAbs
+opToArBB Acos = VM.ArbbOpAcos
+opToArBB Asin = VM.ArbbOpAsin
+opToArBB Atan = VM.ArbbOpAtan
+opToArBB Ceil = VM.ArbbOpCeil
+opToArBB Cos = VM.ArbbOpCos
+opToArBB Cosh = VM.ArbbOpCosh
+opToArBB Exp = VM.ArbbOpExp
+opToArBB Exp10 = VM.ArbbOpExp10
+opToArBB Floor = VM.ArbbOpFloor
+opToArBB Ln  = VM.ArbbOpLn
+opToArBB Log10 = VM.ArbbOpLog10
+opToArBB Log_not = VM.ArbbOpLogNot
+opToArBB Bit_not = VM.ArbbOpBitNot
+opToArBB Rcp = VM.ArbbOpRcp
+opToArBB Round = VM.ArbbOpRound
+opToArBB Rsqrt = VM.ArbbOpRsqrt
+opToArBB Sin  = VM.ArbbOpSin
+opToArBB Sinh = VM.ArbbOpSinh
+opToArBB Sqrt = VM.ArbbOpSqrt
+opToArBB Tan = VM.ArbbOpTan
+opToArBB Tanh = VM.ArbbOpTanh
+opToArBB Neg = VM.ArbbOpNeg
+opToArBB Bit_and  = VM.ArbbOpBitAnd
+opToArBB Atan2 = VM.ArbbOpAtan2
+opToArBB Compare = VM.ArbbOpCompare
+opToArBB Equal = VM.ArbbOpEqual
+opToArBB Geq = VM.ArbbOpGeq
+opToArBB Bit_or = VM.ArbbOpBitOr
+opToArBB Leq = VM.ArbbOpLeq
+opToArBB Less = VM.ArbbOpLess
+opToArBB Log_and = VM.ArbbOpLogAnd
+opToArBB Log_or = VM.ArbbOpLogOr
+opToArBB Lsh = VM.ArbbOpLsh
+opToArBB Mod = VM.ArbbOpMod
+opToArBB Neq = VM.ArbbOpNeq
+opToArBB Pow = VM.ArbbOpPow
+opToArBB Rsh = VM.ArbbOpRsh
+opToArBB Bit_xor = VM.ArbbOpBitXor
+opToArBB Select = VM.ArbbOpSelect
+
+
+
+
+
 -- TODO: go on
 
 opToArBBReduceOp Add = VM.ArbbOpAddReduce
-opToArBBReduceOp Mul = VM.ArbbOpAddReduce
--- TODO: go on     
+opToArBBReduceOp Mul = VM.ArbbOpMulReduce
+opToArBBReduceOp Max = VM.ArbbOpMaxReduce
+opToArBBReduceOp Min = VM.ArbbOpMinReduce
+opToArBBReduceOp And = VM.ArbbOpMinReduce
+opToArBBReduceOp Ior = VM.ArbbOpIorReduce
+opToArBBReduceOp Xor = VM.ArbbOpXorReduce
+
 
 opToArBBScanOp Add = VM.ArbbOpAddScan
-opToArBBScanOp Mul = VM.ArbbOpAddScan
--- TODO: go on     
+opToArBBScanOp Mul = VM.ArbbOpMulScan
+opToArBBScanOp Max = VM.ArbbOpMaxScan
+opToArBBScanOp Min = VM.ArbbOpMinScan
+opToArBBScanOp And = VM.ArbbOpMinScan
+opToArBBScanOp Ior = VM.ArbbOpIorScan
+opToArBBScanOp Xor = VM.ArbbOpXorScan
+
+
 
 ----------------------------------------------------------------------------   
 -- 
