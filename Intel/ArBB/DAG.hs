@@ -161,5 +161,16 @@ constructDAG (LResIndex l e i) = do
         let m'' = Map.insert l (NResIndex e' i) m' 
         put m''
         return l    
+constructDAG (LIndex0 l e) = do 
+  m <- get 
+  case Map.lookup l m of 
+    (Just nid) -> return l 
+    Nothing -> 
+      do 
+        e' <- constructDAG e 
+        m' <- get
+        let m'' = Map.insert l (NIndex0 e') m' 
+        put m''
+        return l    
 
       

@@ -32,6 +32,12 @@ addReduce (E vec) (E lev) = E $ LReduce (newLabel ()) Add vec lev
 mulReduce :: Num a => Exp (DVector (():.t) a) -> Exp USize -> Exp (DVector t a) 
 mulReduce (E vec) (E lev) = E $ LReduce (newLabel ()) Mul vec lev
 
+----------------------------------------------------------------------------
+
+-- | zero dimensional vector to scalar
+index0 :: Exp (DVector () a) -> Exp a 
+index0 (E vec) = E $ LIndex0 (newLabel ()) vec 
+
 ---------------------------------------------------------------------------- 
 -- Scans 
 

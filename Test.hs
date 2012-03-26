@@ -49,8 +49,8 @@ crossProd3D v1 v2 = lprods - rprods
     lprods = v1' * v2' 
     rprods = v1'' * v2'' 
     
-dotProd :: Exp (Vector Float) -> Exp (Vector Float) -> Exp (Scalar Float) 
-dotProd v1 v2 = addReduce0 (v1 * v2)
+dotProd :: Exp (Vector Float) -> Exp (Vector Float) -> Exp Float
+dotProd v1 v2 = index0$ addReduce0 (v1 * v2)
     
 -- Experiment: call a named function 
 --callCP3D :: Exp (Vector Float) -> Exp (Vector Float) -> Exp (Vector Float) 
@@ -131,7 +131,7 @@ test7 =
     liftIO$ putStrLn str
     
     -- execute f 
-    (Vector dat n) <- execute f (v1 :- v2)
+    dat <- execute f (v1 :- v2)
     liftIO$ putStrLn$ show dat
 
 

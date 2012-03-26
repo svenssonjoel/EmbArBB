@@ -180,7 +180,12 @@ genBody' dag nid typem funm is =
       do 
         vs <- genBody' dag n typem funm is 
         return$ [vs !! i]
-        
+    genNode thisNid (NIndex0 n) = 
+      do 
+        vs <- genBody' dag n typem funm is 
+        return$ vs
+     
+    
         
         
 
