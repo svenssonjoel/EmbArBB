@@ -22,3 +22,5 @@ instance Embeddable Word32 where
 instance Embeddable Float where 
   typeOf _ = Scalar VM.ArbbF32 
   
+instance Embeddable Double where 
+  typeOf _ = Scalar VM.ArbbF64 

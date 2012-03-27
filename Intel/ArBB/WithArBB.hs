@@ -102,13 +102,13 @@ instance (Embeddable (DVector t b) , ArBBIO a,
 
             liftVM$ VM.execute_ f [y] ins
          
-            r@(Vector _ res') <- arbbDLoad y
+            r@(Vector _ res') <- arbbDLoad [y]
                   
             return r
           
   
 instance (ArBBIO a, 
-          Num b, IsScalar b, V.Storable b) => Executable a b where 
+          ArBBIO b) => Executable a b where 
   execute (Function fn) inputs  = 
     do 
       (m,_) <- get 
@@ -117,28 +117,66 @@ instance (ArBBIO a,
         (Just f) -> 
           do 
             ins <- arbbULoad inputs 
+            -- [t] <- liftVM$ toArBBType (typeOf (undefined :: b))
           
-            let (Scalar t) = scalarType (undefined :: b)
-            st <- liftVM$ VM.getScalarType_ t
-      
-            g  <- liftVM$ VM.createGlobal_nobind_ st "res" --st "res" 
-            y  <- liftVM$ VM.variableFromGlobal_ g
+            ys  <- arbbOutVars (undefined :: b)
+            -- g  <- liftVM$ VM.createGlobal_nobind_ t "res" --st "res" 
+            -- y  <- liftVM$ VM.variableFromGlobal_ g
 
-            liftVM$ VM.execute_ f [y] ins
+            liftVM$ VM.execute_ f ys ins
          
-            result <- liftVM$ VM.readScalar_ y
+            result <- arbbDLoad  ys
             
             return result
 
-          
 class ArBBIO a where 
   arbbULoad :: a -> ArBB [VM.Variable]
   -- TODO: look at again when supporting multiple outputs 
-  arbbDLoad :: VM.Variable -> ArBB a         
+  arbbDLoad :: [VM.Variable] -> ArBB a         
+  
+  arbbOutVars :: a -> ArBB [VM.Variable]
 
   
 ---------------------------------------------------------------------------- 
 -- Base
+  
+-- Scalars
+instance ArBBIO Float where 
+  arbbULoad a = liftM (:[]) $ liftVM$ VM.float32_ a
+  arbbDLoad [v] = liftVM$ VM.readScalar_ v 
+  arbbOutVars a = 
+    do 
+       [t] <- liftVM$ toArBBType (typeOf (undefined :: Float))
+            
+       g  <- liftVM$ VM.createGlobal_nobind_ t "res" --st "res" 
+       y  <- liftVM$ VM.variableFromGlobal_ g
+       return [y]
+
+
+instance ArBBIO Double where 
+  arbbULoad a = liftM (:[]) $ liftVM$ VM.float64_ a
+  arbbDLoad [v] = liftVM$ VM.readScalar_ v 
+  arbbOutVars a = 
+    do 
+       [t] <- liftVM$ toArBBType (typeOf (undefined :: Double))
+            
+       g  <- liftVM$ VM.createGlobal_nobind_ t "res" --st "res" 
+       y  <- liftVM$ VM.variableFromGlobal_ g
+       return [y]
+
+
+instance ArBBIO Int32 where 
+  arbbULoad a = liftM (:[]) $ liftVM$ VM.int32_ a
+  arbbDLoad [v] = liftVM$ VM.readScalar_ v 
+  arbbOutVars a = 
+    do 
+       [t] <- liftVM$ toArBBType (typeOf (undefined :: Int32))
+            
+       g  <- liftVM$ VM.createGlobal_nobind_ t "res" --st "res" 
+       y  <- liftVM$ VM.variableFromGlobal_ g
+       return [y]
+
+-- Vectors 
 instance (V.Storable a, IsScalar a) => ArBBIO (Vector a) where 
   arbbULoad (Vector dat (One n)) = 
     do 
@@ -153,7 +191,7 @@ instance (V.Storable a, IsScalar a) => ArBBIO (Vector a) where
       vin <- liftVM$ VM.variableFromGlobal_ gin
       
       return$ [vin]
-  arbbDLoad v = 
+  arbbDLoad [v] = 
     do 
       [st] <- liftVM$ toArBBType (scalarType (undefined :: a)) 
       dt <- liftVM$ VM.getDenseType_ st 1 
@@ -173,15 +211,30 @@ instance (V.Storable a, IsScalar a) => ArBBIO (Vector a) where
       dat <- liftIO$ peekArray (fromIntegral n) (castPtr ptr) 
       
       return$ Vector (V.fromList dat) (One (fromIntegral n))
+  arbbOutVars a = 
+    do 
+       [t] <- liftVM$ toArBBType (scalarType (undefined :: a))
+       st <- liftVM$ VM.getDenseType_ t 1 
+            
+       g  <- liftVM$ VM.createGlobal_nobind_ st "res" 
+       y  <- liftVM$ VM.variableFromGlobal_ g
+       return [y]
   
 instance (Num a, V.Storable a, IsScalar a) => ArBBIO (DVector Dim0 a) where 
   arbbULoad (Vector dat Zero) = error "upload: not yet supported" -- undefined
        -- This should be simple
-  arbbDLoad v = 
+  arbbDLoad [v] = 
     do 
       n  <- liftVM$ VM.readScalar_ v  
                     
       return$ Vector (V.fromList [n]) Zero
+  arbbOutVars a = 
+    do 
+       [t] <- liftVM$ toArBBType (scalarType (undefined :: a))
+            
+       g  <- liftVM$ VM.createGlobal_nobind_ t "res" --st "res" 
+       y  <- liftVM$ VM.variableFromGlobal_ g
+       return [y]
 
 ----------------------------------------------------------------------------
 -- recurse 
@@ -193,4 +246,23 @@ instance (ArBBIO a, ArBBIO b) => ArBBIO (a :- b) where
       return $ (v:vs) 
   arbbDLoad v = error "not supported" 
 
-
+----------------------------------------------------------------------------
+-- Tuples 
+instance (ArBBIO a, ArBBIO b) => ArBBIO (a,b) where 
+  arbbULoad (a,b) = 
+    do 
+      v1 <- arbbULoad a 
+      v2 <- arbbULoad b 
+      return $ v1 ++ v2
+  arbbDLoad [a,b] = 
+    do 
+      v1 <- arbbDLoad [a]
+      v2 <- arbbDLoad [b] 
+      
+      return (v1,v2)
+  arbbOutVars (a,b) = 
+    do 
+       v1 <- arbbOutVars a 
+       v2 <- arbbOutVars b 
+       
+       return$ v1++v2
