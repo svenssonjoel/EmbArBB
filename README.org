@@ -5,16 +5,11 @@
 
 * Status 
   + Generates ArBB functions from functions in the embedded language. 
-  + A subset of ArBB functionality is implemented. 
-
-* Problems
-  + Right now there are two kinds of Scalars. 
-    Exp a and Exp (DVector Dim0 a) (for scalar a).
-    Should there be only one ? If so, then Exp (DVector Dim0 a) will be the one. 
 
 * TODOs 
   + Add functionality (cover as many as possible of the ops supported by ArBB) 
-  + Figure out how to capture functions with many outputs. 
+  + (PARTIALLY DONE): Figure out how to capture functions with many outputs. 
+  + Figure out how to support functions with many outputs in a more robust way.
     
 * Notes
   + ArBB Supplies the operations Rotate and RotateRev to the programmer. It seems 
