@@ -24,3 +24,7 @@ instance Embeddable Float where
   
 instance Embeddable Double where 
   typeOf _ = Scalar VM.ArbbF64 
+
+instance (Embeddable a, Embeddable b) => Embeddable (a,b)  where 
+  typeOf (a,b) = Tuple [typeOf a,typeOf b]
+  

@@ -244,7 +244,8 @@ instance (ArBBIO a, ArBBIO b) => ArBBIO (a :- b) where
       [v] <- arbbULoad a1   -- correct? 
       vs  <- arbbULoad rest  
       return $ (v:vs) 
-  arbbDLoad v = error "not supported" 
+  arbbDLoad v = error "arbbDLoad: not supported" 
+  arbbOutVars _ = error "arbbOutVars: not supported" 
 
 ----------------------------------------------------------------------------
 -- Tuples 

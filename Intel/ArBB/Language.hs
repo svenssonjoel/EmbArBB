@@ -75,8 +75,9 @@ rotateRev (E vec) (E steps) = E $ LRotateRev (newLabel ()) vec steps
 
 -- | Sort the contents of a dense 1D container. Also returns 
 -- a dense container of indices describing from where elements where moved
-sortRank :: Exp (Vector a) -> Exp USize -> Exp (Vector a, Vector USize) 
-sortRank (E vec) (E us)  = E $ LSortRank (newLabel ()) vec us
+sortRank :: Exp (Vector a) -> Exp USize -> (Exp (Vector a), Exp (Vector USize)) 
+sortRank (E vec) (E us)  = (fstPair s, sndPair s)
+  where s = E $ LSortRank (newLabel ()) vec us
 
 -- | Sort the contents of a dense 1D container. 
 sort :: Exp (Vector a) -> Exp USize -> Exp (Vector a) 

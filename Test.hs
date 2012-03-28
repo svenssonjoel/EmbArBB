@@ -59,10 +59,11 @@ dotProd v1 v2 = index0$ addReduce0 (v1 * v2)
 ---------------------------------------------------------------------------- 
 -- getRanks 
 getRanks :: Exp (Vector Float) -> Exp (Vector USize) 
-getRanks v1 = sndPair (sortRank v1 0) 
+getRanks v1 = snd (sortRank v1 0) 
 
-getBoth :: Exp (Vector Float) -> Exp (Vector Float, Vector USize) 
+getBoth :: Exp (Vector Float) -> (Exp (Vector Float), Exp (Vector USize)) 
 getBoth v1 = sortRank v1 0 
+        
 
 ----------------------------------------------------------------------------
 -- Small tests 
@@ -122,7 +123,7 @@ test6 =
     liftIO$ putStrLn$ show dat
     
     
-{- 
+
 test6' = 
   withArBB $  
   do
@@ -130,14 +131,14 @@ test6' =
     
     -- create input
     let v1 = Vector (V.fromList [4,3,2,1::Float]) (One 4)
-    
-    --str <- serialize f 
-    --liftIO$ putStrLn str
+
+    str <- serialize f 
+    liftIO$ putStrLn str
     
     -- execute f 
-    ((Vector dat n),Vector ranks n2) <- execute f v1
-    liftIO$ putStrLn$ show dat  ++ " " ++ show ranks   
--} 
+    --((Vector dat n),Vector ranks n2) <- execute f v1
+    --liftIO$ putStrLn$ show dat  ++ " " ++ show ranks   
+ 
    
 test7 = 
   withArBB $  

@@ -48,6 +48,14 @@ type DAG = Map.Map NodeID Node
 type DAGMaker a = State DAG a  
              
 runDAGMaker lexpr = runState lexpr Map.empty
+
+accmDAGMaker xs = doAccm xs Map.empty 
+  where 
+    doAccm [] m = ([],m)
+    doAccm (x:xs) m = let (x',m'') = runState (constructDAG x) m'
+                          (xs',m') = doAccm xs m
+                      in (x':xs',m'')
+      
     
 ----------------------------------------------------------------------------
 -- construct DAG

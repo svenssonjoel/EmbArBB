@@ -32,27 +32,36 @@ capture f =
   do  
     fn <- getFunName 
     let ((e,tins,touts),(_,vt))    = runState (emb f) (0,Map.empty) 
-        (nid,dag) = runDAGMaker (constructDAG e) 
-        tc        = typecheckDAG dag vt
+        (nids,dag) = accmDAGMaker e -- runDAGMaker (constructDAG e) 
+        tc         = typecheckDAG dag vt
         --  Now I should have all parts needed to generate the function.
-    
+    liftIO$ putStrLn "hello world"
     -- liftIO$ putStrLn$ show dag 
     -- liftIO$ putStrLn$ show tc
     -- liftIO$ putStrLn$ show tins
     -- liftIO$ putStrLn$ show touts
-    arbbOuts <- liftVM$ mapM toArBBType touts
     arbbIns  <- liftVM$ mapM toArBBType tins 
+    liftIO$ putStrLn $ show touts
+    arbbOuts <- liftVM$ mapM toArBBType touts
     
+    
+    
+    liftIO$ putStrLn "hello world"
     (funMap,_) <- get
     fd <- liftVM$ VM.funDef_ fn (concat arbbOuts) (concat arbbIns) $ \ os is -> 
       do 
-        v <- genBody dag nid tc funMap is
-        -- CHEATING! try to make it work for real 
-        VM.copy_ (head os) (head v)  
+        vs <- accmBody dag nids tc funMap is 
+        
+        copyAll os vs 
 
     addFunction fn fd                                                          
     return $ embFun fn f            
     
+copyAll [] [] = return ()    
+copyAll (x:xs) (y:ys) = 
+  do 
+    VM.copy_ x y  
+    copyAll xs ys 
     
 embFun :: EmbFun a b => String -> (a -> b) -> Function (InType a b) (OutType b) 
 embFun name f = Function name 
@@ -62,6 +71,7 @@ embFun name f = Function name
         
 
 type VarGenerator a = State (Integer,VarType) a 
+
 getVar :: VarGenerator Variable
 getVar = do 
   (i,m) <- get 
@@ -83,7 +93,7 @@ class EmbFun a b where
   type InType a b
   type OutType b 
   
-  emb :: (a -> b) -> VarGenerator (LExp, IOs, IOs) 
+  emb :: (a -> b) -> VarGenerator ([LExp], IOs, IOs) 
   
   
 -- TODO: What is a good way to make this work with many outputs
@@ -98,9 +108,23 @@ instance (Embeddable b, Embeddable a) => EmbFun (Exp a) (Exp b) where
         t_in = typeOf (undefined :: a) 
         t_out = typeOf (undefined :: b)
     addType v t_in
-    return (e,[t_in],[t_out])
+    return ([e],[t_in],[t_out])
  
-    
+instance (Embeddable b,Embeddable c,  Embeddable a) => EmbFun (Exp a) (Exp b, Exp c) where 
+  type InType (Exp a) (Exp b,Exp c)  = a 
+  type OutType (Exp b,Exp c) = (b,c)
+  
+  emb f = do 
+    v <- getVar 
+    let myVar = E (LVar (newLabel ()) v)
+        (E e1,E e2) = f myVar
+        t_in = typeOf (undefined :: a) 
+        t_out1 = typeOf (undefined :: b)
+        t_out2 = typeOf (undefined :: c) 
+    addType v t_in
+    return ([e1,e2],[t_in],[t_out1,t_out2])
+   
+  
 instance (Embeddable a, EmbFun c d) => EmbFun (Exp a) (c -> d) where 
   type InType (Exp a) (c -> d) = (a :- InType c d) 
   type OutType (c -> d) = OutType d
@@ -112,4 +136,6 @@ instance (Embeddable a, EmbFun c d) => EmbFun (Exp a) (c -> d) where
     addType v t_in 
     (exp,ins,outs) <- emb (f (myVar)) 
     return (exp, t_in:ins, outs)
+  
+  
   

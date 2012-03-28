@@ -33,6 +33,23 @@ genBody :: DAG
            -> VM.EmitArbb [VM.Variable] 
 genBody dag nid typem funm is = evalStateT (genBody' dag nid typem funm is) (Map.empty) 
 
+accmBody :: DAG
+            -> [NodeID] 
+            -> NodeIDType 
+            -> (Map.Map FunctionName VM.ConvFunction)
+            -> [VM.Variable] 
+            -> VM.EmitArbb [VM.Variable]
+accmBody dag nids typem funm is = liftM fst $ doBody nids (Map.empty) 
+
+  where 
+    doBody ::[NodeID] -> (Map.Map NodeID [VM.Variable]) -> VM.EmitArbb ([VM.Variable],(Map.Map NodeID [VM.Variable]))
+    doBody [] m = return ([],m) 
+    doBody (x:xs) m =
+      do 
+          (vs,m') <- runStateT (genBody' dag x typem funm is) m
+          (vss,m'') <- doBody xs m'
+          return (vs++vss,m'')
+
 ----------------------------------------------------------------------------
 -- Helpers 
 visited :: NodeID -> Gen (Maybe [VM.Variable]) 
