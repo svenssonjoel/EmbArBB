@@ -99,6 +99,8 @@ instance EmbeddableExp b => EmbFun () (Exp b) where
         t_out = typeOfExp exp
     return ([e],[],[t_out])
   
+  
+-- TODO: Embeddable or EmbeddableExp ???   
 instance (EmbeddableExp b, Embeddable b, Embeddable a) => EmbFun (Exp a) (Exp b) where 
   type InType (Exp a) (Exp b)  = a 
   type OutType (Exp b) = b

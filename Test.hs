@@ -69,6 +69,13 @@ getBoth' v1 = sortRank' v1 0
 
 
 ----------------------------------------------------------------------------
+-- test reduce 2D to 1D 
+
+red :: Exp (DVector Dim2 Int32) -> Exp (Vector Int32) 
+red v1 = addReduce0 v1
+ 
+
+----------------------------------------------------------------------------
 -- Small tests 
 test1 = withArBB $ capture t1
 test2 = withArBB $ capture t2 
@@ -241,5 +248,21 @@ testScan =
     s2 :: Exp (Vector Float) -> Exp (Vector Float)
     s2 v = addScan v 1 0 
     
+    
+testReduce = 
+  withArBB $  
+  do
+    f <- capture red
+ 
+    -- create input
+    let v1 = Vector (V.fromList [0..9::Int32]) (Two 5 2)
+        
+    str <- serialize f 
+    liftIO$ putStrLn str
+    -- execute f 
+    (Vector dat n) <- execute f v1
+    liftIO$ putStrLn$ show dat
+    
+
 
 
