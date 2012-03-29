@@ -35,12 +35,12 @@ import Intel.ArBB.Embeddable
 ----------------------------------------------------------------------------
 -- ArBB Monad 
 
-type ArBBState = (Map.Map FunctionName VM.ConvFunction, Integer)
+type ArBBState = (Map.Map FunctionName (VM.ConvFunction, [Type], [Type]) , Integer)
                             
-addFunction :: FunctionName -> VM.ConvFunction -> ArBB () 
-addFunction nom cf = do 
+addFunction :: FunctionName -> VM.ConvFunction -> [Type] -> [Type] -> ArBB () 
+addFunction nom cf tins touts = do 
   (m,i) <- get 
-  let m' = Map.insert nom cf m 
+  let m' = Map.insert nom (cf,tins,touts)  m 
   put (m',i) 
 
 getFunName :: ArBB FunctionName
@@ -72,7 +72,7 @@ serialize (Function fn)  =
     (m,_) <- get 
     case Map.lookup fn m of 
       Nothing -> error "serialize: Invalid function" 
-      (Just f) ->  
+      (Just (f,tins,touts)) ->  
         do 
           str <- liftVM$ VM.serializeFunction_ f 
           return (VM.getCString str)
@@ -83,6 +83,7 @@ serialize (Function fn)  =
 class Executable a b where           
   execute :: Function a b -> a -> ArBB b 
   
+{- 
 instance (Embeddable (DVector t b) , ArBBIO a,  
           ArBBIO (DVector t b), 
           IsScalar b, V.Storable b) => Executable a (DVector t b) where  
@@ -105,7 +106,7 @@ instance (Embeddable (DVector t b) , ArBBIO a,
             r@(Vector _ res') <- arbbDLoad [y]
                   
             return r
-          
+-}           
   
 instance (ArBBIO a, 
           ArBBIO b) => Executable a b where 
@@ -114,12 +115,13 @@ instance (ArBBIO a,
       (m,_) <- get 
       case Map.lookup fn m of 
         Nothing -> error "execute: Invalid function" 
-        (Just f) -> 
+        (Just (f,tins,touts)) -> 
           do 
             ins <- arbbULoad inputs 
             -- [t] <- liftVM$ toArBBType (typeOf (undefined :: b))
-          
-            ys  <- arbbOutVars (undefined :: b)
+            
+            ys <- arbbOutVarsFromTypes touts
+            -- ys  <- arbbOutVars (undefined :: b)
             -- g  <- liftVM$ VM.createGlobal_nobind_ t "res" --st "res" 
             -- y  <- liftVM$ VM.variableFromGlobal_ g
 
@@ -129,6 +131,20 @@ instance (ArBBIO a,
             
             return result
 
+arbbOutVarsFromTypes :: [Type] -> ArBB [VM.Variable] 
+arbbOutVarsFromTypes [] = return []
+arbbOutVarsFromTypes (t:ts) = 
+  do 
+    [t1',t2'] <- liftVM$ toArBBType t
+    -- TODO: THIS IS SKETCHY AND WRONG
+    g1 <- liftVM$ VM.createGlobal_nobind_ t1' "res"
+    y1 <- liftVM$ VM.variableFromGlobal_ g1
+    g2 <- liftVM$ VM.createGlobal_nobind_ t2' "res"
+    y2 <- liftVM$ VM.variableFromGlobal_ g2
+   
+    ys <- arbbOutVarsFromTypes ts
+    return (y1 :y2 : ys)
+    
 class ArBBIO a where 
   arbbULoad :: a -> ArBB [VM.Variable]
   -- TODO: look at again when supporting multiple outputs 

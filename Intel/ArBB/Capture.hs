@@ -3,6 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables, 
              MultiParamTypeClasses,
              FlexibleInstances,
+             FlexibleContexts,
              TypeFamilies,
              TypeOperators #-}
 
@@ -36,14 +37,8 @@ capture f =
         (nids,dag) = accmDAGMaker e -- runDAGMaker (constructDAG e) 
         tc         = typecheckDAG dag vt
         --  Now I should have all parts needed to generate the function.
-    --liftIO$ putStrLn$ show dag 
-    --liftIO$ putStrLn$ show tc
-    liftIO$ putStrLn $ show tins
-    arbbIns  <- liftVM$ mapM toArBBType tins 
-    liftIO$ putStrLn "TOUTS"
-    liftIO$ putStrLn $ show touts
-    liftIO$ putStrLn "TOUTS"
     
+    arbbIns  <- liftVM$ mapM toArBBType tins 
     arbbOuts <- liftVM$ mapM toArBBType touts
     
     (funMap,_) <- get
@@ -53,7 +48,7 @@ capture f =
         
         copyAll os vs 
 
-    addFunction fn fd                                                          
+    addFunction fn fd tins touts                                                         
     return $ embFun fn f            
     
 copyAll [] [] = return ()    
@@ -95,6 +90,15 @@ class EmbFun a b where
   emb :: (a -> b) -> VarGenerator ([LExp], IOs, IOs) 
   
 -- TODO: What is a good way to make this work with many outputs
+instance EmbeddableExp b => EmbFun () (Exp b) where
+  type InType () (Exp b)  = () 
+  type OutType (Exp b) = b
+  
+  emb f = do 
+    let exp@(E e) = f ()
+        t_out = typeOfExp exp
+    return ([e],[],[t_out])
+  
 instance (EmbeddableExp b, Embeddable b, Embeddable a) => EmbFun (Exp a) (Exp b) where 
   type InType (Exp a) (Exp b)  = a 
   type OutType (Exp b) = b
@@ -106,7 +110,9 @@ instance (EmbeddableExp b, Embeddable b, Embeddable a) => EmbFun (Exp a) (Exp b)
         t_in = typeOf (undefined :: a) 
         t_out = typeOfExp exp --  (undefined :: b)
     addType v t_in
-    return ([e],[t_in],[t_out])
+    return ([e],[t_in],[t_out]) 
+    
+    
  
 instance (Embeddable b,Embeddable c, Embeddable a) => EmbFun (Exp a) (Exp b, Exp c) where 
   type InType (Exp a) (Exp b,Exp c)  = a 

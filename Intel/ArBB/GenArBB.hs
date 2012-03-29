@@ -28,7 +28,7 @@ type Gen a = StateT (Map.Map NodeID [VM.Variable]) VM.EmitArbb a
 genBody :: DAG 
            -> NodeID 
            -> NodeIDType 
-           -> (Map.Map FunctionName VM.ConvFunction) 
+           -> (Map.Map FunctionName (VM.ConvFunction,[Type],[Type]))
            -> [VM.Variable] 
            -> VM.EmitArbb [VM.Variable] 
 genBody dag nid typem funm is = evalStateT (genBody' dag nid typem funm is) (Map.empty) 
@@ -36,7 +36,7 @@ genBody dag nid typem funm is = evalStateT (genBody' dag nid typem funm is) (Map
 accmBody :: DAG
             -> [NodeID] 
             -> NodeIDType 
-            -> (Map.Map FunctionName VM.ConvFunction)
+            -> (Map.Map FunctionName (VM.ConvFunction,[Type],[Type]))
             -> [VM.Variable] 
             -> VM.EmitArbb [VM.Variable]
 accmBody dag nids typem funm is = liftM fst $ doBody nids (Map.empty) 
@@ -79,7 +79,7 @@ getTypeOfNode n m =
 genBody' :: DAG 
            -> NodeID 
            -> NodeIDType 
-           -> (Map.Map FunctionName VM.ConvFunction) 
+           -> (Map.Map FunctionName (VM.ConvFunction,[Type],[Type])) 
            -> [VM.Variable] 
            -> Gen [VM.Variable] 
 genBody' dag nid typem funm is = 
@@ -96,12 +96,12 @@ genBody' dag nid typem funm is =
     genNode :: NodeID -> Node -> Gen [VM.Variable]
     genNode thisNid (NLit l) = 
       do 
-        lift$ VM.liftIO$ putStrLn$  show l
+        -- lift$ VM.liftIO$ putStrLn$  show l
         v <- genLiteral l 
         return [v] 
     genNode thisNid (NVar (Variable nom)) = 
       do 
-        lift$ VM.liftIO$ putStrLn "Var node" 
+        -- lift$ VM.liftIO$ putStrLn "Var node" 
         return$ [is !! (read (nom L.\\ "v") :: Int)]  -- inputs
     
     genNode thisNid (NReduce op n1 n2) = 
@@ -117,7 +117,7 @@ genBody' dag nid typem funm is =
         -- memoize the computed var
         addNode thisNid [imm] 
         
-        lift$ VM.liftIO$ putStrLn "NReduce node" 
+        -- lift$ VM.liftIO$ putStrLn "NReduce node" 
         return [imm]
     genNode thisNid (NScan op n1 n2 n3) = 
       do
@@ -133,7 +133,7 @@ genBody' dag nid typem funm is =
         -- memoize the computed var
         addNode thisNid [imm] 
         
-        lift$ VM.liftIO$ putStrLn "NScan  node" 
+        -- lift$ VM.liftIO$ putStrLn "NScan  node" 
         return [imm]
     genNode thisNid (NBinOp op n1 n2) = 
       do 
@@ -149,7 +149,7 @@ genBody' dag nid typem funm is =
         -- memoize the computed var
         addNode thisNid [imm] 
         
-        lift$ VM.liftIO$ putStrLn "BinOp node" 
+        -- lift$ VM.liftIO$ putStrLn "BinOp node" 
         return [imm]
     genNode thisNid (NUnOp op n1) = 
       do 
@@ -163,7 +163,7 @@ genBody' dag nid typem funm is =
         -- memoize the computed var
         addNode thisNid [imm] 
         
-        lift$ VM.liftIO$ putStrLn "UnOp node" 
+        -- lift$ VM.liftIO$ putStrLn "UnOp node" 
         return [imm]
     genNode thisNid (NRotate n1 n2) = 
       do 
@@ -189,7 +189,7 @@ genBody' dag nid typem funm is =
         lift$ VM.opDynamic_ VM.ArbbOpRotateReverse [imm] (v1 ++ v2)
         
         addNode thisNid [imm] 
-        lift$ VM.liftIO$ putStrLn "RotateRev node" 
+        -- lift$ VM.liftIO$ putStrLn "RotateRev node" 
         return [imm]
     genNode thisNid (NSortRank n1 n2) = 
       do 
@@ -205,7 +205,7 @@ genBody' dag nid typem funm is =
         lift$ VM.op_ VM.ArbbOpSortRank [imm,ranks] (v1 ++ v2)
         
         addNode thisNid [imm,ranks] 
-        lift$ VM.liftIO$ putStrLn "SortRank node" 
+        -- lift$ VM.liftIO$ putStrLn "SortRank node" 
         return [imm,ranks]
     genNode thisNid (NResIndex n i) = 
       do 
@@ -218,9 +218,7 @@ genBody' dag nid typem funm is =
      
     
         
-        
 
-        
 genLiteral :: Literal -> Gen VM.Variable
 genLiteral (LitInt8 i)  = lift$ VM.int8_ i 
 genLiteral (LitInt16 i) = lift$ VM.int16_ i 
@@ -230,7 +228,7 @@ genLiteral (LitFloat i) = lift$ VM.float32_ i
 genLiteral (LitDouble i) = lift$ VM.float64_ i 
 genLiteral (LitISize (ISize i)) = lift$ VM.isize_ i
 genLiteral (LitUSize (USize i)) = lift$ VM.usize_ i
-
+-- TODO: Go on!
 
 
 opToArBB Add = VM.ArbbOpAdd
@@ -238,10 +236,6 @@ opToArBB Mul = VM.ArbbOpMul
 opToArBB Sub = VM.ArbbOpSub
 opToArBB Min = VM.ArbbOpMin
 opToArBB Max = VM.ArbbOpMax
--- opToArBB And = VM.ArbbOpAnd
--- opToArBB Ior = VM.ArbbOpIor
--- opToArBB Xor = VM.ArbbOpXor
--- opToArBB Abs = VM.ArbbOpAbs
 opToArBB Acos = VM.ArbbOpAcos
 opToArBB Asin = VM.ArbbOpAsin
 opToArBB Atan = VM.ArbbOpAtan
@@ -283,11 +277,7 @@ opToArBB Bit_xor = VM.ArbbOpBitXor
 opToArBB Select = VM.ArbbOpSelect
 
 
-
-
-
--- TODO: go on
-
+-- valid reduction op ? 
 opToArBBReduceOp Add = VM.ArbbOpAddReduce
 opToArBBReduceOp Mul = VM.ArbbOpMulReduce
 opToArBBReduceOp Max = VM.ArbbOpMaxReduce
@@ -296,7 +286,7 @@ opToArBBReduceOp And = VM.ArbbOpMinReduce
 opToArBBReduceOp Ior = VM.ArbbOpIorReduce
 opToArBBReduceOp Xor = VM.ArbbOpXorReduce
 
-
+-- valid scan op ? 
 opToArBBScanOp Add = VM.ArbbOpAddScan
 opToArBBScanOp Mul = VM.ArbbOpMulScan
 opToArBBScanOp Max = VM.ArbbOpMaxScan
@@ -337,7 +327,6 @@ toArBBType (Dense III t) =
 toArBBType (Tuple []) = return [] 
 toArBBType (Tuple (t:ts)) = 
   do
-    liftIO$ putStrLn$ "toArBBType:" ++ show t
     ts' <- toArBBType (Tuple ts) 
     -- Tuples will not contain tuples ! 
     [t']  <- toArBBType t

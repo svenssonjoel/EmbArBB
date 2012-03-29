@@ -138,9 +138,9 @@ test6' =
     str <- serialize f 
     liftIO$ putStrLn str
     
-    -- execute f 
-    --((Vector dat n),Vector ranks n2) <- execute f v1
-    --liftIO$ putStrLn$ show dat  ++ " " ++ show ranks   
+    --  execute f 
+    ((Vector dat n),Vector ranks n2) <- execute f v1
+    liftIO$ putStrLn$ show dat  ++ " " ++ show ranks   
  
 test6'' = 
   withArBB $  
@@ -154,8 +154,8 @@ test6'' =
     liftIO$ putStrLn str
     
     -- execute f 
-    --((Vector dat n),Vector ranks n2) <- execute f v1
-    --liftIO$ putStrLn$ show dat  ++ " " ++ show ranks   
+    ((Vector dat n),Vector ranks n2) <- execute f v1
+    liftIO$ putStrLn$ show dat  ++ " " ++ show ranks   
 
    
 test7 = 
