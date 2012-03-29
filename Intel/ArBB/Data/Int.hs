@@ -12,32 +12,14 @@ import Intel.ArBB.Types
 
 import qualified Intel.ArbbVM as VM 
 
--- TODO: Is ISize 32bit on 32bit platforms and 64bit on 64bit platforms ?
 newtype ISize = ISize Int    
-             deriving (Eq, Show, Storable) 
+             deriving (Eq, Ord, Show, Storable, Real, Enum, Num, Integral ) 
 newtype USize = USize Word
-             deriving (Eq, Show, Storable) 
+             deriving (Eq, Ord, Show, Storable, Real, Enum, Num, Integral ) 
 
 
-instance Num ISize where 
-  (+) (ISize a) (ISize b) = ISize (a+b)
-  (-) (ISize a) (ISize b) = ISize (a-b)
-  (*) (ISize a) (ISize b) = ISize (a*b)
-  
-  abs = undefined 
-  signum = undefined 
-  fromInteger = ISize . fromInteger 
-  
-
-instance Num USize where 
-  (+) (USize a) (USize b) = USize (a+b)
-  (-) (USize a) (USize b) = USize (a-b)
-  (*) (USize a) (USize b) = USize (a*b)
-  
-  abs = undefined 
-  signum = undefined 
-  fromInteger = USize . fromInteger 
-  
-  
 instance IsScalar USize where 
   scalarType _ = Scalar VM.ArbbUsize 
+
+instance IsScalar ISize where 
+  scalarType _ = Scalar VM.ArbbIsize 

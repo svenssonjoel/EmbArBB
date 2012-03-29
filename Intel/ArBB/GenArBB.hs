@@ -300,6 +300,7 @@ opToArBBScanOp Xor = VM.ArbbOpXorScan
 ----------------------------------------------------------------------------   
 -- 
         
+-- | Turn a Type into a opaque ArBB-VM type object
 toArBBType :: Type -> VM.EmitArbb [VM.Type]
 toArBBType (Scalar t) = 
   do 
@@ -333,6 +334,13 @@ toArBBType (Tuple (t:ts)) =
     return $ t':ts'
 
 
-
+-- | declare variables to hold data of a given Type. 
+typeToArBBGlobalVar :: Type -> VM.EmitArbb [VM.Variable]
+typeToArBBGlobalVar t = 
+  do 
+    ts <- toArBBType t 
+    gs <- mapM (\t -> VM.createGlobal_nobind_ t "noname") ts 
+    ys <- mapM VM.variableFromGlobal_ gs 
+    return ys 
     
     
