@@ -66,3 +66,25 @@ instance IsScalar a => Embeddable (DVector Dim3 a) where
     where 
       (Scalar base) = scalarType (undefined :: a) 
 
+----------------------------------------------------------------------------
+-- Experiment
+instance IsScalar a => EmbeddableExp (DVector Dim0 a) where 
+  typeOfExp _ = Scalar base 
+    where 
+      (Scalar base) = scalarType (undefined :: a) 
+  
+instance IsScalar a => EmbeddableExp (DVector Dim1 a) where 
+  typeOfExp _ = Dense I base 
+    where 
+      (Scalar base) = scalarType (undefined :: a) 
+
+instance IsScalar a => EmbeddableExp (DVector Dim2 a) where 
+  typeOfExp _ = Dense II base 
+    where 
+      (Scalar base) = scalarType(undefined :: a) 
+
+instance IsScalar a => EmbeddableExp (DVector Dim3 a) where 
+  typeOfExp _ = Dense III base 
+    where 
+      (Scalar base) = scalarType (undefined :: a) 
+

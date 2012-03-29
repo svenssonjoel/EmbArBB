@@ -1,9 +1,9 @@
 {- 2012 Joel Svensson -} 
 
 {-# LANGUAGE ScopedTypeVariables, 
-             FlexibleInstances, 
-             MultiParamTypeClasses, 
-             TypeFamilies, 
+             MultiParamTypeClasses,
+             FlexibleInstances,
+             TypeFamilies,
              TypeOperators #-}
 
 module Intel.ArBB.Capture where 
@@ -17,6 +17,7 @@ import Intel.ArBB.Vector
 import Intel.ArBB.Embeddable
 import Intel.ArBB.WithArBB
 import Intel.ArBB.GenArBB
+import Intel.ArBB.IsScalar
 
 
 import qualified Intel.ArbbVM as VM 
@@ -35,18 +36,16 @@ capture f =
         (nids,dag) = accmDAGMaker e -- runDAGMaker (constructDAG e) 
         tc         = typecheckDAG dag vt
         --  Now I should have all parts needed to generate the function.
-    liftIO$ putStrLn "hello world"
-    -- liftIO$ putStrLn$ show dag 
-    -- liftIO$ putStrLn$ show tc
-    -- liftIO$ putStrLn$ show tins
-    -- liftIO$ putStrLn$ show touts
+    --liftIO$ putStrLn$ show dag 
+    --liftIO$ putStrLn$ show tc
+    liftIO$ putStrLn $ show tins
     arbbIns  <- liftVM$ mapM toArBBType tins 
+    liftIO$ putStrLn "TOUTS"
     liftIO$ putStrLn $ show touts
+    liftIO$ putStrLn "TOUTS"
+    
     arbbOuts <- liftVM$ mapM toArBBType touts
     
-    
-    
-    liftIO$ putStrLn "hello world"
     (funMap,_) <- get
     fd <- liftVM$ VM.funDef_ fn (concat arbbOuts) (concat arbbIns) $ \ os is -> 
       do 
@@ -95,22 +94,21 @@ class EmbFun a b where
   
   emb :: (a -> b) -> VarGenerator ([LExp], IOs, IOs) 
   
-  
 -- TODO: What is a good way to make this work with many outputs
-instance (Embeddable b, Embeddable a) => EmbFun (Exp a) (Exp b) where 
+instance (EmbeddableExp b, Embeddable b, Embeddable a) => EmbFun (Exp a) (Exp b) where 
   type InType (Exp a) (Exp b)  = a 
   type OutType (Exp b) = b
   
   emb f = do 
     v <- getVar 
     let myVar = E (LVar (newLabel ()) v)
-        (E e) = f myVar
+        exp@(E e) = f myVar
         t_in = typeOf (undefined :: a) 
-        t_out = typeOf (undefined :: b)
+        t_out = typeOfExp exp --  (undefined :: b)
     addType v t_in
     return ([e],[t_in],[t_out])
  
-instance (Embeddable b,Embeddable c,  Embeddable a) => EmbFun (Exp a) (Exp b, Exp c) where 
+instance (Embeddable b,Embeddable c, Embeddable a) => EmbFun (Exp a) (Exp b, Exp c) where 
   type InType (Exp a) (Exp b,Exp c)  = a 
   type OutType (Exp b,Exp c) = (b,c)
   
@@ -120,9 +118,10 @@ instance (Embeddable b,Embeddable c,  Embeddable a) => EmbFun (Exp a) (Exp b, Ex
         (E e1,E e2) = f myVar
         t_in = typeOf (undefined :: a) 
         t_out1 = typeOf (undefined :: b)
-        t_out2 = typeOf (undefined :: c) 
+        t_out2 = typeOf (undefined :: c)
+        -- t_out1 = typeOf (undefined :: b,undefined :: c)
     addType v t_in
-    return ([e1,e2],[t_in],[t_out1,t_out2])
+    return ([e1,e2],[t_in],[Tuple [t_out1,t_out2]])
    
   
 instance (Embeddable a, EmbFun c d) => EmbFun (Exp a) (c -> d) where 

@@ -79,6 +79,10 @@ sortRank :: Exp (Vector a) -> Exp USize -> (Exp (Vector a), Exp (Vector USize))
 sortRank (E vec) (E us)  = (fstPair s, sndPair s)
   where s = E $ LSortRank (newLabel ()) vec us
 
+sortRank' :: Exp (Vector a) -> Exp USize -> (Exp (Vector a, Vector USize)) 
+sortRank' (E vec) (E us) = E $ LSortRank (newLabel ()) vec us
+
+
 -- | Sort the contents of a dense 1D container. 
 sort :: Exp (Vector a) -> Exp USize -> Exp (Vector a) 
 sort (E vec) (E us) = E $ LSort (newLabel ()) vec us 

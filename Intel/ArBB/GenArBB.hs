@@ -337,7 +337,7 @@ toArBBType (Dense III t) =
 toArBBType (Tuple []) = return [] 
 toArBBType (Tuple (t:ts)) = 
   do
-   
+    liftIO$ putStrLn$ "toArBBType:" ++ show t
     ts' <- toArBBType (Tuple ts) 
     -- Tuples will not contain tuples ! 
     [t']  <- toArBBType t

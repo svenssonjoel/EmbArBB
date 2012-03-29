@@ -81,7 +81,11 @@ data LExp = LLit Label Literal
             -- Function with correct name and type must exist in some kind of environment
           | LCall Label FunctionName [LExp]  
           | LMap  Label FunctionName [LExp]   
-          
+            
+           -- Experimental  
+          --  | LFor ...   
+          --  | LIf  Label LExp LExp LExp 
+            
           deriving (Show, Eq)
                    
 -- TODO: Figure out how to get the ArBB looping constructs into the Expr 
