@@ -20,6 +20,8 @@ newtype USize = USize Word
 
 instance IsScalar USize where 
   scalarType _ = Scalar VM.ArbbUsize 
+  scalarSize _ = scalarSize (undefined :: Word) 
 
 instance IsScalar ISize where 
   scalarType _ = Scalar VM.ArbbIsize 
+  scalarSize _ = scalarSize (undefined :: Int)

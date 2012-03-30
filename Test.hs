@@ -18,6 +18,7 @@ import Foreign.Marshal.Array
 import Foreign.Marshal.Utils
 import Foreign.Ptr
 
+
 import Data.Int 
 import Data.Word
 import qualified Data.Map as Map
@@ -74,6 +75,8 @@ getBoth' v1 = sortRank' v1 0
 red :: Exp (DVector Dim2 Int32) -> Exp (Vector Int32) 
 red v1 = addReduce0 v1
  
+sca :: Exp (DVector Dim2 Int32) -> Exp (DVector Dim2 Int32) 
+sca v1 = addScan v1 0 0
 
 ----------------------------------------------------------------------------
 -- Small tests 
@@ -263,6 +266,20 @@ testReduce =
     (Vector dat n) <- execute f v1
     liftIO$ putStrLn$ show dat
     
+testSca = 
+  withArBB $  
+  do
+    f <- capture sca
+ 
+    -- create input
+    let v1 = Vector (V.fromList [0..9::Int32]) (Two 5 2)
+        
+    str <- serialize f 
+    liftIO$ putStrLn str
+    -- execute f 
+    (Vector dat n) <- execute f v1
+    liftIO$ putStrLn$ show dat
+
 
 
 

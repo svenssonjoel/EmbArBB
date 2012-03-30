@@ -32,7 +32,6 @@ import Intel.ArBB.Vector
 import Intel.ArBB.Types 
 import Intel.ArBB.GenArBB
 import Intel.ArBB.IsScalar
-import Intel.ArBB.Data -- Embeddable
 import Intel.ArBB.Data.Int
 
 ----------------------------------------------------------------------------
@@ -120,9 +119,11 @@ class ArBBIO a where
 ArBBScalar(Int8,int8_)
 ArBBScalar(Int16,int16_)
 ArBBScalar(Int32,int32_)
+ArBBScalar(Int64,int64_)
 ArBBScalar(Word8,uint8_)
 ArBBScalar(Word16,uint16_)
 ArBBScalar(Word32,uint32_)
+ArBBScalar(Word64,uint64_)
 ArBBScalar(Float,float32_)
 ArBBScalar(Double,float64_)
 -- ArBBScalar(Bool,bool_) -- a special case 
@@ -132,7 +133,6 @@ ArBBScalar(ISize,isize_)
 ----------------------------------------------------------------------------
 
 -- TODO: way to remove the IsScalar requirement (Big change !!) 
--- TODO: There is a HARDCODED 4 in arbbULoad !!! 
 
 -- Vectors 
 instance (V.Storable a, IsScalar a) => ArBBIO (Vector a) where 
@@ -144,7 +144,10 @@ instance (V.Storable a, IsScalar a) => ArBBIO (Vector a) where
       let (fptr,n') = V.unsafeToForeignPtr0 dat
           ptr = unsafeForeignPtrToPtr fptr
       
-      inb <- liftVM$ VM.createDenseBinding_ (castPtr ptr) 1 [fromIntegral n] [4] 
+      inb <- liftVM$ VM.createDenseBinding_ (castPtr ptr) 
+                                            1 
+                                            [fromIntegral n] 
+                                            [fromIntegral $ scalarSize (undefined :: a)] 
       gin <- liftVM$ VM.createGlobal_ dt "input" inb 
       vin <- liftVM$ VM.variableFromGlobal_ gin
       
@@ -189,33 +192,47 @@ instance (V.Storable a, IsScalar a) => ArBBIO (DVector Dim2 a) where
       let (fptr,n') = V.unsafeToForeignPtr0 dat
           ptr = unsafeForeignPtrToPtr fptr
       
-      inb <- liftVM$ VM.createDenseBinding_ (castPtr ptr) 2 [fromIntegral n1,fromIntegral n2] [4,4*(fromIntegral n1)]
+      inb <- liftVM$ VM.createDenseBinding_ (castPtr ptr) 
+                                            2 
+                                            [fromIntegral n1,fromIntegral n2] 
+                                            [s,s*(fromIntegral n1)]
       gin <- liftVM$ VM.createGlobal_ dt "input" inb 
       vin <- liftVM$ VM.variableFromGlobal_ gin
+      --liftIO$ putStrLn$ show s 
+      --liftIO$ putStrLn$ show n1 
+      --liftIO$ putStrLn$ show n2
       
       return$ [vin]
-  arbbDLoad [v] = undefined 
-  {- 
+    where   
+      s = fromIntegral $ scalarSize (undefined :: a) 
+  arbbDLoad [v] = 
     do 
       [st] <- liftVM$ toArBBType (scalarType (undefined :: a)) 
-      dt <- liftVM$ VM.getDenseType_ st 1 
+      dt <- liftVM$ VM.getDenseType_ st 2
       
     
       size_t <- liftVM$ VM.getScalarType_ VM.ArbbUsize 
-      gs  <- liftVM$ VM.createGlobal_nobind_ size_t "size"
-      s  <- liftVM$ VM.variableFromGlobal_ gs
+      gs1  <- liftVM$ VM.createGlobal_nobind_ size_t "size"
+      s1  <- liftVM$ VM.variableFromGlobal_ gs1
+      gs2  <- liftVM$ VM.createGlobal_nobind_ size_t "size"
+      s2  <- liftVM$ VM.variableFromGlobal_ gs2
       
       -- Read size of vector from ArBB using an immediate op
-      liftVM$ VM.opImm_ VM.ArbbOpLength [s] [v]
+      liftVM$ VM.opImm_ VM.ArbbOpGetNcols [s1] [v]
+      liftVM$ VM.opImm_ VM.ArbbOpGetNrows [s2] [v]
       
-      n :: Int32 <- liftVM$ VM.readScalar_ s  
-                    
+      
+      n1 :: Int64 <- liftVM$ VM.readScalar_ s1  
+      n2 :: Int64 <- liftVM$ VM.readScalar_ s2     
+      -- liftIO$ putStrLn$ show n1
+      -- liftIO$ putStrLn$ show n2
+
       -- now load that number of elements from the VM 
       ptr <- liftVM$ VM.mapToHost_ v [1] VM.ArbbReadOnlyRange
-      dat <- liftIO$ peekArray (fromIntegral n) (castPtr ptr) 
+      dat <- liftIO$ peekArray (fromIntegral (n1*n2)) (castPtr ptr) 
       
-      return$ Vector (V.fromList dat) (One (fromIntegral n))
- -} 
+      return$ Vector (V.fromList dat) (Two (fromIntegral n1) (fromIntegral n2))
+ 
 
 ----------------------------------------------------------------------------
 -- recurse 
