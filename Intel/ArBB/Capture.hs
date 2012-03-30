@@ -15,7 +15,7 @@ import Intel.ArBB.Syntax
 import Intel.ArBB.TypeCheck 
 import Intel.ArBB.Types
 import Intel.ArBB.Vector 
-import Intel.ArBB.Embeddable
+import Intel.ArBB.Data -- Embeddable
 import Intel.ArBB.WithArBB
 import Intel.ArBB.GenArBB
 import Intel.ArBB.IsScalar
@@ -90,18 +90,17 @@ class EmbFun a b where
   emb :: (a -> b) -> VarGenerator ([LExp], IOs, IOs) 
   
 -- TODO: What is a good way to make this work with many outputs
-instance EmbeddableExp b => EmbFun () (Exp b) where
+instance Data (Exp b) => EmbFun () (Exp b) where
   type InType () (Exp b)  = () 
   type OutType (Exp b) = b
   
   emb f = do 
     let exp@(E e) = f ()
-        t_out = typeOfExp exp
+        t_out = typeOf exp
     return ([e],[],[t_out])
   
-  
--- TODO: Embeddable or EmbeddableExp ???   
-instance (EmbeddableExp b, Embeddable b, Embeddable a) => EmbFun (Exp a) (Exp b) where 
+   
+instance (Data (Exp b), Data a) => EmbFun (Exp a) (Exp b) where 
   type InType (Exp a) (Exp b)  = a 
   type OutType (Exp b) = b
   
@@ -110,20 +109,20 @@ instance (EmbeddableExp b, Embeddable b, Embeddable a) => EmbFun (Exp a) (Exp b)
     let myVar = E (LVar (newLabel ()) v)
         exp@(E e) = f myVar
         t_in = typeOf (undefined :: a) 
-        t_out = typeOfExp exp --  (undefined :: b)
+        t_out = typeOf exp -- (undefined :: b)
     addType v t_in
     return ([e],[t_in],[t_out]) 
     
     
  
-instance (Embeddable b,Embeddable c, Embeddable a) => EmbFun (Exp a) (Exp b, Exp c) where 
+instance (Data b, Data c, Data a) => EmbFun (Exp a) (Exp b, Exp c) where 
   type InType (Exp a) (Exp b,Exp c)  = a 
   type OutType (Exp b,Exp c) = (b,c)
   
   emb f = do 
     v <- getVar 
     let myVar = E (LVar (newLabel ()) v)
-        (E e1,E e2) = f myVar
+        (e1'@(E e1),e2'@(E e2)) = f myVar
         t_in = typeOf (undefined :: a) 
         t_out1 = typeOf (undefined :: b)
         t_out2 = typeOf (undefined :: c)
@@ -132,7 +131,7 @@ instance (Embeddable b,Embeddable c, Embeddable a) => EmbFun (Exp a) (Exp b, Exp
     return ([e1,e2],[t_in],[Tuple [t_out1,t_out2]])
    
   
-instance (Embeddable a, EmbFun c d) => EmbFun (Exp a) (c -> d) where 
+instance (Data a, EmbFun c d) => EmbFun (Exp a) (c -> d) where 
   type InType (Exp a) (c -> d) = (a :- InType c d) 
   type OutType (c -> d) = OutType d
   

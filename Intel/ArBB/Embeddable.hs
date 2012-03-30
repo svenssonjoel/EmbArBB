@@ -1,4 +1,5 @@
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleInstances, 
+             ScopedTypeVariables#-}
 module Intel.ArBB.Embeddable where 
 
 import Intel.ArBB.Types 
@@ -43,30 +44,30 @@ instance (Embeddable a, Embeddable b) => Embeddable (a,b)  where
 ----------------------------------------------------------------------------
 -- Experiment 
 
-class EmbeddableExp a where 
-  typeOfExp :: Exp a -> Type 
+--class EmbeddableExp a where 
+--  typeOfExp :: Exp a -> Type 
   
-instance EmbeddableExp Int32 where 
-  typeOfExp _ = Scalar VM.ArbbI32 
+instance Embeddable (Exp Int32) where 
+  typeOf _ = Scalar VM.ArbbI32 
 
-instance EmbeddableExp Word32 where 
-  typeOfExp _ = Scalar VM.ArbbU32 
+instance Embeddable (Exp Word32) where 
+  typeOf _ = Scalar VM.ArbbU32 
 
-instance EmbeddableExp Float where 
-  typeOfExp _ = Scalar VM.ArbbF32 
+instance Embeddable (Exp Float) where 
+  typeOf _ = Scalar VM.ArbbF32 
   
-instance EmbeddableExp Double where 
-  typeOfExp _ = Scalar VM.ArbbF64 
+instance Embeddable (Exp Double) where 
+  typeOf _ = Scalar VM.ArbbF64 
   
-instance EmbeddableExp USize where 
-  typeOfExp _ = Scalar VM.ArbbUsize
+instance Embeddable (Exp USize) where 
+  typeOf _ = Scalar VM.ArbbUsize
 
-instance EmbeddableExp ISize where 
-  typeOfExp _ = Scalar VM.ArbbIsize
+instance Embeddable (Exp ISize) where 
+  typeOf _ = Scalar VM.ArbbIsize
 
 
-instance (Embeddable a, Embeddable b) => EmbeddableExp (a,b)  where 
-  typeOfExp e = Tuple [typeOf (undefined ::a),typeOf (undefined :: b)]
+instance (Embeddable a, Embeddable b) => Embeddable (Exp (a,b))  where 
+  typeOf e = Tuple [typeOf (undefined ::a),typeOf (undefined :: b)]
 
 
 -- TODO: How to really do the above. 

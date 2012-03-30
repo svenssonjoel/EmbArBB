@@ -1,5 +1,5 @@
 
-{-# LANGUAGE TypeOperators, 
+{-# LANGUAGE CPP, TypeOperators, 
              FlexibleInstances,
              ScopedTypeVariables #-}
 
@@ -8,7 +8,7 @@
 module Intel.ArBB.Vector where 
 
 import qualified Data.Vector.Storable as V
-import Intel.ArBB.Embeddable
+import Intel.ArBB.Data -- Embeddable
 import Intel.ArBB.Types 
 import Intel.ArBB.Syntax 
 import Intel.ArBB.IsScalar
@@ -45,46 +45,13 @@ type Vector3D = DVector Dim3
                 
 ----------------------------------------------------------------------------
 -- 
-
-instance IsScalar a => Embeddable (DVector Dim0 a) where 
-  typeOf _ = Scalar base 
-    where 
-      (Scalar base) = scalarType (undefined :: a) 
-  
-instance IsScalar a => Embeddable (DVector Dim1 a) where 
-  typeOf _ = Dense I base 
-    where 
-      (Scalar base) = scalarType (undefined :: a) 
-
-instance IsScalar a => Embeddable (DVector Dim2 a) where 
-  typeOf _ = Dense II base 
-    where 
-      (Scalar base) = scalarType(undefined :: a) 
-
-instance IsScalar a => Embeddable (DVector Dim3 a) where 
-  typeOf _ = Dense III base 
-    where 
-      (Scalar base) = scalarType (undefined :: a) 
-
-----------------------------------------------------------------------------
--- Experiment
-instance IsScalar a => EmbeddableExp (DVector Dim0 a) where 
-  typeOfExp _ = Scalar base 
-    where 
-      (Scalar base) = scalarType (undefined :: a) 
-  
-instance IsScalar a => EmbeddableExp (DVector Dim1 a) where 
-  typeOfExp _ = Dense I base 
-    where 
-      (Scalar base) = scalarType (undefined :: a) 
-
-instance IsScalar a => EmbeddableExp (DVector Dim2 a) where 
-  typeOfExp _ = Dense II base 
-    where 
-      (Scalar base) = scalarType(undefined :: a) 
-
-instance IsScalar a => EmbeddableExp (DVector Dim3 a) where 
-  typeOfExp _ = Dense III base 
-    where 
-      (Scalar base) = scalarType (undefined :: a) 
-
+unS (Scalar a) = a
+#define DenseOfScal(t,mod) instance IsScalar a => Data (t) where {  typeOf _ = mod (unS (scalarType (undefined :: a))); sizeOf _ = undefined}                             
+DenseOfScal(DVector Dim0 a,Scalar)
+DenseOfScal(DVector Dim1 a,Dense I)
+DenseOfScal(DVector Dim2 a ,Dense II)
+DenseOfScal(DVector Dim3 a ,Dense III)
+DenseOfScal(Exp (DVector Dim0 a),Scalar)
+DenseOfScal(Exp (DVector Dim1 a),Dense I)
+DenseOfScal(Exp (DVector Dim2 a),Dense II)
+DenseOfScal(Exp (DVector Dim3 a),Dense III)
