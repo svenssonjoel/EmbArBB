@@ -8,7 +8,7 @@
              OverlappingInstances,
              UndecidableInstances,
              CPP
-              #-}
+             #-}
 {- 2012 Joel Svensson -} 
 
 module Intel.ArBB.WithArBB where 
@@ -32,7 +32,7 @@ import Intel.ArBB.Vector
 import Intel.ArBB.Types 
 import Intel.ArBB.GenArBB
 import Intel.ArBB.IsScalar
-import Intel.ArBB.Embeddable
+import Intel.ArBB.Data -- Embeddable
 import Intel.ArBB.Data.Int
 
 ----------------------------------------------------------------------------
