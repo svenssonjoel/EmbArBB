@@ -5,9 +5,6 @@
 
 module Intel.ArBB.Syntax where 
 
-
--- import Intel.ArBB.Vector -- why ? 
-
 import Data.Int
 import Data.Word 
 
@@ -33,15 +30,18 @@ newLabel () = unsafePerformIO $ do
 data Literal = LitInt8   Int8  
              | LitInt16  Int16
              | LitInt32  Int32
+             | LitInt64  Int64
              | LitWord8  Word8
              | LitWord16 Word16
              | LitWord32 Word32 
+             | LitWord64 Word64  
              | LitFloat  Float 
-               
              | LitDouble Double
 
              | LitISize  ISize
              | LitUSize  USize 
+               
+             | LitBool   Bool 
                deriving (Eq,Show)
 
 data Variable = Variable String 

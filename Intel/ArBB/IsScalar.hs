@@ -49,13 +49,3 @@ instance IsScalar Word where
                n -> error "scalarType: <Word> Strage size"
   scalarSize a = S.sizeOf a 
 
-{- 
-instance IsScalar Int8 where 
-  scalarType _ = Scalar VM.ArbbI8 
-  
-instance IsScalar Int32 where 
-  scalarType _ = Scalar VM.ArbbI3
-
-instance IsScalar Float where 
-  scalarType _ = Scalar VM.ArbbF32
--} 

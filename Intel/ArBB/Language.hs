@@ -1,5 +1,8 @@
 {-# LANGUAGE TypeOperators, 
-             FlexibleInstances #-} 
+             FlexibleInstances, 
+             FlexibleContexts, 
+             UndecidableInstances,
+             ScopedTypeVariables #-} 
 
 {- 2012 Joel Svensson -} 
 module Intel.ArBB.Language where 
@@ -111,6 +114,26 @@ instance Show (Exp a) where
 instance Eq (Exp a) where 
   (==) = undefined -- compare labels here
 
+instance Num (Exp Int8) where 
+  (+) (E a) (E b) = E $ LBinOp (newLabel ()) Add a b
+  (*) (E a) (E b) = E $ LBinOp (newLabel ()) Mul a b
+  (-) (E a) (E b) = E $ LBinOp (newLabel ()) Sub a b
+
+  abs = undefined 
+  signum = undefined 
+  
+  fromInteger a = E $ LLit (newLabel ()) $ LitInt8 $ fromInteger a
+
+instance Num (Exp Int16) where 
+  (+) (E a) (E b) = E $ LBinOp (newLabel ()) Add a b
+  (*) (E a) (E b) = E $ LBinOp (newLabel ()) Mul a b
+  (-) (E a) (E b) = E $ LBinOp (newLabel ()) Sub a b
+
+  abs = undefined 
+  signum = undefined 
+  
+  fromInteger a = E $ LLit (newLabel ()) $ LitInt16 $ fromInteger a
+
 instance Num (Exp Int32) where 
   (+) (E a) (E b) = E $ LBinOp (newLabel ()) Add a b
   (*) (E a) (E b) = E $ LBinOp (newLabel ()) Mul a b
@@ -121,7 +144,7 @@ instance Num (Exp Int32) where
   
   fromInteger a = E $ LLit (newLabel ()) $ LitInt32 $ fromInteger a
 
-instance Num (Exp Float) where 
+instance Num (Exp Int64) where 
   (+) (E a) (E b) = E $ LBinOp (newLabel ()) Add a b
   (*) (E a) (E b) = E $ LBinOp (newLabel ()) Mul a b
   (-) (E a) (E b) = E $ LBinOp (newLabel ()) Sub a b
@@ -129,7 +152,7 @@ instance Num (Exp Float) where
   abs = undefined 
   signum = undefined 
   
-  fromInteger a = E $ LLit (newLabel ()) $ LitFloat $ fromInteger a
+  fromInteger a = E $ LLit (newLabel ()) $ LitInt64 $ fromInteger a
 
 instance Num (Exp Word8) where 
   (+) (E a) (E b) = E $ LBinOp (newLabel ()) Add a b
@@ -140,6 +163,16 @@ instance Num (Exp Word8) where
   signum = undefined 
   
   fromInteger a = E $ LLit (newLabel ()) $ LitWord8 $ fromInteger a
+
+instance Num (Exp Word16) where 
+  (+) (E a) (E b) = E $ LBinOp (newLabel ()) Add a b
+  (*) (E a) (E b) = E $ LBinOp (newLabel ()) Mul a b
+  (-) (E a) (E b) = E $ LBinOp (newLabel ()) Sub a b
+
+  abs = undefined 
+  signum = undefined 
+  
+  fromInteger a = E $ LLit (newLabel ()) $ LitWord16 $ fromInteger a
 
 
 instance Num (Exp Word32) where 
@@ -152,6 +185,17 @@ instance Num (Exp Word32) where
   
   fromInteger a = E $ LLit (newLabel ()) $ LitWord32 $ fromInteger a
   
+instance Num (Exp Word64) where 
+  (+) (E a) (E b) = E $ LBinOp (newLabel ()) Add a b
+  (*) (E a) (E b) = E $ LBinOp (newLabel ()) Mul a b
+  (-) (E a) (E b) = E $ LBinOp (newLabel ()) Sub a b
+
+  abs = undefined 
+  signum = undefined 
+  
+  fromInteger a = E $ LLit (newLabel ()) $ LitWord64 $ fromInteger a
+
+
 instance Num (Exp ISize) where 
   (+) (E a) (E b) = E $ LBinOp (newLabel ()) Add a b
   (*) (E a) (E b) = E $ LBinOp (newLabel ()) Mul a b
@@ -174,6 +218,27 @@ instance Num (Exp USize) where
   fromInteger a = E $ LLit (newLabel ()) $ LitUSize $ fromInteger a
 
 
+instance Num (Exp Float) where 
+  (+) (E a) (E b) = E $ LBinOp (newLabel ()) Add a b
+  (*) (E a) (E b) = E $ LBinOp (newLabel ()) Mul a b
+  (-) (E a) (E b) = E $ LBinOp (newLabel ()) Sub a b
+
+  abs = undefined 
+  signum = undefined 
+  
+  fromInteger a = E $ LLit (newLabel ()) $ LitFloat $ fromInteger a
+
+instance Num (Exp Double) where 
+  (+) (E a) (E b) = E $ LBinOp (newLabel ()) Add a b
+  (*) (E a) (E b) = E $ LBinOp (newLabel ()) Mul a b
+  (-) (E a) (E b) = E $ LBinOp (newLabel ()) Sub a b
+
+  abs = undefined 
+  signum = undefined 
+  
+  fromInteger a = E $ LLit (newLabel ()) $ LitDouble $ fromInteger a
+
+
 ----------------------------------------------------------------------------
 -- 
 instance Num a => Num (Exp (DVector t a)) where 
@@ -188,13 +253,7 @@ instance Num a => Num (Exp (DVector t a)) where
   
   
 ----------------------------------------------------------------------------
---Minimal complete definition: .&., .|., xor, 
--- complement, (shift or (shiftL and shiftR)),  
--- (rotate or (rotateL and rotateR)), 
--- bitSize and isSigned.
-
-
-instance Bits (Exp Int32) where  
+instance (Num (Exp a), Bits a) => Bits (Exp a) where  
   (.&.) (E a) (E b) = E $ LBinOp (newLabel ()) Bit_and a b
   (.|.) (E a) (E b) = E $ LBinOp (newLabel ()) Bit_or a b
   xor (E a) (E b) = E $ LBinOp (newLabel ()) Bit_xor a b
@@ -206,5 +265,5 @@ instance Bits (Exp Int32) where
    where 
      (E dist) = fromIntegral b :: (Exp Word8)      
   complement (E a) = E $ LUnOp (newLabel ()) Bit_not a
-  bitSize _ = 32   
+  bitSize _ = (bitSize (undefined :: a)) 
   isSigned _ = True 
