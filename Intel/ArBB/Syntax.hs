@@ -72,10 +72,21 @@ data LExp = LLit Label Literal
           | LRotate Label LExp LExp 
           | LRotateRev Label LExp LExp
             
+            -- reverse 1D vector
+          | LReverse Label LExp   
+            
+          | LGather Label [LExp] 
+          | LScatter Label [LExp] 
+            
+            -- Create Constant 1D vector 
+          | LConstVector Label LExp LExp 
+            
+            -- Concatenate 2 1D vectors
+          | LCat Label LExp LExp  
+            
           | LSort Label LExp LExp 
           | LSortRank Label LExp LExp -- This one has two outpus !! (how deal with this ?) 
                         
-            -- Will this work? 
             -- ArBB Functions may compute several results 
           | LResIndex Label LExp Int 
             -- Function with correct name and type must exist in some kind of environment
