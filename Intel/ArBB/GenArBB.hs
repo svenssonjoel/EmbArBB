@@ -222,28 +222,27 @@ genBody' dag nid typem funm is =
         return$ vs
     genNode thisNid (NIf n1 n2 n3) =  
       do 
-        liftIO$ putStrLn "IF NODE" 
+      
         -- conditional is a single var
         [v1] <- genBody' dag n1 typem funm is 
-        liftIO$ putStrLn "Cond var ok" 
+        -- TODO: condition variables need to be local. 
+        bt <- lift$ VM.getScalarType_ VM.ArbbBoolean
+        cond <- lift$ VM.createLocal_ bt "cond" 
+        -- Ensure that cond is local 
+        lift$ VM.copy_ cond v1     
+        
         -- May be more than one result
         t <- getTypeOfNode' thisNid typem  
-        liftIO$ putStrLn "out type ok" 
-        --t2 <- getTypeOfNode' n2 typem 
-        --t3 <- getTypeOfNode' n3 typem
-        
+
         imm <- lift$ typeToArBBLocalVar t 
-        liftIO$ putStrLn "Out type to ArBB type ok" 
+      
         state <- get
-        
-        lift$ VM.if_ v1 
-          (do 
-              VM.liftIO$ putStrLn "c1"
+        lift$ VM.if_ cond 
+          (do
               c1 <- evalStateT (genBody' dag n2 typem funm is) state
               copyAll imm c1              
           ) 
           (do
-              VM.liftIO$ putStrLn "c2"
               c2 <- evalStateT (genBody' dag n3 typem funm is) state
               copyAll imm c2
           )
@@ -256,20 +255,22 @@ genLiteral :: Literal -> Gen VM.Variable
 genLiteral (LitInt8 i)  = lift$ VM.int8_ i 
 genLiteral (LitInt16 i) = lift$ VM.int16_ i 
 genLiteral (LitInt32 i) = lift$ VM.int32_ i 
+genLiteral (LitInt64 i) = lift$ VM.int64_ i
+genLiteral (LitWord8 i) = lift$ VM.uint8_ i 
+genLiteral (LitWord16 i) = lift$ VM.uint16_ i 
 genLiteral (LitWord32 i) = lift$ VM.uint32_ i 
+genLiteral (LitWord64 i) = lift$ VM.uint64_ i 
 genLiteral (LitFloat i) = lift$ VM.float32_ i 
 genLiteral (LitDouble i) = lift$ VM.float64_ i 
 genLiteral (LitISize (ISize i)) = lift$ VM.isize_ i
 genLiteral (LitUSize (USize i)) = lift$ VM.usize_ i
--- TODO: condition variables need to be local. 
---       Is this a problem with the above as well ? 
-genLiteral (LitBool  b) = 
-  do 
-    bt <- lift$ VM.getScalarType_ VM.ArbbBoolean
-    cond <- lift$ VM.createLocal_ bt "cond" 
-    gb <- lift$ VM.bool_ b
-    lift$ VM.copy_ cond gb  
-    return cond
+genLiteral (LitBool  b) = lift$ VM.bool_ b 
+--  do 
+--    bt <- lift$ VM.getScalarType_ VM.ArbbBoolean
+--    cond <- lift$ VM.createLocal_ bt "cond" 
+--    gb <- lift$ VM.bool_ b
+--    lift$ VM.copy_ cond gb  
+--    return cond
 -- TODO: Go on!
 
 

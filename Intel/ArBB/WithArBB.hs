@@ -108,7 +108,9 @@ class ArBBIO a where
   -- TODO: look at again when supporting multiple outputs 
   arbbDLoad :: [VM.Variable] -> ArBB a         
   
-
+instance ArBBIO () where 
+  arbbULoad _ = return []
+  arbbDLoad _ = return () 
   
 ---------------------------------------------------------------------------- 
 -- Base

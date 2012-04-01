@@ -79,8 +79,8 @@ sca :: Exp (DVector Dim2 Int32) -> Exp (DVector Dim2 Int32)
 sca v1 = addScan v1 0 0
 
 ----------------------------------------------------------------------------
-cond :: (Exp Int32) -> (Exp Int32) 
-cond e = ifThenElse (E $ LLit (newLabel ()) $ LitBool True) (e+1)  (e+2) 
+cond :: () -> (Exp Int32) 
+cond () = ifThenElse (E $ LLit (newLabel ()) $ LitBool True) 1  2 
 
 ----------------------------------------------------------------------------
 -- Small tests 
@@ -294,7 +294,7 @@ testCond =
     str <- serialize f 
     liftIO$ putStrLn str
     -- execute f 
-    dat <- execute f 1
+    dat <- execute f ()
     liftIO$ putStrLn$ show dat
 
 
