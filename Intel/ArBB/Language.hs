@@ -106,6 +106,13 @@ sndPair (E a) = E $ LResIndex (newLabel ()) a 1
 
 
 ----------------------------------------------------------------------------
+-- conditional 
+
+ifThenElse :: (Exp Bool) -> (Exp a) -> (Exp a) -> (Exp a)
+ifThenElse (E b) (E e1) (E e2) = E $ LIf (newLabel ()) b e1 e2
+
+
+----------------------------------------------------------------------------
 -- instances 
 
 instance Show (Exp a) where 

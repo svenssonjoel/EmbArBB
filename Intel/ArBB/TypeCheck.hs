@@ -153,6 +153,13 @@ typecheckNID d n =
       do 
         (Tuple nt) <- typecheckNID dag n 
         return$ Just$ nt !! i 
+    typecheckNode dag (NIf n1 n2 n3) = 
+      do 
+        -- TODO: FIX 
+        t1 <- typecheckNID dag n1
+        t2 <- typecheckNID dag n2 
+        t3 <- typecheckNID dag n3 
+        return $ Just t2
       
     typecheckLiteral (LitInt8 _)   = return$ Just$ Scalar ArBB.ArbbI8
     typecheckLiteral (LitInt16 _)  = return$ Just$ Scalar ArBB.ArbbI16
@@ -160,4 +167,4 @@ typecheckNID d n =
     typecheckLiteral (LitWord32 _) = return$ Just$ Scalar ArBB.ArbbU32
     typecheckLiteral (LitISize _)  = return$ Just$ Scalar ArBB.ArbbIsize 
     typecheckLiteral (LitUSize _)  = return$ Just$ Scalar ArBB.ArbbUsize 
-    
+    typecheckLiteral (LitBool _)   = return$ Just$ Scalar ArBB.ArbbBoolean

@@ -73,6 +73,11 @@ getTypeOfNode n m =
   in 
     lift$ toArBBType t 
 
+getTypeOfNode' :: NodeID -> NodeIDType -> Gen Type 
+getTypeOfNode' n m = return$ fromJust$ Map.lookup n m 
+
+
+
 
 ----------------------------------------------------------------------------
 -- The real worker
@@ -215,10 +220,38 @@ genBody' dag nid typem funm is =
       do 
         vs <- genBody' dag n typem funm is 
         return$ vs
-     
-    
+    genNode thisNid (NIf n1 n2 n3) =  
+      do 
+        liftIO$ putStrLn "IF NODE" 
+        -- conditional is a single var
+        [v1] <- genBody' dag n1 typem funm is 
+        liftIO$ putStrLn "Cond var ok" 
+        -- May be more than one result
+        t <- getTypeOfNode' thisNid typem  
+        liftIO$ putStrLn "out type ok" 
+        --t2 <- getTypeOfNode' n2 typem 
+        --t3 <- getTypeOfNode' n3 typem
         
-
+        imm <- lift$ typeToArBBLocalVar t 
+        liftIO$ putStrLn "Out type to ArBB type ok" 
+        state <- get
+        
+        lift$ VM.if_ v1 
+          (do 
+              VM.liftIO$ putStrLn "c1"
+              c1 <- evalStateT (genBody' dag n2 typem funm is) state
+              copyAll imm c1              
+          ) 
+          (do
+              VM.liftIO$ putStrLn "c2"
+              c2 <- evalStateT (genBody' dag n3 typem funm is) state
+              copyAll imm c2
+          )
+        addNode thisNid imm 
+        return imm
+        
+        
+        
 genLiteral :: Literal -> Gen VM.Variable
 genLiteral (LitInt8 i)  = lift$ VM.int8_ i 
 genLiteral (LitInt16 i) = lift$ VM.int16_ i 
@@ -228,6 +261,15 @@ genLiteral (LitFloat i) = lift$ VM.float32_ i
 genLiteral (LitDouble i) = lift$ VM.float64_ i 
 genLiteral (LitISize (ISize i)) = lift$ VM.isize_ i
 genLiteral (LitUSize (USize i)) = lift$ VM.usize_ i
+-- TODO: condition variables need to be local. 
+--       Is this a problem with the above as well ? 
+genLiteral (LitBool  b) = 
+  do 
+    bt <- lift$ VM.getScalarType_ VM.ArbbBoolean
+    cond <- lift$ VM.createLocal_ bt "cond" 
+    gb <- lift$ VM.bool_ b
+    lift$ VM.copy_ cond gb  
+    return cond
 -- TODO: Go on!
 
 
@@ -342,5 +384,23 @@ typeToArBBGlobalVar t =
     gs <- mapM (\t -> VM.createGlobal_nobind_ t "noname") ts 
     ys <- mapM VM.variableFromGlobal_ gs 
     return ys 
+
+typeToArBBLocalVar :: Type -> VM.EmitArbb [VM.Variable]
+typeToArBBLocalVar t = 
+  do 
+    ts <- toArBBType t 
+    ys <- mapM (\t -> VM.createLocal_ t "noname") ts 
+    return ys 
     
+
     
+
+copyAll [] [] = return ()    
+copyAll (x:xs) (y:ys) = 
+  do 
+    VM.copy_ x y  
+    copyAll xs ys 
+
+
+
+

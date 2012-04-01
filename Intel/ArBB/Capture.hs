@@ -51,11 +51,6 @@ capture f =
     addFunction fn fd tins touts                                                         
     return $ embFun fn f            
     
-copyAll [] [] = return ()    
-copyAll (x:xs) (y:ys) = 
-  do 
-    VM.copy_ x y  
-    copyAll xs ys 
     
 embFun :: EmbFun a b => String -> (a -> b) -> Function (InType a b) (OutType b) 
 embFun name f = Function name 

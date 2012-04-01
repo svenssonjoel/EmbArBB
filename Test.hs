@@ -79,6 +79,10 @@ sca :: Exp (DVector Dim2 Int32) -> Exp (DVector Dim2 Int32)
 sca v1 = addScan v1 0 0
 
 ----------------------------------------------------------------------------
+cond :: (Exp Int32) -> (Exp Int32) 
+cond e = ifThenElse (E $ LLit (newLabel ()) $ LitBool True) (e+1)  (e+2) 
+
+----------------------------------------------------------------------------
 -- Small tests 
 test1 = withArBB $ capture t1
 test2 = withArBB $ capture t2 
@@ -278,6 +282,19 @@ testSca =
     liftIO$ putStrLn str
     -- execute f 
     (Vector dat n) <- execute f v1
+    liftIO$ putStrLn$ show dat
+
+
+
+testCond = 
+  withArBB $  
+  do
+    f <- capture cond
+    return f
+    str <- serialize f 
+    liftIO$ putStrLn str
+    -- execute f 
+    dat <- execute f 1
     liftIO$ putStrLn$ show dat
 
 

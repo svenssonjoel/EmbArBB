@@ -38,6 +38,8 @@ data Node = NLit Literal
           | NResIndex NodeID Int 
           | NCall FunctionName [NodeID] 
           | NMap  FunctionName [NodeID]
+            
+          | NIf NodeID NodeID NodeID
           deriving (Eq,Show)
 
 type DAG = Map.Map NodeID Node
@@ -180,5 +182,17 @@ constructDAG (LIndex0 l e) = do
         let m'' = Map.insert l (NIndex0 e') m' 
         put m''
         return l    
-
+constructDAG (LIf l e1 e2 e3) = do 
+  m <- get 
+  case Map.lookup l m of 
+    (Just nid) -> return l
+    Nothing -> 
+      do
+        e1' <- constructDAG e1 
+        e2' <- constructDAG e2 
+        e3' <- constructDAG e3 
+        m' <- get
+        let m'' = Map.insert l (NIf e1' e2' e3') m'
+        put m''
+        return l
       

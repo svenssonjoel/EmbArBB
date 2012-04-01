@@ -95,7 +95,7 @@ data LExp = LLit Label Literal
             
            -- Experimental  
           --  | LFor ...   
-          --  | LIf  Label LExp LExp LExp 
+          | LIf  Label LExp LExp LExp 
             
           deriving (Show, Eq)
                    
