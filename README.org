@@ -1,6 +1,5 @@
 * EmbArBB 
   + Embedded language for data-parallel programming targetting Intel ArBB.
-  + very sketchy! (But improving) 
   + Uses the Haskell/ArBB bindings (svenssonjoel/arbb-vm.git on github) 
 
 * Status 
@@ -8,7 +7,6 @@
 
 * TODOs 
   + Add functionality (cover as many as possible of the ops supported by ArBB) 
-  + (PARTIALLY DONE): Figure out how to capture functions with many outputs. 
   + Figure out how to support functions with many outputs in a more robust way.
     
 * Notes
@@ -16,3 +14,5 @@
     to me that RotateRev is compiled into a Rotate operation with a negated distance. 
   + Scan direction seems broken. Setting direction to 0 and 1 gives same resulting 
     output array (or did i missunderstand what the direction is supposed to mean).
+  + OpDynamic_ is for those ops that work with different number of inputs (right?) 
+  

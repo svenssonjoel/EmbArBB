@@ -18,7 +18,6 @@ import Foreign.Marshal.Array
 import Foreign.Marshal.Utils
 import Foreign.Ptr
 
-
 import Data.Int 
 import Data.Word
 import qualified Data.Map as Map
@@ -81,6 +80,8 @@ sca v1 = addScan v1 0 0
 ----------------------------------------------------------------------------
 cond :: () -> (Exp Int32) 
 cond () = ifThenElse (E $ LLit (newLabel ()) $ LitBool True) 1  2 
+
+
 
 ----------------------------------------------------------------------------
 -- Small tests 
@@ -297,6 +298,23 @@ testCond =
     dat <- execute f ()
     liftIO$ putStrLn$ show dat
 
+
+testIndex = 
+  withArBB $  
+  do
+    f <- capture fun
+    return f
+    str <- serialize f 
+    liftIO$ putStrLn str
+    
+    let v1 = Vector (V.fromList [0..9::Int32]) (One 10)
+    
+    -- execute f 
+    dat <- execute f v1
+    liftIO$ putStrLn$ show dat
+  where 
+    fun :: Exp (DVector Dim1 Int32) -> Exp Int32
+    fun v = index1 v 3
 
 
 

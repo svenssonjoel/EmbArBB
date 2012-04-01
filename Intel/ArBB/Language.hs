@@ -42,6 +42,16 @@ mulReduce (E vec) (E lev) = E $ LReduce (newLabel ()) Mul vec lev
 index0 :: Exp (DVector () a) -> Exp a 
 index0 (E vec) = E $ LIndex0 (newLabel ()) vec 
 
+index1 :: Exp (DVector Dim1 a) -> Exp USize -> Exp a 
+index1 (E vec) (E ix) = E $ LIndex1 (newLabel ()) vec ix 
+
+index2 :: Exp (DVector Dim2 a) -> Exp USize -> Exp USize -> Exp a 
+index2 (E vec) (E ix1) (E ix2)  = E $ LIndex2 (newLabel ()) vec ix1 ix2  
+
+index3 :: Exp (DVector Dim2 a) -> Exp USize -> Exp USize -> Exp USize -> Exp a 
+index3 (E vec) (E ix1) (E ix2) (E ix3) = E $ LIndex3 (newLabel ()) vec ix1 ix2 ix3 
+
+
 ---------------------------------------------------------------------------- 
 -- Scans 
 

@@ -181,7 +181,46 @@ constructDAG (LIndex0 l e) = do
         m' <- get
         let m'' = Map.insert l (NIndex0 e') m' 
         put m''
+        return l   
+constructDAG (LIndex1 l e1 e2 ) = do 
+  m <- get 
+  case Map.lookup l m of 
+    (Just nid) -> return l 
+    Nothing -> 
+      do 
+        e1' <- constructDAG e1 
+        e2' <- constructDAG e2
+        m' <- get
+        let m'' = Map.insert l (NIndex1 e1' e2') m' 
+        put m''
         return l    
+constructDAG (LIndex2 l e1 e2 e3) = do 
+  m <- get 
+  case Map.lookup l m of 
+    (Just nid) -> return l 
+    Nothing -> 
+      do 
+        e1' <- constructDAG e1 
+        e2' <- constructDAG e2
+        e3' <- constructDAG e3
+        m' <- get
+        let m'' = Map.insert l (NIndex2 e1' e2' e3') m' 
+        put m''
+        return l            
+constructDAG (LIndex3 l e1 e2 e3 e4) = do 
+  m <- get 
+  case Map.lookup l m of 
+    (Just nid) -> return l 
+    Nothing -> 
+      do 
+        e1' <- constructDAG e1 
+        e2' <- constructDAG e2
+        e3' <- constructDAG e3
+        e4' <- constructDAG e4
+        m' <- get
+        let m'' = Map.insert l (NIndex3 e1' e2' e3' e4') m' 
+        put m''
+        return l            
 constructDAG (LIf l e1 e2 e3) = do 
   m <- get 
   case Map.lookup l m of 

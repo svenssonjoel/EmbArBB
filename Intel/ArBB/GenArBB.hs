@@ -101,12 +101,9 @@ genBody' dag nid typem funm is =
     genNode :: NodeID -> Node -> Gen [VM.Variable]
     genNode thisNid (NLit l) = 
       do 
-        -- lift$ VM.liftIO$ putStrLn$  show l
         v <- genLiteral l 
         return [v] 
     genNode thisNid (NVar (Variable nom)) = 
-      do 
-        -- lift$ VM.liftIO$ putStrLn "Var node" 
         return$ [is !! (read (nom L.\\ "v") :: Int)]  -- inputs
     
     genNode thisNid (NReduce op n1 n2) = 
@@ -215,14 +212,45 @@ genBody' dag nid typem funm is =
     genNode thisNid (NResIndex n i) = 
       do 
         vs <- genBody' dag n typem funm is 
-        return$ [vs !! i]
+        return [vs !! i]
     genNode thisNid (NIndex0 n) = 
       do 
         vs <- genBody' dag n typem funm is 
-        return$ vs
-    genNode thisNid (NIf n1 n2 n3) =  
+        return vs
+    genNode thisNid (NIndex1 n1 n2) = 
       do 
-      
+        v1 <- genBody' dag n1 typem funm is 
+        v2 <- genBody' dag n2 typem funm is 
+        -- can only be a scalar, right ?
+        [t1] <- getTypeOfNode thisNid typem 
+        imm <- lift$ VM.createLocal_ t1 "imm"
+        lift$ VM.opDynamic_ VM.ArbbOpExtract [imm] (v1++v2)
+        return [imm]
+    genNode thisNid (NIndex2 n1 n2 n3) = 
+      do 
+        v1 <- genBody' dag n1 typem funm is 
+        v2 <- genBody' dag n2 typem funm is 
+        v3 <- genBody' dag n3 typem funm is 
+     
+        [t1] <- getTypeOfNode thisNid typem 
+        imm <- lift$ VM.createLocal_ t1 "imm"
+        lift$ VM.opDynamic_ VM.ArbbOpExtract [imm] (v1++v2++v3)
+        return [imm]
+    genNode thisNid (NIndex3 n1 n2 n3 n4) = 
+      do 
+        v1 <- genBody' dag n1 typem funm is 
+        v2 <- genBody' dag n2 typem funm is 
+        v3 <- genBody' dag n3 typem funm is 
+        v4 <- genBody' dag n4 typem funm is 
+        
+        [t1] <- getTypeOfNode thisNid typem 
+        imm <- lift$ VM.createLocal_ t1 "imm"
+        lift$ VM.opDynamic_ VM.ArbbOpExtract [imm] (v1++v2++v3++v4)
+        return [imm]
+        
+    
+    genNode thisNid (NIf n1 n2 n3) =  
+      do       
         -- conditional is a single var
         [v1] <- genBody' dag n1 typem funm is 
         -- TODO: condition variables need to be local. 
