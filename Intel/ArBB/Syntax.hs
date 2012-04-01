@@ -97,86 +97,13 @@ data LExp = LLit Label Literal
           --  | LFor ...   
           | LIf  Label LExp LExp LExp 
             
+            -- Experiment: Encode all ArBBOps in this constr
+          | LOp Label Op [LExp]   
+            
           deriving (Show, Eq)
                    
 {-
  -- reorder operations
-arbb_op_gather,
-arbb_op_scatter,
-arbb_op_pack,
-arbb_op_unpack,
-arbb_op_shuffle,
-arbb_op_unshuffle,
-arbb_op_repeat,
-arbb_op_distribute,
-arbb_op_repeat_row,
-arbb_op_repeat_col,
-arbb_op_repeat_page,
-arbb_op_transpose,
-arbb_op_swap_col,
-arbb_op_swap_row,
-arbb_op_swap_page,
-arbb_op_shift_constant,
-arbb_op_shift_clamp,
-arbb_op_shift_constant_reverse,
-arbb_op_shift_clamp_reverse,
-arbb_op_rotate,
-arbb_op_rotate_reverse,
-arbb_op_reverse,
-arbb_op_length,
-arbb_op_apply_nesting,
-arbb_op_get_nesting,
-arbb_op_cat,
-arbb_op_cast,
-arbb_op_extract,
-arbb_op_split,
-arbb_op_unsplit,
-arbb_op_index,
-arbb_op_mask,
-arbb_op_copy_nesting,
-arbb_op_flatten,
-arbb_op_const_vector,
-arbb_op_sort,
-arbb_op_sort_rank,
-arbb_op_replace,
-arbb_op_set_regular_nesting,
-arbb_op_replace_row,
-arbb_op_replace_col,
-arbb_op_replace_page,
-arbb_op_get_nrows,
-arbb_op_get_ncols,
-arbb_op_get_npages,
-arbb_op_extract_row,
-arbb_op_extract_col,
-arbb_op_extract_page,
-arbb_op_section,
-arbb_op_segment,
-arbb_op_replace_segment,
-arbb_op_alloc,
-arbb_op_replace_element,
-arbb_op_get_elt_coord,
-arbb_op_bitwise_cast,
-arbb_op_get_neighbor,
-arbb_op_expect_size,
-// collective operations
-arbb_op_add_reduce,
-arbb_op_mul_reduce,
-arbb_op_max_reduce,
-arbb_op_max_reduce_loc,
-arbb_op_min_reduce,
-arbb_op_min_reduce_loc,
-arbb_op_and_reduce,
-arbb_op_ior_reduce,
-arbb_op_xor_reduce,
-arbb_op_add_scan,
-arbb_op_mul_scan,
-arbb_op_max_scan,
-arbb_op_min_scan,
-arbb_op_and_scan,
-arbb_op_ior_scan,
-arbb_op_xor_scan,
-arbb_op_add_merge,
-arbb_op_add_merge_scalar
 
 -}
                    
@@ -202,8 +129,31 @@ data Op = Add | Sub  | Mul | Div
         | Lsh | Mod 
         | Neq | Pow | Rsh 
         | Bit_xor | Select
-
-          
+         -- Experimental
+        | Gather | Scatter | Pack | Unpack
+        | Shuffle | Unshuffle | Repeat
+        | Distribute | RepeatRow | RepeatCol | RepeatPage
+        | Transpose | SwapCol | SwapRow | SwapPage
+        | ShiftConst | ShiftClamp | ShiftConstRev | ShiftConstClampRev
+        | Rotate | RotateRev | Reverse 
+        | Length | ApplyNesting | GetNesting  
+        | Cat | Cast | Extract | Split | Unsplit
+        | Index | Mask | CopyNesting | Flatten 
+        | ConstVector | Sort | SortRank | Replace 
+        | SetRegularNesting | ReplaceRow | ReplaceCol | ReplacePage 
+        | GetNRows | GetNCols | GetNPages 
+        | ExtractRow | ExtractCol | ExtractPage 
+        | Section | Segment | ReplaceSegment
+        | Alloc | ReplaceElem 
+        | GetEltCoord | BitwiseCast
+        | GetNeighbour | ExpectSize 
+        | AddReduce | MulReduce | MaxReduce | MaxReduceLoc 
+        | MinReduce | MinReduceLoc 
+        | AndReduce | IorReduce | XorReduce 
+        | AddScan | MulScan | MaxScan | MinScan | AndScan 
+        | IorScan | XorScan 
+        | AddMerge | AddMergeScalar
+                     
           deriving (Eq, Show) 
                    
 isReduceOp Add = True 
