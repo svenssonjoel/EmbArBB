@@ -63,7 +63,7 @@ getRanks v1 = snd (sortRank v1 0)
 
 getBoth :: Exp (Vector Float) -> (Exp (Vector Float), Exp (Vector USize)) 
 getBoth v1 = sortRank v1 0 
-        
+  
 getBoth' :: Exp (Vector Float) -> (Exp (Vector Float, Vector USize)) 
 getBoth' v1 = sortRank' v1 0 
 

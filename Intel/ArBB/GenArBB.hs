@@ -105,38 +105,7 @@ genBody' dag nid typem funm is =
         return [v] 
     genNode thisNid (NVar (Variable nom)) = 
         return$ [is !! (read (nom L.\\ "v") :: Int)]  -- inputs
-    
-    genNode thisNid (NReduce op n1 n2) = 
-      do
-        
-        [t] <- getTypeOfNode thisNid typem
-        v1 <- genBody' dag n1 typem funm is 
-        v2 <- genBody' dag n2 typem funm is 
-        
-        imm <- lift$ VM.createLocal_ t "imm"   -- st "res" 
-        lift$ VM.opDynamic_ (opToArBBReduceOp op) [imm] (v1 ++ v2) 
-        
-        -- memoize the computed var
-        addNode thisNid [imm] 
-        
-        -- lift$ VM.liftIO$ putStrLn "NReduce node" 
-        return [imm]
-    genNode thisNid (NScan op n1 n2 n3) = 
-      do
-        
-        [t] <- getTypeOfNode thisNid typem
-        v1 <- genBody' dag n1 typem funm is 
-        v2 <- genBody' dag n2 typem funm is 
-        v3 <- genBody' dag n3 typem funm is 
-        
-        imm <- lift$ VM.createLocal_ t "imm"   -- st "res" 
-        lift$ VM.op_ (opToArBBScanOp op) [imm] (v1 ++ v2 ++ v3) 
-        
-        -- memoize the computed var
-        addNode thisNid [imm] 
-        
-        -- lift$ VM.liftIO$ putStrLn "NScan  node" 
-        return [imm]
+
     genNode thisNid (NBinOp op n1 n2) = 
       do 
         v1 <- genBody' dag n1 typem funm is 
@@ -167,48 +136,7 @@ genBody' dag nid typem funm is =
         
         -- lift$ VM.liftIO$ putStrLn "UnOp node" 
         return [imm]
-    genNode thisNid (NRotate n1 n2) = 
-      do 
-        v1 <- genBody' dag n1 typem funm is 
-        v2 <- genBody' dag n2 typem funm is 
-        
-        [t] <- getTypeOfNode thisNid typem 
-        
-        imm <- lift$ VM.createLocal_ t "imm" 
-        lift$ VM.opDynamic_ VM.ArbbOpRotate [imm] (v1 ++ v2)
-        
-        addNode thisNid [imm] 
-        lift$ VM.liftIO$ putStrLn "Rotate node" 
-        return [imm]
-    genNode thisNid (NRotateRev n1 n2) = 
-      do 
-        v1 <- genBody' dag n1 typem funm is 
-        v2 <- genBody' dag n2 typem funm is 
-        
-        [t] <- getTypeOfNode thisNid typem 
-        
-        imm <- lift$ VM.createLocal_ t "imm" 
-        lift$ VM.opDynamic_ VM.ArbbOpRotateReverse [imm] (v1 ++ v2)
-        
-        addNode thisNid [imm] 
-        -- lift$ VM.liftIO$ putStrLn "RotateRev node" 
-        return [imm]
-    genNode thisNid (NSortRank n1 n2) = 
-      do 
-        
-        v1 <- genBody' dag n1 typem funm is 
-        v2 <- genBody' dag n2 typem funm is 
-        
-        [t1,t2] <- getTypeOfNode thisNid typem 
-       
-        imm <- lift$ VM.createLocal_ t1 "imm" 
-        ranks <- lift$ VM.createLocal_ t2 "imm"
-      
-        lift$ VM.op_ VM.ArbbOpSortRank [imm,ranks] (v1 ++ v2)
-        
-        addNode thisNid [imm,ranks] 
-        -- lift$ VM.liftIO$ putStrLn "SortRank node" 
-        return [imm,ranks]
+    
     genNode thisNid (NResIndex n i) = 
       do 
         vs <- genBody' dag n typem funm is 
@@ -217,36 +145,7 @@ genBody' dag nid typem funm is =
       do 
         vs <- genBody' dag n typem funm is 
         return vs
-    genNode thisNid (NIndex1 n1 n2) = 
-      do 
-        v1 <- genBody' dag n1 typem funm is 
-        v2 <- genBody' dag n2 typem funm is 
-        -- can only be a scalar, right ?
-        [t1] <- getTypeOfNode thisNid typem 
-        imm <- lift$ VM.createLocal_ t1 "imm"
-        lift$ VM.opDynamic_ VM.ArbbOpExtract [imm] (v1++v2)
-        return [imm]
-    genNode thisNid (NIndex2 n1 n2 n3) = 
-      do 
-        v1 <- genBody' dag n1 typem funm is 
-        v2 <- genBody' dag n2 typem funm is 
-        v3 <- genBody' dag n3 typem funm is 
-     
-        [t1] <- getTypeOfNode thisNid typem 
-        imm <- lift$ VM.createLocal_ t1 "imm"
-        lift$ VM.opDynamic_ VM.ArbbOpExtract [imm] (v1++v2++v3)
-        return [imm]
-    genNode thisNid (NIndex3 n1 n2 n3 n4) = 
-      do 
-        v1 <- genBody' dag n1 typem funm is 
-        v2 <- genBody' dag n2 typem funm is 
-        v3 <- genBody' dag n3 typem funm is 
-        v4 <- genBody' dag n4 typem funm is 
-        
-        [t1] <- getTypeOfNode thisNid typem 
-        imm <- lift$ VM.createLocal_ t1 "imm"
-        lift$ VM.opDynamic_ VM.ArbbOpExtract [imm] (v1++v2++v3++v4)
-        return [imm]
+ 
     genNode thisNid (NOp op ns) = 
       do 
         vs <- mapM (\n -> genBody' dag n typem funm is) ns 

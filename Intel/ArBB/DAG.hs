@@ -22,6 +22,7 @@ data Node = NLit Literal
           | NUnOp  Op NodeID 
             
           | NIndex0 NodeID
+            {- 
           | NIndex1 NodeID NodeID 
           | NIndex2 NodeID NodeID NodeID
           | NIndex3 NodeID NodeID NodeID NodeID
@@ -34,7 +35,7 @@ data Node = NLit Literal
             
           | NSort NodeID NodeID 
           | NSortRank NodeID NodeID 
-            
+            -} 
           | NResIndex NodeID Int 
           | NCall FunctionName [NodeID] 
           | NMap  FunctionName [NodeID]
@@ -77,55 +78,7 @@ constructDAG (LLit l i) =
     let m' = Map.insert l (NLit i) m 
     put m'
     return l
-constructDAG (LReduce l op input level) = do     
-  m <- get 
-  case Map.lookup l m  of 
-    (Just nid) -> return l -- correct now ? 
-    Nothing    -> 
-      do 
-        input' <- constructDAG input 
-        level' <- constructDAG level
-        m' <- get 
-        let m'' = Map.insert l (NReduce op input' level') m'
-        put m''
-        return l
-constructDAG (LScan l op input dir level) = do     
-  m <- get 
-  case Map.lookup l m  of 
-    (Just nid) -> return l -- correct now ? 
-    Nothing    -> 
-      do 
-        input' <- constructDAG input 
-        dir'   <- constructDAG dir
-        level' <- constructDAG level
-        m' <- get 
-        let m'' = Map.insert l (NScan op input' dir' level') m'
-        put m''
-        return l
-constructDAG (LRotate l i1 i2) = do 
-  m <- get 
-  case Map.lookup l m of 
-    (Just nid) -> return l 
-    Nothing -> 
-      do 
-        i1' <- constructDAG i1
-        i2' <- constructDAG i2
-        m'  <- get 
-        let m'' = Map.insert l (NRotate i1' i2') m' 
-        put m'' 
-        return l
-constructDAG (LRotateRev l i1 i2) = do 
-  m <- get 
-  case Map.lookup l m of 
-    (Just nid) -> return l 
-    Nothing -> 
-      do 
-        i1' <- constructDAG i1
-        i2' <- constructDAG i2
-        m'  <- get 
-        let m'' = Map.insert l (NRotateRev i1' i2') m' 
-        put m'' 
-        return l        
+
 constructDAG (LBinOp l op i1 i2) = do        
   m <- get 
   case Map.lookup l m of 
@@ -138,30 +91,7 @@ constructDAG (LBinOp l op i1 i2) = do
         let m'' = Map.insert l (NBinOp op i1' i2') m'
         put m'' 
         return l
-constructDAG (LSort l i1 i2) = do 
-  m <- get 
-  case Map.lookup l m of 
-    (Just nid) -> return l
-    Nothing -> 
-      do 
-        i1' <- constructDAG i1 
-        i2' <- constructDAG i2 
-        m' <- get 
-        let m'' = Map.insert l (NSort i1' i2') m' 
-        put m'' 
-        return l 
-constructDAG (LSortRank l i1 i2) = do 
-  m <- get 
-  case Map.lookup l m of 
-    (Just nid) -> return l
-    Nothing -> 
-      do 
-        i1' <- constructDAG i1 
-        i2' <- constructDAG i2 
-        m' <- get 
-        let m'' = Map.insert l (NSortRank i1' i2') m' 
-        put m'' 
-        return l 
+
 constructDAG (LResIndex l e i) = do 
   m <- get 
   case Map.lookup l m of 
@@ -173,6 +103,7 @@ constructDAG (LResIndex l e i) = do
         let m'' = Map.insert l (NResIndex e' i) m' 
         put m''
         return l    
+ 
 constructDAG (LIndex0 l e) = do 
   m <- get 
   case Map.lookup l m of 
@@ -184,45 +115,6 @@ constructDAG (LIndex0 l e) = do
         let m'' = Map.insert l (NIndex0 e') m' 
         put m''
         return l   
-constructDAG (LIndex1 l e1 e2 ) = do 
-  m <- get 
-  case Map.lookup l m of 
-    (Just nid) -> return l 
-    Nothing -> 
-      do 
-        e1' <- constructDAG e1 
-        e2' <- constructDAG e2
-        m' <- get
-        let m'' = Map.insert l (NIndex1 e1' e2') m' 
-        put m''
-        return l    
-constructDAG (LIndex2 l e1 e2 e3) = do 
-  m <- get 
-  case Map.lookup l m of 
-    (Just nid) -> return l 
-    Nothing -> 
-      do 
-        e1' <- constructDAG e1 
-        e2' <- constructDAG e2
-        e3' <- constructDAG e3
-        m' <- get
-        let m'' = Map.insert l (NIndex2 e1' e2' e3') m' 
-        put m''
-        return l            
-constructDAG (LIndex3 l e1 e2 e3 e4) = do 
-  m <- get 
-  case Map.lookup l m of 
-    (Just nid) -> return l 
-    Nothing -> 
-      do 
-        e1' <- constructDAG e1 
-        e2' <- constructDAG e2
-        e3' <- constructDAG e3
-        e4' <- constructDAG e4
-        m' <- get
-        let m'' = Map.insert l (NIndex3 e1' e2' e3' e4') m' 
-        put m''
-        return l            
 constructDAG (LIf l e1 e2 e3) = do 
   m <- get 
   case Map.lookup l m of 
@@ -248,6 +140,7 @@ constructDAG (LOp l op es)  =
           let m'' = Map.insert l (NOp op es') m'
           put m''     
           return l 
+constructDAG x = error $ show x 
           
 constrAll [] = return []
 constrAll (x:xs) = 

@@ -54,39 +54,11 @@ data LExp = LLit Label Literal
           | LBinOp Label Op LExp LExp
           | LUnOp Label Op LExp 
             
-            -- Index into Vectors 
+         
             -- Special case (reduction results are arrays, 
             -- sometimes of length one (a zero dimensional array
           | LIndex0 Label LExp      -- needed ? 
-          | LIndex1 Label LExp LExp -- label vector index
-          | LIndex2 Label LExp LExp LExp   
-          | LIndex3 Label LExp LExp LExp LExp 
-
-            -- Operations on dense  
-            
-            -- Reduce a level in a dense container
-          | LReduce Label Op LExp LExp   -- Not all Ops are valid. 
-            -- Scan across a level and a given direction
-          | LScan Label Op LExp LExp LExp -- Not all Ops are valid.
-            
-          | LRotate Label LExp LExp 
-          | LRotateRev Label LExp LExp
-            
-            -- reverse 1D vector
-          | LReverse Label LExp   
-            
-          | LGather Label [LExp] 
-          | LScatter Label [LExp] 
-            
-            -- Create Constant 1D vector 
-          | LConstVector Label LExp LExp 
-            
-            -- Concatenate 2 1D vectors
-          | LCat Label LExp LExp  
-            
-          | LSort Label LExp LExp 
-          | LSortRank Label LExp LExp -- This one has two outpus !! (how deal with this ?) 
-                        
+     
             -- ArBB Functions may compute several results 
           | LResIndex Label LExp Int 
             -- Function with correct name and type must exist in some kind of environment
@@ -178,18 +150,11 @@ isScanOp _   = False
 -- 
 
 getLabel :: LExp -> Label                    
-getLabel (LSort l _ _) = l 
-getLabel (LSortRank l _ _) = l 
-getLabel (LRotate l _ _) = l 
-getLabel (LRotateRev l _ _) = l
-getLabel (LReduce l _ _ _) = l
-getLabel (LIndex1 l _ _) = l 
-getLabel (LIndex0 l _) = l 
 getLabel (LUnOp l _ _) = l 
 getLabel (LBinOp l _ _ _) = l 
 getLabel (LVar l _) = l 
 getLabel (LLit l _) = l 
-
+getLabel (LOp l _ _) = l 
 ---------------------------------------------------------------------------- 
 -- add a layer of types 
 

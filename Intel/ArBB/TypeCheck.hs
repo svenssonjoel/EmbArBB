@@ -85,70 +85,7 @@ typecheckNID d n =
         if isScalar nt 
           then return$ Just$ nt 
           else return Nothing 
-    typecheckNode dag (NIndex1 n1 n2) = 
-      do 
-        nt1 <- typecheckNID dag n1 
-        nt2 <- typecheckNID dag n2 -- ignore now 
-                                   -- earlier layer will ensure it is of right type
-        if is1D nt1 
-          then 
-            let (Dense I scal) = nt1 
-            in return$ Just $ Scalar scal 
-          else return Nothing 
-    typecheckNode dag (NIndex2 n1 n2 n3) = 
-      do 
-        nt1 <- typecheckNID dag n1 
-        nt2 <- typecheckNID dag n2 -- ignore now 
-                                   -- earlier layer will ensure it is of right type
-        nt3 <- typecheckNID dag n3
-        if is2D nt1 
-          then 
-            let (Dense II scal) = nt1 
-            in return$ Just $ Scalar scal 
-          else return Nothing            
-    typecheckNode dag (NIndex3 n1 n2 n3 n4) = 
-      do 
-        nt1 <- typecheckNID dag n1 
-        nt2 <- typecheckNID dag n2 -- ignore now 
-                                   -- earlier layer will ensure it is of right type
-        nt3 <- typecheckNID dag n3
-        nt4 <- typecheckNID dag n4 
-        if is3D nt1 
-          then 
-            let (Dense III scal) = nt1 
-            in return$ Just $ Scalar scal 
-          else return Nothing                       
-    typecheckNode dag (NReduce op n1 n2) = 
-      do 
-        nt1 <- typecheckNID dag n1 
-        nt2 <- typecheckNID dag n2
-        -- Be more serious later. 
-        return $ decrRank nt1 
-    typecheckNode dag (NScan op n1 n2 n3) = 
-      do 
-        nt1 <- typecheckNID dag n1 
-        nt2 <- typecheckNID dag n2
-        nt3 <- typecheckNID dag n3
-        -- Be more serious later. 
-        
-        return $ Just nt1 
-        
-    typecheckNode dag (NRotate n d) = 
-      do 
-        nt <- typecheckNID dag n     -- fix later
-        dt <- typecheckNID dag d 
-        return$ Just nt 
-    typecheckNode dag (NRotateRev n d) = 
-      do 
-        nt <- typecheckNID dag n  -- fix later 
-        dt <- typecheckNID dag d 
-        return$ Just nt
-    typecheckNode dag (NSortRank n d) = 
-      do 
-        nt <- typecheckNID dag n 
-        dt <- typecheckNID dag d 
-        
-        return$ Just$ Tuple [nt,Dense I ArBB.ArbbUsize]   
+
     typecheckNode dag (NResIndex n i) =   
       do 
         (Tuple nt) <- typecheckNID dag n 
