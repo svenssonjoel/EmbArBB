@@ -86,6 +86,19 @@ index3 :: Exp (DVector Dim2 a) -> Exp USize -> Exp USize -> Exp USize -> Exp a
 index3 (E vec) (E ix1) (E ix2) (E ix3) = 
   E $ LOp (newLabel ()) Extract [vec,ix1,ix2,ix3] 
 
+-- | Extract a row from a 2D vector 
+extractRow :: Exp (DVector Dim2 a) -> Exp USize -> Exp (Vector a) 
+extractRow (E vec) (E row) = E $ LOp (newLabel ()) ExtractRow [vec,row]
+
+-- | Extract a column from a 2D vector 
+extractCol :: Exp (DVector Dim2 a) -> Exp USize -> Exp (Vector a) 
+extractCol (E vec) (E col) = E $ LOp (newLabel ()) ExtractCol [vec,col]
+
+-- | Extract a page from a 3D vector 
+extractPage :: Exp (DVector Dim3 a) -> Exp USize -> Exp (DVector Dim2 a) 
+extractPage (E vec) (E page) = E $ LOp (newLabel ()) ExtractPage [vec,page]
+
+
 
 ---------------------------------------------------------------------------- 
 -- Scans 
@@ -171,6 +184,10 @@ rotateRev (E vec) (E steps) =
 reverse :: Exp (Vector a) -> Exp (Vector a) 
 reverse (E vec) = E $ LOp (newLabel ()) Reverse [vec]
 
+-- | Transpose a the first two dimensionalities of a 2D or 3D container
+transpose :: Exp (DVector (():.():.t) a) -> Exp (DVector (():.():. t) a) 
+transpose (E vec) = E $ LOp (newLabel ()) Transpose [vec]
+
 -- | Sort the contents of a dense 1D container. Also returns 
 -- a dense container of indices describing from where elements where moved
 sortRank :: Exp (Vector a) -> Exp USize -> (Exp (Vector a), Exp (Vector USize)) 
@@ -181,11 +198,27 @@ sortRank' :: Exp (Vector a) -> Exp USize -> (Exp (Vector a, Vector USize))
 sortRank' (E vec) (E us) = 
   E $ LOp (newLabel ()) SortRank [vec,us]
 
-
 -- | Sort the contents of a dense 1D container. 
 sort :: Exp (Vector a) -> Exp USize -> Exp (Vector a) 
 sort (E vec) (E us) = 
   E $ LOp (newLabel ()) Sort [vec,us] 
+
+---------------------------------------------------------------------------- 
+-- get sizes of vectors 
+
+-- | get the length (total size) of a 1,2,3D vector 
+length :: Exp (DVector (():.t) a) -> Exp USize 
+length (E vec) = E $ LOp (newLabel ()) Length [vec]
+
+getNRows :: Exp (DVector (():.():.t) a) -> Exp USize 
+getNRows (E vec) = E $ LOp (newLabel ()) GetNRows [vec]
+  
+getNCols :: Exp (DVector (():.():.t) a) -> Exp USize 
+getNCols (E vec) = E $ LOp (newLabel ()) GetNCols [vec]
+
+getNPages :: Exp (DVector Dim3 a) -> Exp USize 
+getNPages (E vec) = E $ LOp (newLabel ()) GetNPages [vec]
+
 
 ----------------------------------------------------------------------------
 -- | Call an ArBB Function 
