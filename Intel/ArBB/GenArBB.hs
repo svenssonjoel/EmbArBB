@@ -201,13 +201,6 @@ genLiteral (LitDouble i) = lift$ VM.float64_ i
 genLiteral (LitISize (ISize i)) = lift$ VM.isize_ i
 genLiteral (LitUSize (USize i)) = lift$ VM.usize_ i
 genLiteral (LitBool  b) = lift$ VM.bool_ b 
---  do 
---    bt <- lift$ VM.getScalarType_ VM.ArbbBoolean
---    cond <- lift$ VM.createLocal_ bt "cond" 
---    gb <- lift$ VM.bool_ b
---    lift$ VM.copy_ cond gb  
---    return cond
--- TODO: Go on!
 
 opToArBB :: Op -> VM.Opcode
 opToArBB Add = VM.ArbbOpAdd
@@ -330,6 +323,7 @@ opToArBB XorScan = VM.ArbbOpXorScan
 opToArBB AddMerge = VM.ArbbOpAddMerge 
 opToArBB AddMergeScalar = VM.ArbbOpAddMergeScalar 
       
+-- TODO: there are many Dynamnic ops here that are incorrectly "False"                     
 isOpDynamic :: Op -> Bool
 isOpDynamic Add = False 
 isOpDynamic Mul = False 

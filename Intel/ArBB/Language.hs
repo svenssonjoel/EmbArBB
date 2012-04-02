@@ -40,20 +40,48 @@ mulReduce :: Num a => Exp (DVector (():.t) a) -> Exp USize -> Exp (DVector t a)
 mulReduce (E vec) (E lev) = 
   E $ LOp (newLabel ()) MulReduce [vec,lev]
 
+-- | reduce along a specified level 
+maxReduce :: Num a => Exp (DVector (():.t) a) -> Exp USize -> Exp (DVector t a) 
+maxReduce (E vec) (E lev) = 
+  E $ LOp (newLabel ()) MaxReduce [vec,lev]
+
+-- | reduce along a specified level 
+minReduce :: Num a => Exp (DVector (():.t) a) -> Exp USize -> Exp (DVector t a) 
+minReduce (E vec) (E lev) = 
+  E $ LOp (newLabel ()) MinReduce [vec,lev]
+
+-- | reduce along a specified level 
+andReduce :: Exp (DVector (():.t) Bool) -> Exp USize -> Exp (DVector t Bool) 
+andReduce (E vec) (E lev) = 
+  E $ LOp (newLabel ()) AndReduce [vec,lev]
+
+-- | reduce along a specified level 
+iorReduce :: Exp (DVector (():.t) Bool) -> Exp USize -> Exp (DVector t Bool) 
+iorReduce (E vec) (E lev) = 
+  E $ LOp (newLabel ()) IorReduce [vec,lev]
+
+-- | reduce along a specified level 
+xorReduce :: Exp (DVector (():.t) Bool) -> Exp USize -> Exp (DVector t Bool) 
+xorReduce (E vec) (E lev) = 
+  E $ LOp (newLabel ()) XorReduce [vec,lev]
+
 ----------------------------------------------------------------------------
 
 -- | zero dimensional vector to scalar
 index0 :: Exp (DVector () a) -> Exp a 
 index0 (E vec) = E $ LIndex0 (newLabel ()) vec 
 
+-- | Index into a 1D vector
 index1 :: Exp (DVector Dim1 a) -> Exp USize -> Exp a 
 index1 (E vec) (E ix) = 
   E $ LOp (newLabel ()) Extract [vec,ix] 
 
+-- | Index into a 2D vector
 index2 :: Exp (DVector Dim2 a) -> Exp USize -> Exp USize -> Exp a 
 index2 (E vec) (E ix1) (E ix2)  = 
   E $ LOp (newLabel ()) Extract [vec,ix1,ix2]  
 
+-- | Index into a 3D vector 
 index3 :: Exp (DVector Dim2 a) -> Exp USize -> Exp USize -> Exp USize -> Exp a 
 index3 (E vec) (E ix1) (E ix2) (E ix3) = 
   E $ LOp (newLabel ()) Extract [vec,ix1,ix2,ix3] 
@@ -81,8 +109,51 @@ mulScan :: Num a
 mulScan (E vec) (E dir) (E lev) = 
   E $ LOp (newLabel ()) MulScan [vec,dir,lev] 
 
+-- | Scan across a specified level and direction over a dense container
+maxScan :: Num a 
+           => (Exp (DVector t a)) 
+           -> Exp USize 
+           -> Exp USize 
+           -> Exp (DVector t a)
+maxScan (E vec) (E dir) (E lev) = 
+  E $ LOp (newLabel ()) MaxScan [vec,dir,lev] 
+  
+-- | Scan across a specified level and direction over a dense container
+minScan :: Num a 
+           => (Exp (DVector t a)) 
+           -> Exp USize 
+           -> Exp USize 
+           -> Exp (DVector t a)
+minScan (E vec) (E dir) (E lev) = 
+  E $ LOp (newLabel ()) MinScan [vec,dir,lev] 
+  
 
+-- | Scan across a specified level and direction over a dense container
+andScan :: (Exp (DVector t Bool)) 
+           -> Exp USize 
+           -> Exp USize 
+           -> Exp (DVector t Bool)
+andScan (E vec) (E dir) (E lev) = 
+  E $ LOp (newLabel ()) AndScan [vec,dir,lev] 
+  
+-- | Scan across a specified level and direction over a dense container
+iorScan ::  (Exp (DVector t Bool)) 
+           -> Exp USize 
+           -> Exp USize 
+           -> Exp (DVector t Bool)
+iorScan (E vec) (E dir) (E lev) = 
+  E $ LOp (newLabel ()) IorScan [vec,dir,lev] 
+  
+-- | Scan across a specified level and direction over a dense container
+xorScan ::  (Exp (DVector t Bool)) 
+           -> Exp USize 
+           -> Exp USize 
+           -> Exp (DVector t Bool)
+xorScan (E vec) (E dir) (E lev) = 
+  E $ LOp (newLabel ()) XorScan [vec,dir,lev] 
 
+  
+  
 ----------------------------------------------------------------------------
 -- | Rotate the contents of a dense container.
 -- Example: {1,2,3} -> {2,3,1}
@@ -90,11 +161,15 @@ rotate :: Exp (DVector (():.t) a) -> Exp ISize -> Exp (DVector (():.t) a)
 rotate (E vec) (E steps) = 
   E $ LOp (newLabel ()) Rotate [vec,steps]  
 
--- | Rotate the contents of a dense container in the reverse direction
+-- | Rotate the contents of a dense container in the reversedirection
 -- Example: {1,2,3} -> {3,1,2} 
 rotateRev :: Exp (DVector (():.t) a) -> Exp ISize -> Exp (DVector (():.t) a) 
 rotateRev (E vec) (E steps) = 
   E $ LOp (newLabel ()) RotateRev [vec,steps]  
+
+-- | Reverse a 1D vector 
+reverse :: Exp (Vector a) -> Exp (Vector a) 
+reverse (E vec) = E $ LOp (newLabel ()) Reverse [vec]
 
 -- | Sort the contents of a dense 1D container. Also returns 
 -- a dense container of indices describing from where elements where moved
