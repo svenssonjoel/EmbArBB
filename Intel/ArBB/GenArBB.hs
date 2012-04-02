@@ -106,37 +106,6 @@ genBody' dag nid typem funm is =
     genNode thisNid (NVar (Variable nom)) = 
         return$ [is !! (read (nom L.\\ "v") :: Int)]  -- inputs
 
-    genNode thisNid (NBinOp op n1 n2) = 
-      do 
-        v1 <- genBody' dag n1 typem funm is 
-        v2 <- genBody' dag n2 typem funm is 
-        
-        [t] <- getTypeOfNode thisNid typem
-        
-        imm <- lift $ VM.createLocal_ t "imm" 
-        -- Assume v1,v2 list of length one 
-        lift$ VM.op_ (opToArBB op) [imm] (v1 ++ v2) 
-        
-        -- memoize the computed var
-        addNode thisNid [imm] 
-        
-        -- lift$ VM.liftIO$ putStrLn "BinOp node" 
-        return [imm]
-    genNode thisNid (NUnOp op n1) = 
-      do 
-        v1 <- genBody' dag n1 typem funm is 
-        
-        [t] <- getTypeOfNode thisNid typem
-        
-        imm <- lift $ VM.createLocal_ t "imm" 
-        lift$ VM.op_ (opToArBB op) [imm] v1 
-        
-        -- memoize the computed var
-        addNode thisNid [imm] 
-        
-        -- lift$ VM.liftIO$ putStrLn "UnOp node" 
-        return [imm]
-    
     genNode thisNid (NResIndex n i) = 
       do 
         vs <- genBody' dag n typem funm is 

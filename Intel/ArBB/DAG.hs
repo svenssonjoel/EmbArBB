@@ -18,24 +18,9 @@ type NodeID = Word32
 
 data Node = NLit Literal
           | NVar Variable 
-          | NBinOp Op NodeID NodeID 
-          | NUnOp  Op NodeID 
-            
-          | NIndex0 NodeID
-            {- 
-          | NIndex1 NodeID NodeID 
-          | NIndex2 NodeID NodeID NodeID
-          | NIndex3 NodeID NodeID NodeID NodeID
-            
-          | NReduce Op NodeID NodeID
-          | NScan   Op NodeID NodeID NodeID 
           
-          | NRotate NodeID NodeID 
-          | NRotateRev NodeID NodeID 
-            
-          | NSort NodeID NodeID 
-          | NSortRank NodeID NodeID 
-            -} 
+          | NIndex0 NodeID
+          
           | NResIndex NodeID Int 
           | NCall FunctionName [NodeID] 
           | NMap  FunctionName [NodeID]
@@ -78,19 +63,6 @@ constructDAG (LLit l i) =
     let m' = Map.insert l (NLit i) m 
     put m'
     return l
-
-constructDAG (LBinOp l op i1 i2) = do        
-  m <- get 
-  case Map.lookup l m of 
-    (Just nid) -> return l
-    Nothing -> 
-      do 
-        i1' <- constructDAG i1 
-        i2' <- constructDAG i2 
-        m' <- get 
-        let m'' = Map.insert l (NBinOp op i1' i2') m'
-        put m'' 
-        return l
 
 constructDAG (LResIndex l e i) = do 
   m <- get 

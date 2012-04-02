@@ -51,13 +51,8 @@ data Variable = Variable String
 -- Labeled Expression
 data LExp = LLit Label Literal  
           | LVar Label Variable 
-          | LBinOp Label Op LExp LExp
-          | LUnOp Label Op LExp 
             
-         
-            -- Special case (reduction results are arrays, 
-            -- sometimes of length one (a zero dimensional array
-          | LIndex0 Label LExp      -- needed ? 
+          | LIndex0 Label LExp 
      
             -- ArBB Functions may compute several results 
           | LResIndex Label LExp Int 
@@ -65,7 +60,7 @@ data LExp = LLit Label Literal
           | LCall Label FunctionName [LExp]  
           | LMap  Label FunctionName [LExp]   
             
-           -- Experimental  
+          -- Experimental  
           --  | LFor ...   
           | LIf  Label LExp LExp LExp 
             
@@ -150,11 +145,10 @@ isScanOp _   = False
 -- 
 
 getLabel :: LExp -> Label                    
-getLabel (LUnOp l _ _) = l 
-getLabel (LBinOp l _ _ _) = l 
 getLabel (LVar l _) = l 
 getLabel (LLit l _) = l 
 getLabel (LOp l _ _) = l 
+getLabel (LIf l _ _ _) = l 
 ---------------------------------------------------------------------------- 
 -- add a layer of types 
 

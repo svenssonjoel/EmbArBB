@@ -219,7 +219,6 @@ getNCols (E vec) = E $ LOp (newLabel ()) GetNCols [vec]
 getNPages :: Exp (DVector Dim3 a) -> Exp USize 
 getNPages (E vec) = E $ LOp (newLabel ()) GetNPages [vec]
 
-
 ----------------------------------------------------------------------------
 -- | Call an ArBB Function 
 call :: ArgList t => Function t (Exp r) -> t -> (Exp r) 
@@ -252,9 +251,9 @@ instance Eq (Exp a) where
   (==) = undefined -- compare labels here
 
 instance Num (Exp Int8) where 
-  (+) (E a) (E b) = E $ LBinOp (newLabel ()) Add a b
-  (*) (E a) (E b) = E $ LBinOp (newLabel ()) Mul a b
-  (-) (E a) (E b) = E $ LBinOp (newLabel ()) Sub a b
+  (+) (E a) (E b) = E $ LOp (newLabel ()) Add [a,b]
+  (*) (E a) (E b) = E $ LOp (newLabel ()) Mul [a,b]
+  (-) (E a) (E b) = E $ LOp (newLabel ()) Sub [a,b]
 
   abs = undefined 
   signum = undefined 
@@ -262,9 +261,9 @@ instance Num (Exp Int8) where
   fromInteger a = E $ LLit (newLabel ()) $ LitInt8 $ fromInteger a
 
 instance Num (Exp Int16) where 
-  (+) (E a) (E b) = E $ LBinOp (newLabel ()) Add a b
-  (*) (E a) (E b) = E $ LBinOp (newLabel ()) Mul a b
-  (-) (E a) (E b) = E $ LBinOp (newLabel ()) Sub a b
+  (+) (E a) (E b) = E $ LOp (newLabel ()) Add [a,b]
+  (*) (E a) (E b) = E $ LOp (newLabel ()) Mul [a,b]
+  (-) (E a) (E b) = E $ LOp (newLabel ()) Sub [a,b]
 
   abs = undefined 
   signum = undefined 
@@ -272,9 +271,9 @@ instance Num (Exp Int16) where
   fromInteger a = E $ LLit (newLabel ()) $ LitInt16 $ fromInteger a
 
 instance Num (Exp Int32) where 
-  (+) (E a) (E b) = E $ LBinOp (newLabel ()) Add a b
-  (*) (E a) (E b) = E $ LBinOp (newLabel ()) Mul a b
-  (-) (E a) (E b) = E $ LBinOp (newLabel ()) Sub a b
+  (+) (E a) (E b) = E $ LOp (newLabel ()) Add [a,b]
+  (*) (E a) (E b) = E $ LOp (newLabel ()) Mul [a,b]
+  (-) (E a) (E b) = E $ LOp (newLabel ()) Sub [a,b]
 
   abs = undefined 
   signum = undefined 
@@ -282,9 +281,9 @@ instance Num (Exp Int32) where
   fromInteger a = E $ LLit (newLabel ()) $ LitInt32 $ fromInteger a
 
 instance Num (Exp Int64) where 
-  (+) (E a) (E b) = E $ LBinOp (newLabel ()) Add a b
-  (*) (E a) (E b) = E $ LBinOp (newLabel ()) Mul a b
-  (-) (E a) (E b) = E $ LBinOp (newLabel ()) Sub a b
+  (+) (E a) (E b) = E $ LOp (newLabel ()) Add [a,b]
+  (*) (E a) (E b) = E $ LOp (newLabel ()) Mul [a,b]
+  (-) (E a) (E b) = E $ LOp (newLabel ()) Sub [a,b]
 
   abs = undefined 
   signum = undefined 
@@ -292,9 +291,9 @@ instance Num (Exp Int64) where
   fromInteger a = E $ LLit (newLabel ()) $ LitInt64 $ fromInteger a
 
 instance Num (Exp Word8) where 
-  (+) (E a) (E b) = E $ LBinOp (newLabel ()) Add a b
-  (*) (E a) (E b) = E $ LBinOp (newLabel ()) Mul a b
-  (-) (E a) (E b) = E $ LBinOp (newLabel ()) Sub a b
+  (+) (E a) (E b) = E $ LOp (newLabel ()) Add [a,b]
+  (*) (E a) (E b) = E $ LOp (newLabel ()) Mul [a,b]
+  (-) (E a) (E b) = E $ LOp (newLabel ()) Sub [a,b]
 
   abs = undefined 
   signum = undefined 
@@ -302,9 +301,9 @@ instance Num (Exp Word8) where
   fromInteger a = E $ LLit (newLabel ()) $ LitWord8 $ fromInteger a
 
 instance Num (Exp Word16) where 
-  (+) (E a) (E b) = E $ LBinOp (newLabel ()) Add a b
-  (*) (E a) (E b) = E $ LBinOp (newLabel ()) Mul a b
-  (-) (E a) (E b) = E $ LBinOp (newLabel ()) Sub a b
+  (+) (E a) (E b) = E $ LOp (newLabel ()) Add [a,b]
+  (*) (E a) (E b) = E $ LOp (newLabel ()) Mul [a,b]
+  (-) (E a) (E b) = E $ LOp (newLabel ()) Sub [a,b]
 
   abs = undefined 
   signum = undefined 
@@ -313,9 +312,9 @@ instance Num (Exp Word16) where
 
 
 instance Num (Exp Word32) where 
-  (+) (E a) (E b) = E $ LBinOp (newLabel ()) Add a b
-  (*) (E a) (E b) = E $ LBinOp (newLabel ()) Mul a b
-  (-) (E a) (E b) = E $ LBinOp (newLabel ()) Sub a b
+  (+) (E a) (E b) = E $ LOp (newLabel ()) Add [a,b]
+  (*) (E a) (E b) = E $ LOp (newLabel ()) Mul [a,b]
+  (-) (E a) (E b) = E $ LOp (newLabel ()) Sub [a,b]
 
   abs = undefined 
   signum = undefined 
@@ -323,9 +322,9 @@ instance Num (Exp Word32) where
   fromInteger a = E $ LLit (newLabel ()) $ LitWord32 $ fromInteger a
   
 instance Num (Exp Word64) where 
-  (+) (E a) (E b) = E $ LBinOp (newLabel ()) Add a b
-  (*) (E a) (E b) = E $ LBinOp (newLabel ()) Mul a b
-  (-) (E a) (E b) = E $ LBinOp (newLabel ()) Sub a b
+  (+) (E a) (E b) = E $ LOp (newLabel ()) Add [a,b]
+  (*) (E a) (E b) = E $ LOp (newLabel ()) Mul [a,b]
+  (-) (E a) (E b) = E $ LOp (newLabel ()) Sub [a,b]
 
   abs = undefined 
   signum = undefined 
@@ -334,9 +333,9 @@ instance Num (Exp Word64) where
 
 
 instance Num (Exp ISize) where 
-  (+) (E a) (E b) = E $ LBinOp (newLabel ()) Add a b
-  (*) (E a) (E b) = E $ LBinOp (newLabel ()) Mul a b
-  (-) (E a) (E b) = E $ LBinOp (newLabel ()) Sub a b
+  (+) (E a) (E b) = E $ LOp (newLabel ()) Add [a,b]
+  (*) (E a) (E b) = E $ LOp (newLabel ()) Mul [a,b]
+  (-) (E a) (E b) = E $ LOp (newLabel ()) Sub [a,b]
 
   abs = undefined 
   signum = undefined 
@@ -345,9 +344,9 @@ instance Num (Exp ISize) where
   
   
 instance Num (Exp USize) where 
-  (+) (E a) (E b) = E $ LBinOp (newLabel ()) Add a b
-  (*) (E a) (E b) = E $ LBinOp (newLabel ()) Mul a b
-  (-) (E a) (E b) = E $ LBinOp (newLabel ()) Sub a b
+  (+) (E a) (E b) = E $ LOp (newLabel ()) Add [a,b]
+  (*) (E a) (E b) = E $ LOp (newLabel ()) Mul [a,b]
+  (-) (E a) (E b) = E $ LOp (newLabel ()) Sub [a,b]
 
   abs = undefined 
   signum = undefined 
@@ -356,9 +355,9 @@ instance Num (Exp USize) where
 
 
 instance Num (Exp Float) where 
-  (+) (E a) (E b) = E $ LBinOp (newLabel ()) Add a b
-  (*) (E a) (E b) = E $ LBinOp (newLabel ()) Mul a b
-  (-) (E a) (E b) = E $ LBinOp (newLabel ()) Sub a b
+  (+) (E a) (E b) = E $ LOp (newLabel ()) Add [a,b]
+  (*) (E a) (E b) = E $ LOp (newLabel ()) Mul [a,b]
+  (-) (E a) (E b) = E $ LOp (newLabel ()) Sub [a,b]
 
   abs = undefined 
   signum = undefined 
@@ -366,9 +365,9 @@ instance Num (Exp Float) where
   fromInteger a = E $ LLit (newLabel ()) $ LitFloat $ fromInteger a
 
 instance Num (Exp Double) where 
-  (+) (E a) (E b) = E $ LBinOp (newLabel ()) Add a b
-  (*) (E a) (E b) = E $ LBinOp (newLabel ()) Mul a b
-  (-) (E a) (E b) = E $ LBinOp (newLabel ()) Sub a b
+  (+) (E a) (E b) = E $ LOp (newLabel ()) Add [a,b]
+  (*) (E a) (E b) = E $ LOp (newLabel ()) Mul [a,b]
+  (-) (E a) (E b) = E $ LOp (newLabel ()) Sub [a,b]
 
   abs = undefined 
   signum = undefined 
@@ -379,9 +378,9 @@ instance Num (Exp Double) where
 ----------------------------------------------------------------------------
 -- 
 instance Num a => Num (Exp (DVector t a)) where 
-  (+) (E v1) (E v2) = E $ LBinOp (newLabel ()) Add v1 v2 
-  (*) (E v1) (E v2) = E $ LBinOp (newLabel ()) Mul v1 v2 
-  (-) (E v1) (E v2) = E $ LBinOp (newLabel ()) Sub v1 v2 
+  (+) (E v1) (E v2) = E $ LOp (newLabel ()) Add [v1,v2] 
+  (*) (E v1) (E v2) = E $ LOp (newLabel ()) Mul [v1,v2] 
+  (-) (E v1) (E v2) = E $ LOp (newLabel ()) Sub [v1,v2] 
   
   abs = undefined 
   signum = undefined 
@@ -391,16 +390,16 @@ instance Num a => Num (Exp (DVector t a)) where
   
 ----------------------------------------------------------------------------
 instance (Num (Exp a), Bits a) => Bits (Exp a) where  
-  (.&.) (E a) (E b) = E $ LBinOp (newLabel ()) Bit_and a b
-  (.|.) (E a) (E b) = E $ LBinOp (newLabel ()) Bit_or a b
-  xor (E a) (E b) = E $ LBinOp (newLabel ()) Bit_xor a b
+  (.&.) (E a) (E b) = E $ LOp (newLabel ()) Bit_and [a,b]
+  (.|.) (E a) (E b) = E $ LOp (newLabel ()) Bit_or [a,b]
+  xor (E a) (E b) = E $ LOp (newLabel ()) Bit_xor [a,b]
   
-  shiftL (E a) b = E $ LBinOp (newLabel ()) Lsh a dist
+  shiftL (E a) b = E $ LOp (newLabel ()) Lsh [a,dist]
    where 
      (E dist) = fromIntegral b :: (Exp Word8)   
-  shiftR (E a) b = E $ LBinOp (newLabel ()) Rsh a dist
+  shiftR (E a) b = E $ LOp (newLabel ()) Rsh [a,dist]
    where 
      (E dist) = fromIntegral b :: (Exp Word8)      
-  complement (E a) = E $ LUnOp (newLabel ()) Bit_not a
+  complement (E a) = E $ LOp (newLabel ()) Bit_not [a]
   bitSize _ = (bitSize (undefined :: a)) 
   isSigned _ = True 

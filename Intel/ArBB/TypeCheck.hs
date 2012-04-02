@@ -66,19 +66,6 @@ typecheckNID d n =
   where 
     typecheckNode dag (NLit l) = typecheckLiteral l
     typecheckNode dag (NVar v) = varType v 
-    typecheckNode dag (NBinOp op n1 n2) = 
-      do 
-        nt1 <- typecheckNID dag n1 
-        nt2 <- typecheckNID dag n2
-        -- Be more serious here later. 
-        if nt1 == nt2 
-          then return$ Just nt1 
-          else return Nothing 
-    typecheckNode dag (NUnOp op n) =                 
-      do 
-        -- Be more serious later.
-        nt <- typecheckNID dag n 
-        return$ Just$ nt 
     typecheckNode dag (NIndex0 n) = 
       do 
         nt <- typecheckNID dag n 
