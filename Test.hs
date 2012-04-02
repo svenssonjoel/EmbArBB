@@ -231,9 +231,10 @@ testScan =
   do
     f <- capture s1
     g <- capture s2
+    h <- capture s3
     
     -- create input
-    let v1 = Vector (V.fromList [0..9::Float]) (One 10)
+    let v1 = Vector (V.fromList [1..10::Float]) (One 10)
         
     str <- serialize f 
     liftIO$ putStrLn str
@@ -249,12 +250,21 @@ testScan =
     (Vector dat n) <- execute g v1
     liftIO$ putStrLn$ "s2 " ++ show dat
     
+    --execute h
+    (Vector dat n) <- execute h v1
+    liftIO$ putStrLn$ "s3 " ++ show dat
+    
+    
+    
   where 
     s1 :: Exp (Vector Float) -> Exp (Vector Float) 
     s1 v = addScan v 0 0
     
     s2 :: Exp (Vector Float) -> Exp (Vector Float)
     s2 v = addScan v 1 0 
+    
+    s3 :: Exp (Vector Float) -> Exp (Vector Float)
+    s3 v = mulScan v 1 0 
     
     
 testReduce = 

@@ -134,7 +134,7 @@ data Op = Add | Sub  | Mul | Div
         | Shuffle | Unshuffle | Repeat
         | Distribute | RepeatRow | RepeatCol | RepeatPage
         | Transpose | SwapCol | SwapRow | SwapPage
-        | ShiftConst | ShiftClamp | ShiftConstRev | ShiftConstClampRev
+        | ShiftConst | ShiftClamp | ShiftConstRev | ShiftClampRev
         | Rotate | RotateRev | Reverse 
         | Length | ApplyNesting | GetNesting  
         | Cat | Cast | Extract | Split | Unsplit
@@ -146,7 +146,7 @@ data Op = Add | Sub  | Mul | Div
         | Section | Segment | ReplaceSegment
         | Alloc | ReplaceElem 
         | GetEltCoord | BitwiseCast
-        | GetNeighbour | ExpectSize 
+        | GetNeighbor | ExpectSize 
         | AddReduce | MulReduce | MaxReduce | MaxReduceLoc 
         | MinReduce | MinReduceLoc 
         | AndReduce | IorReduce | XorReduce 

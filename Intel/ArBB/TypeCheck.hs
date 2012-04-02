@@ -160,6 +160,10 @@ typecheckNID d n =
         t2 <- typecheckNID dag n2 
         t3 <- typecheckNID dag n3 
         return $ Just t2
+    typecheckNode dag (NOp op ns) = 
+      do
+        ts <- mapM (typecheckNID dag) ns 
+        return$ typeOfOp op ts 
       
     typecheckLiteral (LitInt8 _)   = return$ Just$ Scalar ArBB.ArbbI8
     typecheckLiteral (LitInt16 _)  = return$ Just$ Scalar ArBB.ArbbI16
@@ -168,3 +172,131 @@ typecheckNID d n =
     typecheckLiteral (LitISize _)  = return$ Just$ Scalar ArBB.ArbbIsize 
     typecheckLiteral (LitUSize _)  = return$ Just$ Scalar ArBB.ArbbUsize 
     typecheckLiteral (LitBool _)   = return$ Just$ Scalar ArBB.ArbbBoolean
+    
+    same t1 t2 = if t1 == t2 then Just t1 else Nothing 
+    
+    -- LOTS of cheating going on 
+    typeOfOp :: Op -> [Type] -> Maybe Type
+    typeOfOp Add [t1,t2] = same t1 t2
+    typeOfOp Mul [t1,t2] = same t1 t2
+    typeOfOp Sub [t1,t2] = same t1 t2
+    typeOfOp Min [t1,t2] = same t1 t2
+    typeOfOp Max [t1,t2] = same t1 t2
+    typeOfOp Acos [t] = Just t 
+    typeOfOp Asin [t] = Just t 
+    typeOfOp Atan [t] = Just t 
+    typeOfOp Ceil [t] = Just t 
+    typeOfOp Cos  [t] = Just t 
+    typeOfOp Cosh [t] = Just t 
+    typeOfOp Exp  [t] = Just t 
+    typeOfOp Exp10 [t] = Just t 
+    typeOfOp Floor [t] = Just t 
+    typeOfOp Ln [t] = Just t    
+    typeOfOp Log10 [t] = Just t  
+    typeOfOp Log_not [t] = Just t  -- Bool -> Bool
+    typeOfOp Bit_not [t] = Just t  -- Bits a => a -> a 
+    typeOfOp Rcp xs = undefined 
+    typeOfOp Round xs = undefined 
+    typeOfOp Rsqrt xs = undefined 
+    typeOfOp Sin  xs = undefined 
+    typeOfOp Sinh xs = undefined 
+    typeOfOp Sqrt xs = undefined 
+    typeOfOp Tan xs = undefined 
+    typeOfOp Tanh xs = undefined 
+    typeOfOp Neg xs = undefined 
+    typeOfOp Bit_and  xs = undefined 
+    typeOfOp Atan2 xs = undefined 
+    typeOfOp Compare xs = undefined 
+    typeOfOp Equal xs = undefined 
+    typeOfOp Geq xs = undefined 
+    typeOfOp Bit_or xs = undefined 
+    typeOfOp Leq xs = undefined 
+    typeOfOp Less xs = undefined 
+    typeOfOp Log_and xs = undefined 
+    typeOfOp Log_or xs = undefined 
+    typeOfOp Lsh xs = undefined 
+    typeOfOp Mod xs = undefined 
+    typeOfOp Neq xs = undefined 
+    typeOfOp Pow xs = undefined 
+    typeOfOp Rsh xs = undefined 
+    typeOfOp Bit_xor xs = undefined 
+    typeOfOp Select xs = undefined 
+    typeOfOp Gather xs = undefined 
+    typeOfOp Scatter xs = undefined 
+    typeOfOp Pack xs = undefined 
+    typeOfOp Unpack xs = undefined 
+    typeOfOp Shuffle xs = undefined 
+    typeOfOp Unshuffle xs = undefined 
+    typeOfOp Repeat xs = undefined 
+    typeOfOp Distribute xs = undefined 
+    typeOfOp RepeatRow xs = undefined 
+    typeOfOp RepeatCol xs = undefined 
+    typeOfOp RepeatPage xs = undefined 
+    typeOfOp Transpose xs = undefined 
+    typeOfOp SwapCol xs = undefined 
+    typeOfOp SwapRow xs = undefined 
+    typeOfOp SwapPage xs = undefined 
+    typeOfOp ShiftConst xs = undefined 
+    typeOfOp ShiftClamp xs = undefined 
+    typeOfOp ShiftConstRev xs = undefined 
+    typeOfOp ShiftClampRev xs = undefined 
+    typeOfOp Rotate [v,d] = Just v 
+    typeOfOp RotateRev [v,d] = Just v
+    typeOfOp Reverse [v] = Just v 
+    typeOfOp Length xs = undefined 
+    typeOfOp ApplyNesting xs = undefined 
+    typeOfOp GetNesting xs = undefined 
+    typeOfOp Cat xs = undefined 
+    typeOfOp Cast xs = undefined 
+    
+    typeOfOp Extract [Dense I a,i] = Just $ Scalar a 
+    typeOfOp Extract [Dense II a,i,j] = Just $ Scalar a 
+    typeOfOp Extract [Dense III a,i,j,k] = Just $ Scalar a 
+    
+    typeOfOp Split xs = undefined 
+    typeOfOp Unsplit xs = undefined 
+    typeOfOp Index xs = undefined 
+    typeOfOp Mask xs = undefined 
+    typeOfOp CopyNesting xs = undefined 
+    typeOfOp Flatten xs = undefined 
+    typeOfOp ConstVector xs = undefined 
+    typeOfOp Sort [v,d] = Just v
+    typeOfOp SortRank [v,d] = Just$ Tuple [v,Dense I ArBB.ArbbUsize] -- DVector Dim1 a -> (DVector Dim1 a, DVector Dim1 USize)
+    typeOfOp Replace xs = undefined 
+    typeOfOp SetRegularNesting xs = undefined 
+    typeOfOp ReplaceRow xs = undefined 
+    typeOfOp ReplaceCol xs = undefined 
+    typeOfOp ReplacePage xs = undefined 
+    typeOfOp GetNRows xs = undefined 
+    typeOfOp GetNCols xs = undefined 
+    typeOfOp GetNPages xs = undefined 
+    typeOfOp ExtractRow xs = undefined 
+    typeOfOp ExtractCol xs = undefined 
+    typeOfOp ExtractPage xs = undefined 
+    typeOfOp Section xs = undefined 
+    typeOfOp Segment xs = undefined 
+    typeOfOp ReplaceSegment xs = undefined 
+    typeOfOp Alloc xs = undefined 
+    typeOfOp ReplaceElem xs = undefined 
+    typeOfOp GetEltCoord xs = undefined 
+    typeOfOp BitwiseCast xs = undefined 
+    typeOfOp GetNeighbor xs = undefined 
+    typeOfOp ExpectSize xs = undefined 
+    typeOfOp AddReduce [v,l] = decrRank v  
+    typeOfOp MulReduce [v,l] = decrRank v 
+    typeOfOp MaxReduce [v,l] = decrRank v 
+    typeOfOp MaxReduceLoc xs = undefined 
+    typeOfOp MinReduce [v,l] = decrRank v 
+    typeOfOp MinReduceLoc xs = undefined 
+    typeOfOp AndReduce [v,l] = decrRank v 
+    typeOfOp IorReduce [v,l] = decrRank v 
+    typeOfOp XorReduce [v,l] = decrRank v 
+    typeOfOp AddScan [v,d,l] = Just v --Vec, USize, USise  
+    typeOfOp MulScan [v,d,l] = Just v --Vec, USize, USise  
+    typeOfOp MaxScan [v,d,l] = Just v --Vec, USize, USise  
+    typeOfOp MinScan [v,d,l] = Just v --Vec, USize, USise  
+    typeOfOp AndScan [v,d,l] = Just v --Vec, USize, USise  
+    typeOfOp IorScan [v,d,l] = Just v --Vec, USize, USise  
+    typeOfOp XorScan [v,d,l] = Just v --Vec, USize, USise  
+    typeOfOp AddMerge xs = undefined 
+    typeOfOp AddMergeScalar xs = undefined 

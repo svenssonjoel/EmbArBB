@@ -20,21 +20,25 @@ import Data.Bits
 
 -- | Reduce along level 0 
 addReduce0 :: Num a => Exp (DVector (():.t) a) -> Exp (DVector t a) 
-addReduce0 (E vec) = E $ LReduce (newLabel ()) Add vec zero 
+addReduce0 (E vec) = 
+  E $ LOp (newLabel ()) AddReduce [vec,zero] 
   where (E zero) = 0 :: Exp USize
 
 -- | Reduce along level 0 
 mulReduce0 :: Num a => Exp (DVector (():.t) a) -> Exp (DVector t a) 
-mulReduce0 (E vec) = E $ LReduce (newLabel ()) Mul vec zero
+mulReduce0 (E vec) = 
+  E $ LOp (newLabel ()) MulReduce [vec,zero]
   where (E zero) = 0 :: Exp USize
                                                                              
 -- | reduce along a specified level 
 addReduce :: Num a => Exp (DVector (():.t) a) -> Exp USize -> Exp (DVector t a) 
-addReduce (E vec) (E lev) = E $ LReduce (newLabel ()) Add vec lev
+addReduce (E vec) (E lev) = 
+  E $ LOp (newLabel ()) AddReduce [vec,lev]
 
 -- | reduce along a specified level 
 mulReduce :: Num a => Exp (DVector (():.t) a) -> Exp USize -> Exp (DVector t a) 
-mulReduce (E vec) (E lev) = E $ LReduce (newLabel ()) Mul vec lev
+mulReduce (E vec) (E lev) = 
+  E $ LOp (newLabel ()) MulReduce [vec,lev]
 
 ----------------------------------------------------------------------------
 
@@ -43,13 +47,16 @@ index0 :: Exp (DVector () a) -> Exp a
 index0 (E vec) = E $ LIndex0 (newLabel ()) vec 
 
 index1 :: Exp (DVector Dim1 a) -> Exp USize -> Exp a 
-index1 (E vec) (E ix) = E $ LIndex1 (newLabel ()) vec ix 
+index1 (E vec) (E ix) = 
+  E $ LOp (newLabel ()) Extract [vec,ix] 
 
 index2 :: Exp (DVector Dim2 a) -> Exp USize -> Exp USize -> Exp a 
-index2 (E vec) (E ix1) (E ix2)  = E $ LIndex2 (newLabel ()) vec ix1 ix2  
+index2 (E vec) (E ix1) (E ix2)  = 
+  E $ LOp (newLabel ()) Extract [vec,ix1,ix2]  
 
 index3 :: Exp (DVector Dim2 a) -> Exp USize -> Exp USize -> Exp USize -> Exp a 
-index3 (E vec) (E ix1) (E ix2) (E ix3) = E $ LIndex3 (newLabel ()) vec ix1 ix2 ix3 
+index3 (E vec) (E ix1) (E ix2) (E ix3) = 
+  E $ LOp (newLabel ()) Extract [vec,ix1,ix2,ix3] 
 
 
 ---------------------------------------------------------------------------- 
@@ -62,7 +69,8 @@ addScan :: Num a
            -> Exp USize 
            -> Exp (DVector t a)
 addScan (E vec) (E dir) (E lev) = 
-  E $ LScan (newLabel ()) Add vec dir lev 
+  E $ LOp (newLabel ()) AddScan [vec,dir,lev] 
+
 
 -- | Scan across a specified level and direction over a dense container
 mulScan :: Num a 
@@ -71,7 +79,7 @@ mulScan :: Num a
            -> Exp USize 
            -> Exp (DVector t a)
 mulScan (E vec) (E dir) (E lev) = 
-  E $ LScan (newLabel ()) Mul vec dir lev 
+  E $ LOp (newLabel ()) MulScan [vec,dir,lev] 
 
 
 
@@ -79,26 +87,30 @@ mulScan (E vec) (E dir) (E lev) =
 -- | Rotate the contents of a dense container.
 -- Example: {1,2,3} -> {2,3,1}
 rotate :: Exp (DVector (():.t) a) -> Exp ISize -> Exp (DVector (():.t) a) 
-rotate (E vec) (E steps) = E $ LRotate (newLabel ()) vec steps  
+rotate (E vec) (E steps) = 
+  E $ LOp (newLabel ()) Rotate [vec,steps]  
 
 -- | Rotate the contents of a dense container in the reverse direction
 -- Example: {1,2,3} -> {3,1,2} 
 rotateRev :: Exp (DVector (():.t) a) -> Exp ISize -> Exp (DVector (():.t) a) 
-rotateRev (E vec) (E steps) = E $ LRotateRev (newLabel ()) vec steps  
+rotateRev (E vec) (E steps) = 
+  E $ LOp (newLabel ()) RotateRev [vec,steps]  
 
 -- | Sort the contents of a dense 1D container. Also returns 
 -- a dense container of indices describing from where elements where moved
 sortRank :: Exp (Vector a) -> Exp USize -> (Exp (Vector a), Exp (Vector USize)) 
 sortRank (E vec) (E us)  = (fstPair s, sndPair s)
-  where s = E $ LSortRank (newLabel ()) vec us
+  where s = E $ LOp (newLabel ()) SortRank [vec,us]
 
 sortRank' :: Exp (Vector a) -> Exp USize -> (Exp (Vector a, Vector USize)) 
-sortRank' (E vec) (E us) = E $ LSortRank (newLabel ()) vec us
+sortRank' (E vec) (E us) = 
+  E $ LOp (newLabel ()) SortRank [vec,us]
 
 
 -- | Sort the contents of a dense 1D container. 
 sort :: Exp (Vector a) -> Exp USize -> Exp (Vector a) 
-sort (E vec) (E us) = E $ LSort (newLabel ()) vec us 
+sort (E vec) (E us) = 
+  E $ LOp (newLabel ()) Sort [vec,us] 
 
 ----------------------------------------------------------------------------
 -- | Call an ArBB Function 

@@ -40,6 +40,8 @@ data Node = NLit Literal
           | NMap  FunctionName [NodeID]
             
           | NIf NodeID NodeID NodeID
+            -- experimental 
+          | NOp Op [NodeID] 
           deriving (Eq,Show)
 
 type DAG = Map.Map NodeID Node
@@ -234,4 +236,23 @@ constructDAG (LIf l e1 e2 e3) = do
         let m'' = Map.insert l (NIf e1' e2' e3') m'
         put m''
         return l
-      
+constructDAG (LOp l op es)  = 
+  do       
+    m <- get 
+    case Map.lookup l m of 
+      (Just nid) -> return l 
+      Nothing -> 
+        do 
+          es' <- constrAll es 
+          m' <- get 
+          let m'' = Map.insert l (NOp op es') m'
+          put m''     
+          return l 
+          
+constrAll [] = return []
+constrAll (x:xs) = 
+  do 
+    x' <- constructDAG x 
+    xs' <- constrAll xs 
+    return (x':xs')
+    

@@ -247,8 +247,19 @@ genBody' dag nid typem funm is =
         imm <- lift$ VM.createLocal_ t1 "imm"
         lift$ VM.opDynamic_ VM.ArbbOpExtract [imm] (v1++v2++v3++v4)
         return [imm]
-        
+    genNode thisNid (NOp op ns) = 
+      do 
+        vs <- mapM (\n -> genBody' dag n typem funm is) ns 
+       
+        t <- getTypeOfNode' thisNid typem  
+        imm <- lift$ typeToArBBLocalVar t 
     
+        case isOpDynamic op of 
+          True -> lift$ VM.opDynamic_ (opToArBB op) imm (concat vs)
+          False -> lift$ VM.op_ (opToArBB op) imm (concat vs) 
+        
+        return imm
+        
     genNode thisNid (NIf n1 n2 n3) =  
       do       
         -- conditional is a single var
@@ -276,9 +287,7 @@ genBody' dag nid typem funm is =
           )
         addNode thisNid imm 
         return imm
-        
-        
-        
+      
 genLiteral :: Literal -> Gen VM.Variable
 genLiteral (LitInt8 i)  = lift$ VM.int8_ i 
 genLiteral (LitInt16 i) = lift$ VM.int16_ i 
@@ -301,7 +310,7 @@ genLiteral (LitBool  b) = lift$ VM.bool_ b
 --    return cond
 -- TODO: Go on!
 
-
+opToArBB :: Op -> VM.Opcode
 opToArBB Add = VM.ArbbOpAdd
 opToArBB Mul = VM.ArbbOpMul 
 opToArBB Sub = VM.ArbbOpSub
@@ -346,6 +355,203 @@ opToArBB Pow = VM.ArbbOpPow
 opToArBB Rsh = VM.ArbbOpRsh
 opToArBB Bit_xor = VM.ArbbOpBitXor
 opToArBB Select = VM.ArbbOpSelect
+opToArBB Gather = VM.ArbbOpGather 
+opToArBB Scatter = VM.ArbbOpScatter
+opToArBB Pack = VM.ArbbOpPack
+opToArBB Unpack = VM.ArbbOpUnpack 
+opToArBB Shuffle = VM.ArbbOpShuffle
+opToArBB Unshuffle = VM.ArbbOpUnshuffle
+opToArBB Repeat = VM.ArbbOpRepeat  
+opToArBB Distribute = VM.ArbbOpDistribute 
+opToArBB RepeatRow = VM.ArbbOpRepeatRow  
+opToArBB RepeatCol = VM.ArbbOpRepeatCol 
+opToArBB RepeatPage = VM.ArbbOpRepeatPage
+opToArBB Transpose = VM.ArbbOpTranspose 
+opToArBB SwapCol = VM.ArbbOpSwapCol 
+opToArBB SwapRow = VM.ArbbOpSwapRow
+opToArBB SwapPage= VM.ArbbOpSwapPage 
+opToArBB ShiftConst = VM.ArbbOpShiftConstant 
+opToArBB ShiftClamp = VM.ArbbOpShiftClamp
+opToArBB ShiftConstRev = VM.ArbbOpShiftConstantReverse 
+opToArBB ShiftClampRev = VM.ArbbOpShiftClampReverse
+opToArBB Rotate = VM.ArbbOpRotate
+opToArBB RotateRev = VM.ArbbOpRotateReverse 
+opToArBB Reverse = VM.ArbbOpReverse
+opToArBB Length = VM.ArbbOpLength 
+opToArBB ApplyNesting = VM.ArbbOpApplyNesting 
+opToArBB GetNesting = VM.ArbbOpGetNesting 
+opToArBB Cat = VM.ArbbOpCat 
+opToArBB Cast = VM.ArbbOpCast 
+opToArBB Extract = VM.ArbbOpExtract 
+opToArBB Split = VM.ArbbOpSplit 
+opToArBB Unsplit = VM.ArbbOpUnsplit 
+opToArBB Index = VM.ArbbOpIndex 
+opToArBB Mask = VM.ArbbOpMask 
+opToArBB CopyNesting = VM.ArbbOpCopyNesting 
+opToArBB Flatten = VM.ArbbOpFlatten 
+opToArBB ConstVector = VM.ArbbOpConstVector 
+opToArBB Sort = VM.ArbbOpSort 
+opToArBB SortRank = VM.ArbbOpSortRank 
+opToArBB Replace = VM.ArbbOpReplace 
+opToArBB SetRegularNesting = VM.ArbbOpSetRegularNesting 
+opToArBB ReplaceRow = VM.ArbbOpReplaceRow 
+opToArBB ReplaceCol = VM.ArbbOpReplaceCol 
+opToArBB ReplacePage = VM.ArbbOpReplacePage 
+opToArBB GetNRows = VM.ArbbOpGetNrows 
+opToArBB GetNCols = VM.ArbbOpGetNcols 
+opToArBB GetNPages = VM.ArbbOpGetNpages 
+opToArBB ExtractRow = VM.ArbbOpExtractRow 
+opToArBB ExtractCol = VM.ArbbOpExtractCol 
+opToArBB ExtractPage = VM.ArbbOpExtractPage
+opToArBB Section = VM.ArbbOpSection 
+opToArBB Segment = VM.ArbbOpSegment 
+opToArBB ReplaceSegment = VM.ArbbOpReplaceSegment 
+opToArBB Alloc = VM.ArbbOpAlloc 
+opToArBB ReplaceElem = VM.ArbbOpReplaceElement 
+opToArBB GetEltCoord = VM.ArbbOpGetEltCoord
+opToArBB BitwiseCast = VM.ArbbOpBitwiseCast 
+opToArBB GetNeighbor = VM.ArbbOpGetNeighbor 
+opToArBB ExpectSize = VM.ArbbOpExpectSize 
+opToArBB AddReduce = VM.ArbbOpAddReduce 
+opToArBB MulReduce = VM.ArbbOpMulReduce  
+opToArBB MaxReduce = VM.ArbbOpMaxReduce 
+opToArBB MaxReduceLoc = VM.ArbbOpMaxReduceLoc 
+opToArBB MinReduce = VM.ArbbOpMinReduce 
+opToArBB MinReduceLoc = VM.ArbbOpMinReduceLoc 
+opToArBB AndReduce = VM.ArbbOpAndReduce 
+opToArBB IorReduce = VM.ArbbOpIorReduce 
+opToArBB XorReduce = VM.ArbbOpXorReduce 
+opToArBB AddScan = VM.ArbbOpAddScan 
+opToArBB MulScan = VM.ArbbOpMulScan 
+opToArBB MaxScan = VM.ArbbOpMaxScan 
+opToArBB MinScan = VM.ArbbOpMinScan 
+opToArBB AndScan = VM.ArbbOpAndScan 
+opToArBB IorScan = VM.ArbbOpIorScan 
+opToArBB XorScan = VM.ArbbOpXorScan 
+opToArBB AddMerge = VM.ArbbOpAddMerge 
+opToArBB AddMergeScalar = VM.ArbbOpAddMergeScalar 
+      
+isOpDynamic :: Op -> Bool
+isOpDynamic Add = False 
+isOpDynamic Mul = False 
+isOpDynamic Sub = False 
+isOpDynamic Min = False 
+isOpDynamic Max = False 
+isOpDynamic Acos = False
+isOpDynamic Asin = False
+isOpDynamic Atan = False
+isOpDynamic Ceil = False
+isOpDynamic Cos = False 
+isOpDynamic Cosh = False
+isOpDynamic Exp = False 
+isOpDynamic Exp10 = False 
+isOpDynamic Floor = False 
+isOpDynamic Ln  = False 
+isOpDynamic Log10 = False 
+isOpDynamic Log_not = False 
+isOpDynamic Bit_not = False 
+isOpDynamic Rcp = False 
+isOpDynamic Round = False 
+isOpDynamic Rsqrt = False 
+isOpDynamic Sin  = False 
+isOpDynamic Sinh = False 
+isOpDynamic Sqrt = False 
+isOpDynamic Tan = False 
+isOpDynamic Tanh = False
+isOpDynamic Neg = False 
+isOpDynamic Bit_and  = False 
+isOpDynamic Atan2 = False 
+isOpDynamic Compare = False 
+isOpDynamic Equal = False 
+isOpDynamic Geq = False 
+isOpDynamic Bit_or = False 
+isOpDynamic Leq = False 
+isOpDynamic Less = False 
+isOpDynamic Log_and = False 
+isOpDynamic Log_or = False 
+isOpDynamic Lsh = False 
+isOpDynamic Mod = False 
+isOpDynamic Neq = False 
+isOpDynamic Pow = False 
+isOpDynamic Rsh = False 
+isOpDynamic Bit_xor = False 
+isOpDynamic Select = False 
+isOpDynamic Gather = False  
+isOpDynamic Scatter = False 
+isOpDynamic Pack = False 
+isOpDynamic Unpack = False  
+isOpDynamic Shuffle = False 
+isOpDynamic Unshuffle = False 
+isOpDynamic Repeat = False   
+isOpDynamic Distribute = False  
+isOpDynamic RepeatRow = False   
+isOpDynamic RepeatCol = False  
+isOpDynamic RepeatPage = False
+isOpDynamic Transpose = False  
+isOpDynamic SwapCol = False  
+isOpDynamic SwapRow = False 
+isOpDynamic SwapPage = False  
+isOpDynamic ShiftConst = False  
+isOpDynamic ShiftClamp = False 
+isOpDynamic ShiftConstRev = False  
+isOpDynamic ShiftClampRev = False 
+isOpDynamic Rotate = True
+isOpDynamic RotateRev = True  
+isOpDynamic Reverse = False 
+isOpDynamic Length = False  
+isOpDynamic ApplyNesting = False  
+isOpDynamic GetNesting = False  
+isOpDynamic Cat = False  
+isOpDynamic Cast = False  
+isOpDynamic Extract = True 
+isOpDynamic Split = False  
+isOpDynamic Unsplit = False  
+isOpDynamic Index = False  
+isOpDynamic Mask = False  
+isOpDynamic CopyNesting = False  
+isOpDynamic Flatten = False  
+isOpDynamic ConstVector = False  
+isOpDynamic Sort = False  
+isOpDynamic SortRank = False  
+isOpDynamic Replace = False  
+isOpDynamic SetRegularNesting = False  
+isOpDynamic ReplaceRow = False  
+isOpDynamic ReplaceCol = False  
+isOpDynamic ReplacePage = False  
+isOpDynamic GetNRows = False  
+isOpDynamic GetNCols = False  
+isOpDynamic GetNPages = False  
+isOpDynamic ExtractRow = False  
+isOpDynamic ExtractCol = False  
+isOpDynamic ExtractPage = False 
+isOpDynamic Section = False  
+isOpDynamic Segment = False  
+isOpDynamic ReplaceSegment = False  
+isOpDynamic Alloc = False  
+isOpDynamic ReplaceElem = False  
+isOpDynamic GetEltCoord = False 
+isOpDynamic BitwiseCast = False  
+isOpDynamic GetNeighbor = False  
+isOpDynamic ExpectSize = False  
+isOpDynamic AddReduce = True  
+isOpDynamic MulReduce = True   
+isOpDynamic MaxReduce = True 
+isOpDynamic MaxReduceLoc = True  
+isOpDynamic MinReduce = True  
+isOpDynamic MinReduceLoc = True  
+isOpDynamic AndReduce = True
+isOpDynamic IorReduce = True  
+isOpDynamic XorReduce = True  
+isOpDynamic AddScan = False  
+isOpDynamic MulScan = False  
+isOpDynamic MaxScan = False  
+isOpDynamic MinScan = False  
+isOpDynamic AndScan = False  
+isOpDynamic IorScan = False  
+isOpDynamic XorScan = False  
+isOpDynamic AddMerge = False  
+isOpDynamic AddMergeScalar = False  
+
 
 
 -- valid reduction op ? 
