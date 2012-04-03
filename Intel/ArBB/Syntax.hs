@@ -61,14 +61,23 @@ data LExp = LLit Label Literal
           | LMap  Label FunctionName [LExp]   
             
           -- Experimental  
-          --  | LFor ...   
+          | LFor Label ([LExp] -> LExp)   -- loop condition 
+                       ([LExp] -> [LExp]) -- loop body 
+                       [LExp]             -- start state
+                 
           | LIf  Label LExp LExp LExp 
             
             -- Experiment: Encode all ArBBOps in this constr
           | LOp Label Op [LExp]   
             
-          deriving (Show, Eq)
+          deriving (Show)
                    
+instance Show (a->b) where 
+  show _ = "func" 
+
+instance Eq LExp where 
+  a == b = getLabel a == getLabel b
+
 {-
  -- reorder operations
 

@@ -28,6 +28,10 @@ data Node = NLit Literal
           | NIf NodeID NodeID NodeID
             -- experimental 
           | NOp Op [NodeID] 
+            
+            --Hmm dont know about this... 
+          | NFor DAG DAG [NodeID]   
+            
           deriving (Eq,Show)
 
 type DAG = Map.Map NodeID Node

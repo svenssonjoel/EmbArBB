@@ -242,6 +242,18 @@ ifThenElse (E b) (E e1) (E e2) = E $ LIf (newLabel ()) b e1 e2
 
 
 ----------------------------------------------------------------------------
+-- For loop ... (JUST A FIRST TEST!)
+for :: ((Exp a,Exp Int32) -> Exp Bool)
+       -> ((Exp a,Exp Int32) -> (Exp a,Exp Int32))
+       -> (Exp a, Exp Int32) -> Exp a 
+for cond f (E s,E i)  = E $ LFor (newLabel ()) cond' f' [s,i]
+  where 
+    cond' [a,b] = let (E r) = cond (E a, E b) 
+                  in r    
+    f'    [a,b] = let (E r1, E r2) = f (E a, E b)
+                  in [r1,r2]
+
+----------------------------------------------------------------------------
 -- instances 
 
 instance Show (Exp a) where 
@@ -403,3 +415,10 @@ instance (Num (Exp a), Bits a) => Bits (Exp a) where
   complement (E a) = E $ LOp (newLabel ()) Bit_not [a]
   bitSize _ = (bitSize (undefined :: a)) 
   isSigned _ = True 
+
+
+---------------------------------------------------------------------------- 
+-- boolean ops 
+
+(<*) :: Ord a => Exp a -> Exp a -> Exp Bool
+(<*) (E a) (E b) = E $ LOp (newLabel ()) Less [a,b]
