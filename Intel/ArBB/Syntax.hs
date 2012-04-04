@@ -64,6 +64,8 @@ data LExp = LLit Label Literal
           | LFor Label ([LExp] -> LExp)   -- loop condition 
                        ([LExp] -> [LExp]) -- loop body 
                        [LExp]             -- start state
+          | LFor' Label [Variable] LExp [LExp] [LExp]
+
                  
           | LIf  Label LExp LExp LExp 
             

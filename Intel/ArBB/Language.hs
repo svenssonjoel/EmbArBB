@@ -253,6 +253,24 @@ for cond f (E s,E i)  = E $ LFor (newLabel ()) cond' f' [s,i]
     f'    [a,b] = let (E r1, E r2) = f (E a, E b)
                   in [r1,r2]
 
+for' :: ((Exp a,Exp Int32) -> Exp Bool)
+       -> ((Exp a,Exp Int32) -> (Exp a,Exp Int32))
+       -> (Exp a, Exp Int32) -> Exp a 
+for' cond f (E s, E i) = E $ LFor' (newLabel ()) [var,ix] c body [s,i]
+ where 
+   l1   = newLabel ()
+   l2   = newLabel () 
+   var  = Variable ("l" ++ show l1)
+   ix   = Variable ("l" ++ show l2)
+   v1   = E $ LVar (newLabel ()) var
+   v2   = E $ LVar (newLabel ()) ix 
+   (E v1', E v2')  = f (v1,v2)           
+   body = [v1',v2'] 
+   (E c) = cond  (v1,v2) 
+   -- (E c) = E $ LLit (newLabel ()) $ LitBool True
+     
+-- [LOp 18 Add [LVar 19 (Variable "v0"),LVar 20 (Variable "l13")],LOp 21 Add [LVar 16 (Variable "l14"),LLit 22 (LitInt32 1)]] [LVar 19 (Variable "v0"),LLit 23 (LitInt32 0)]
+
 ----------------------------------------------------------------------------
 -- instances 
 
