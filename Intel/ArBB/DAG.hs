@@ -30,7 +30,7 @@ data Node = NLit Literal
           | NOp Op [NodeID] 
             
             --Hmm dont know about this... 
-          | NFor DAG DAG [NodeID]   
+          | NFor NodeID [NodeID]   
             
           deriving (Eq,Show)
 
@@ -91,6 +91,7 @@ constructDAG (LIndex0 l e) = do
         let m'' = Map.insert l (NIndex0 e') m' 
         put m''
         return l   
+        
 constructDAG (LIf l e1 e2 e3) = do 
   m <- get 
   case Map.lookup l m of 
@@ -104,6 +105,7 @@ constructDAG (LIf l e1 e2 e3) = do
         let m'' = Map.insert l (NIf e1' e2' e3') m'
         put m''
         return l
+        
 constructDAG (LOp l op es)  = 
   do       
     m <- get 
@@ -116,6 +118,12 @@ constructDAG (LOp l op es)  =
           let m'' = Map.insert l (NOp op es') m'
           put m''     
           return l 
+constructDAG (LFor l cond body state1) = 
+  do 
+    m <- get 
+    case Map.lookup l m of 
+      (Just nid) -> return l 
+      Nothing ->  undefined  
 constructDAG x = error $ show x 
           
 constrAll [] = return []

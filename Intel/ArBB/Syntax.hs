@@ -78,11 +78,7 @@ instance Show (a->b) where
 instance Eq LExp where 
   a == b = getLabel a == getLabel b
 
-{-
- -- reorder operations
-
--}
-                   
+ 
 -- TODO: Figure out how to get the ArBB looping constructs into the Expr 
 --       datatype.
 
