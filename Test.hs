@@ -329,28 +329,20 @@ testIndex =
 testFor = 
   withArBB $  
   do
-    --f <- capture fun
-    f2 <- capture fun2
+    f <- capture fun
    
-    str <- serialize f2
+    str <- serialize f
     liftIO$ putStrLn str
-    
-   -- str <- serialize f 
-   -- liftIO$ putStrLn str
-
---    let v1 = Vector (V.fromList [0..9::Int32]) (One 10)
+  
+    let v1 = Vector (V.fromList [0..9::Int32]) (One 10)
     
     -- execute f 
-  --  (Vector dat n) <- execute f v1
---    liftIO$ putStrLn$ show dat
+    (Vector dat n,i) <- execute f v1
+    liftIO$ putStrLn$ show dat
 
-  where 
-    fun :: Exp (DVector Dim1 Int32) -> Exp (DVector Dim1 Int32)
-    fun v = for (\(v',i)  -> i <* 10)  
-                (\(v',i) -> (v + v',i+1))
-                (v,0)
-    fun2 :: Exp (DVector Dim1 Int32) -> Exp (DVector Dim1 Int32)
-    fun2 v = for' (\(v',i)  -> i <* 10)  
+  where
+    fun :: Exp (DVector Dim1 Int32) -> (Exp (DVector Dim1 Int32),Exp Int32)
+    fun v = for' (\(v',i)  -> i <* 10)  
                   (\(v',i) -> (v + v',i+1))
                   (v,0)
                             

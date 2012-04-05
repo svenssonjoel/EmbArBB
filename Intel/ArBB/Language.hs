@@ -259,9 +259,10 @@ for cond f (E s,E i)  = E $ LFor (newLabel ()) cond' f' [s,i]
 
 for' :: Data (Exp a) => ((Exp a,Exp Int32) -> Exp Bool)
        -> ((Exp a,Exp Int32) -> (Exp a,Exp Int32))
-       -> (Exp a, Exp Int32) -> Exp a 
-for' cond f (s'@(E s), E i) = E $ LFor' (newLabel ()) [(var,t1),(ix,Scalar VM.ArbbI32)] c body [s,i]
+       -> (Exp a, Exp Int32) -> (Exp a,Exp Int32) 
+for' cond f (s'@(E s), E i) = (fstPair loop, sndPair loop)
  where 
+   loop = E $ LFor' (newLabel ()) [(var,t1),(ix,Scalar VM.ArbbI32)] c body [s,i]
    l1   = newLabel ()
    l2   = newLabel () 
    var  = Variable ("l" ++ show l1)

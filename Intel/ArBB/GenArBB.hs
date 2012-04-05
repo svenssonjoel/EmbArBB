@@ -204,32 +204,45 @@ genBody' dag nid {- typem -} funm is =
         -- This breaks ! the local variables are not in the VarType map! :( 
         --t <- mapM (\x -> getTypeOfNode' x typem) st  -- starting state 
         
-        let t = snd (unzip vars) -- get the types 
+        t'  <- mapM (typecheckNID dag) st 
         
-        liftIO$ putStrLn (show t)
+        --let t = snd (unzip vars) -- get the types 
+        
+        --liftIO$ putStrLn (show t)
         
         -- lift concat! (feel like i need Structured results here) 
-        state_vars <-  liftVM$ concat `fmap` ( mapM typeToArBBLocalVar t )
-        liftIO$ putStrLn (show state_vars)
+        state_vars <-  liftVM$ concat `fmap` ( mapM typeToArBBLocalVar t' )
+        liftIO$ putStrLn $ "state_vars: " ++ (show state_vars)
+        liftIO$ putStrLn $ "body: " ++ (show body)
         
         -- extend the environment.. 
         let vars' = fst (unzip vars) 
         let vis = is ++ (zip vars' state_vars) 
         liftIO$ putStrLn (show vis)
         
+        (vt,_) <- get   
+        let newVT = Map.union vt (Map.fromList (zip vars' t'))
         
-        [v1] <- genBody' dag cond' {- typem-} funm vis 
+        
+         -- process initial state
+        vs <- liftVM$ accmBody dag st vt funm vis 
+        liftVM$ copyAll state_vars vs
+       
+        -- [v1] <-  genBody' dag cond' {- typem-} funm vis 
+        [v1] <- liftVM$ accmBody dag [cond'] newVT funm vis
         -- TODO: condition variables need to be local. 
         bt <- liftVM$ VM.getScalarType_ VM.ArbbBoolean
         cond <- liftVM$ VM.createLocal_ bt "cond" 
         -- Ensure that cond is local 
         liftVM$ VM.copy_ cond v1     
         
-        (vt,_) <- get 
+       
         -- genstate <- get 
         liftVM$ VM.while_ (return cond) 
            ( do 
-                c1 <- accmBody dag body {-typem-} vt funm vis
+                c1 <- accmBody dag body {-typem-} newVT funm vis
+                liftIO$ putStrLn $ "c1: " ++ show c1
+                liftIO$ putStrLn $ "sv: " ++ show state_vars
                 copyAll state_vars c1 -- update state
            )
         addNode thisNid state_vars
@@ -580,6 +593,7 @@ copyAll (x:xs) (y:ys) =
   do 
     VM.copy_ x y  
     copyAll xs ys 
+--copyAll xs ys = error$ show xs ++ " " ++ show ys 
 
 
 

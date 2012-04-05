@@ -49,7 +49,8 @@ capture f =
     fd <- liftVM$ VM.funDef_ fn (concat arbbOuts) (concat arbbIns) $ \ os is -> 
       do 
         vs <- accmBody dag nids {-tc-} vt funMap (zip names is) 
-        
+        lift$ putStrLn $ "os :" ++ show os 
+        lift$ putStrLn $ "vs :" ++ show vs
         copyAll os vs 
 
     addFunction fn fd tins touts                                                         
