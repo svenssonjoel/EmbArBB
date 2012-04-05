@@ -84,6 +84,12 @@ getTypeOfNode' :: NodeID -> NodeIDType -> Gen Type
 getTypeOfNode' n m = return$ fromJust$ Map.lookup n m 
 
     
+getAllState :: Gen AllState
+getAllState = 
+  do 
+    a <- get 
+    b <- lift get
+    return (a,b)
     
 ----------------------------------------------------------------------------
 -- Wrapper 
@@ -123,6 +129,24 @@ accmBody dag nids vt funm is = liftM fst $ doBody nids ((vt,Map.empty),Map.empty
           (vss,m'') <- doBody xs m'
           return (vs++vss,m'')
 -}
+
+accmBodyLocal :: DAG
+            -> [NodeID] 
+        --    -> NodeIDType 
+            -> AllState
+            -> (Map.Map FunctionName (VM.ConvFunction,[Type],[Type]))
+            -> [(Variable, VM.Variable)] 
+            -> VM.EmitArbb [VM.Variable]
+accmBodyLocal dag nids allstate funm is = liftM fst $ doBody nids allstate -- ((vt,Map.empty),Map.empty) 
+
+  where 
+    doBody ::[NodeID] -> AllState -> VM.EmitArbb ([VM.Variable],AllState)
+    doBody [] m = return ([],m) 
+    doBody (x:xs) m =
+      do 
+          (vs,s) <- runGenAllState (genBody' dag x  funm is) m
+          (vss,s') <- doBody xs s
+          return (vs++vss,s')
 
 
 ----------------------------------------------------------------------------
@@ -248,21 +272,19 @@ genBody' dag nid funm is =
       
         liftVM$ copyAll state_vars vs
         
-        [special] <- liftVM$ typeToArBBLocalVar (Scalar VM.ArbbI32)
-        
         --TODO: Figure out what is so special about the loop variable 
         --      If anything.. (things break down here)
         
+        alls <- getAllState 
         -- the actual loop 
         liftVM$ VM.while_ (do [c] <- accmBody dag [cond'] newVT funm vis; return c ) 
            ( do 
-                c1 <- accmBody dag body newVT funm vis
+                c1 <- accmBodyLocal dag body alls funm vis
                 copyAll state_vars c1 -- update state
            )
-        i <- liftVM$ VM.int32_ 768
-        liftVM $ VM.copy_ special i -- (last state_vars) 
-        addNode thisNid (init state_vars ++ [special]) -- state_vars
-        return (init state_vars ++ [special])
+        
+        addNode thisNid state_vars -- state_vars
+        return state_vars
         
        
 

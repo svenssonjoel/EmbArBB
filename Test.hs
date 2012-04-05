@@ -385,7 +385,7 @@ testFor =
       let (x,y) = for' (\(v',i)  -> i <* 10)  
                        (\(v',i) -> (v + v',i+1))
                        (v,0)
-      in (x+x,y+1)
+      in (x+x,y)
                             
 
 
