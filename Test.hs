@@ -325,6 +325,42 @@ testIndex =
   where 
     fun :: Exp (DVector Dim1 Int32) -> Exp Int32
     fun v = index1 v 3
+    
+testScalar = 
+  withArBB $  
+  do
+    f <- capture fun
+    return f
+    str <- serialize f 
+    liftIO$ putStrLn str
+  
+    -- execute f 
+    dat <- execute f 10
+    liftIO$ putStrLn$ show dat
+  where 
+    fun :: Exp Int32 -> Exp Int32
+    fun v = v+v
+  
+testScalar2 = 
+  withArBB $  
+  do
+    f <- capture fun
+    return f
+    str <- serialize f 
+    liftIO$ putStrLn str
+    
+    let v1 = Vector (V.fromList [0..9::Int32]) (One 10)
+    
+    -- execute f 
+    (Vector vout n,dat) <- execute f (v1 :- 10)
+    liftIO$ putStrLn$ show vout
+    liftIO$ putStrLn$ show dat
+    
+  where 
+    fun :: Exp (Vector Int32) -> Exp Int32 -> (Exp (Vector Int32), Exp Int32)
+    fun v i = (v + v,i + i)
+
+
 
 testFor = 
   withArBB $  
@@ -334,17 +370,22 @@ testFor =
     str <- serialize f
     liftIO$ putStrLn str
   
+  
     let v1 = Vector (V.fromList [0..9::Int32]) (One 10)
     
     -- execute f 
     (Vector dat n,i) <- execute f v1
     liftIO$ putStrLn$ show dat
+    liftIO$ putStrLn$ show i
+    
 
   where
     fun :: Exp (DVector Dim1 Int32) -> (Exp (DVector Dim1 Int32),Exp Int32)
-    fun v = for' (\(v',i)  -> i <* 10)  
-                  (\(v',i) -> (v + v',i+1))
-                  (v,0)
+    fun v = 
+      let (x,y) = for' (\(v',i)  -> i <* 10)  
+                       (\(v',i) -> (v + v',i+1))
+                       (v,0)
+      in (x+x,y+1)
                             
 
 

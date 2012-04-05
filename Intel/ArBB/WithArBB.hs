@@ -81,7 +81,6 @@ serialize (Function fn)  =
           str <- liftVM$ VM.serializeFunction_ f 
           return (VM.getCString str)
           
-          
 ----------------------------------------------------------------------------
 -- | Execute an ArBB function
 execute :: (ArBBIO a, ArBBIO b) =>  Function a b -> a -> ArBB b             
@@ -259,6 +258,6 @@ instance (ArBBIO a, ArBBIO b) => ArBBIO (a,b) where
     do 
       v1 <- arbbDLoad [a]
       v2 <- arbbDLoad [b] 
-      
+
       return (v1,v2)
  

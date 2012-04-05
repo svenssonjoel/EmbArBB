@@ -11,7 +11,6 @@ import Intel.ArBB.Vector
 import Intel.ArBB.Syntax 
 import Intel.ArBB.Data.Int 
 import Intel.ArBB.Data
-import Intel.ArBB.Types
 
 import qualified Intel.ArbbVM as VM
 
@@ -259,10 +258,10 @@ for cond f (E s,E i)  = E $ LFor (newLabel ()) cond' f' [s,i]
 
 for' :: Data (Exp a) => ((Exp a,Exp Int32) -> Exp Bool)
        -> ((Exp a,Exp Int32) -> (Exp a,Exp Int32))
-       -> (Exp a, Exp Int32) -> (Exp a,Exp Int32) 
+       -> (Exp a, Exp Int32) -> (Exp a, Exp Int32) 
 for' cond f (s'@(E s), E i) = (fstPair loop, sndPair loop)
  where 
-   loop = E $ LFor' (newLabel ()) [(var,t1),(ix,Scalar VM.ArbbI32)] c body [s,i]
+   loop = E $ LFor' (newLabel ()) [var,ix] c body [s,i]
    l1   = newLabel ()
    l2   = newLabel () 
    var  = Variable ("l" ++ show l1)
@@ -272,11 +271,8 @@ for' cond f (s'@(E s), E i) = (fstPair loop, sndPair loop)
    (E v1', E v2')  = f (v1,v2)           
    body = [v1',v2'] 
    (E c) = cond  (v1,v2) 
-   -- TODO: Grabbing types here is a bit of a hack. 
-   t1 = typeOf s' 
-   -- (E c) = E $ LLit (newLabel ()) $ LitBool True
      
--- [LOp 18 Add [LVar 19 (Variable "v0"),LVar 20 (Variable "l13")],LOp 21 Add [LVar 16 (Variable "l14"),LLit 22 (LitInt32 1)]] [LVar 19 (Variable "v0"),LLit 23 (LitInt32 0)]
+
 
 ----------------------------------------------------------------------------
 -- instances 

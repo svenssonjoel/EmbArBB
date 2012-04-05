@@ -30,6 +30,9 @@ type TypeChecker m a = StateT (VarType,NodeIDType) m a
 runTypeChecker :: Monad m => TypeChecker m a -> VarType -> m a 
 runTypeChecker c vt = evalStateT c (vt,Map.empty)
 
+runTypeChecker' :: Monad m => TypeChecker m a -> (VarType,NodeIDType) -> m (a,(VarType,NodeIDType))
+runTypeChecker' c vt = runStateT c vt 
+
 type CheckState a = CheckState' Identity a 
 
 varType :: Monad m => Variable -> TypeChecker m (Maybe Type)

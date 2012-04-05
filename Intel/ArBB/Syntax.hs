@@ -9,7 +9,7 @@ import Data.Int
 import Data.Word 
 
 import Intel.ArBB.Data.Int 
-import Intel.ArBB.Types
+
 
 import System.IO.Unsafe
 import Data.IORef
@@ -65,7 +65,7 @@ data LExp = LLit Label Literal
           | LFor Label ([LExp] -> LExp)   -- loop condition 
                        ([LExp] -> [LExp]) -- loop body 
                        [LExp]             -- start state
-          | LFor' Label [(Variable,Type)] LExp [LExp] [LExp]
+          | LFor' Label [Variable] LExp [LExp] [LExp]
 
                  
           | LIf  Label LExp LExp LExp 

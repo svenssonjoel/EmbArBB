@@ -44,6 +44,17 @@ runGen' g vt nidv =
     let m = runTypeChecker g vt 
     runStateT m nidv
     
+type AllState = ((VarType,NodeIDType),NodeIDVar)
+
+runGenAllState :: Gen a -> AllState -> VM.EmitArbb (a,AllState) 
+runGenAllState g (vt,nv) = 
+  do
+    let m = runTypeChecker' g vt 
+    ((a,vt'),nt') <- runStateT m nv 
+    return (a, (vt',nt'))
+    
+    
+    
 ---------------------------------------------------------------------------- 
 -- attempt to define operations on new Gen a 
 
@@ -84,7 +95,7 @@ genBody :: DAG
            -> [(Variable, VM.Variable)] 
            -> VM.EmitArbb [VM.Variable] 
 -- genBody dag nid typem funm is = evalStateT (genBody' dag nid typem funm is) (Map.empty) 
-genBody dag nid {-typem-} vt funm is = runGen (genBody' dag nid {-typem-} funm is) vt 
+genBody dag nid  vt funm is = runGen (genBody' dag nid  funm is) vt 
  
 accmBody :: DAG
             -> [NodeID] 
@@ -93,16 +104,25 @@ accmBody :: DAG
             -> (Map.Map FunctionName (VM.ConvFunction,[Type],[Type]))
             -> [(Variable, VM.Variable)] 
             -> VM.EmitArbb [VM.Variable]
-accmBody dag nids {- typem -} vt funm is = liftM fst $ doBody nids (Map.empty) 
+accmBody dag nids vt funm is = liftM fst $ doBody nids ((vt,Map.empty),Map.empty) 
 
   where 
+    doBody ::[NodeID] -> AllState -> VM.EmitArbb ([VM.Variable],AllState)
+    doBody [] m = return ([],m) 
+    doBody (x:xs) m =
+      do 
+          (vs,s) <- runGenAllState (genBody' dag x  funm is) m
+          (vss,s') <- doBody xs s
+          return (vs++vss,s')
+{-
     doBody ::[NodeID] -> (Map.Map NodeID [VM.Variable]) -> VM.EmitArbb ([VM.Variable],(Map.Map NodeID [VM.Variable]))
     doBody [] m = return ([],m) 
     doBody (x:xs) m =
       do 
-          (vs,m') <- runGen' (genBody' dag x {-typem-} funm is) vt m
+          (vs,m') <- runGen' (genBody' dag x  funm is) vt m
           (vss,m'') <- doBody xs m'
           return (vs++vss,m'')
+-}
 
 
 ----------------------------------------------------------------------------
@@ -112,15 +132,18 @@ accmBody dag nids {- typem -} vt funm is = liftM fst $ doBody nids (Map.empty)
 
 genBody' :: DAG 
            -> NodeID 
-        --   -> NodeIDType 
            -> (Map.Map FunctionName (VM.ConvFunction,[Type],[Type])) 
            -> [(Variable,VM.Variable)] 
            -> Gen [VM.Variable] 
-genBody' dag nid {- typem -} funm is = 
+genBody' dag nid funm is = 
   do 
     m <- lift get 
     case Map.lookup nid m of 
-      (Just v) -> return v 
+      (Just v) -> 
+        do 
+          liftIO$ putStrLn$ "already generated : " ++ show nid 
+            
+          return v 
       Nothing   -> 
           case Map.lookup nid dag of 
             (Just node) -> genNode nid node 
@@ -141,17 +164,22 @@ genBody' dag nid {- typem -} funm is =
 
     genNode thisNid (NResIndex n i) = 
       do 
-        vs <- genBody' dag n {-typem-} funm is 
+        vs <- genBody' dag n  funm is 
         return [vs !! i]
     genNode thisNid (NIndex0 n) = 
       do 
-        vs <- genBody' dag n {-typem-} funm is 
+        vs <- genBody' dag n  funm is 
         return vs
  
     genNode thisNid (NOp op ns) = 
       do 
-        vs <- mapM (\n -> genBody' dag n {-typem-} funm is) ns 
+        -- liftIO$ putStrLn$ "NOp :" ++ show op       
+        
+        vs <- mapM (\n -> genBody' dag n  funm is) ns 
        
+        -- (vt,_) <- get 
+        -- liftIO$ putStrLn $ show vt
+        
         --t <- getTypeOfNode' thisNid typem  
         t <- typecheckNID dag thisNid
         imm <- liftVM$ typeToArBBLocalVar t 
@@ -160,12 +188,13 @@ genBody' dag nid {- typem -} funm is =
           True -> liftVM$ VM.opDynamic_ (opToArBB op) imm (concat vs)
           False -> liftVM$ VM.op_ (opToArBB op) imm (concat vs) 
         
+        -- liftIO$ putStrLn "leaving NOp"
         return imm
         
     genNode thisNid (NIf n1 n2 n3) =  
       do       
         -- conditional is a single var
-        [v1] <- genBody' dag n1 {-typem-} funm is 
+        [v1] <- genBody' dag n1  funm is 
         -- TODO: condition variables need to be local. 
         bt <- liftVM$ VM.getScalarType_ VM.ArbbBoolean
         cond <- liftVM$ VM.createLocal_ bt "cond" 
@@ -182,11 +211,11 @@ genBody' dag nid {- typem -} funm is =
         (vt,_) <- get 
         liftVM$ VM.if_ cond 
           (do
-              c1 <- fst `fmap` runGen' (genBody' dag n2  {-typem-} funm is) vt state
+              c1 <- fst `fmap` runGen' (genBody' dag n2  funm is) vt state
               copyAll imm c1              
           ) 
           (do
-              c2 <- fst `fmap` runGen' (genBody' dag n3 {-typem-} funm is) vt state
+              c2 <- fst `fmap` runGen' (genBody' dag n3  funm is) vt state
               copyAll imm c2
           )
         addNode thisNid imm 
@@ -196,60 +225,45 @@ genBody' dag nid {- typem -} funm is =
     -- TODO: Extend typem with the types of the "lx" variables. 
     genNode thisNid a@(NFor' vars cond' body st) = 
       do 
-        liftIO$ putStrLn "NFOR"
+     
         -- declare variables.  
-        
-        -- let typem' = Map.union typem (Map.fromList (zip 
-        
-        -- This breaks ! the local variables are not in the VarType map! :( 
-        --t <- mapM (\x -> getTypeOfNode' x typem) st  -- starting state 
-        
-        t'  <- mapM (typecheckNID dag) st 
-        
-        --let t = snd (unzip vars) -- get the types 
-        
-        --liftIO$ putStrLn (show t)
-        
-        -- lift concat! (feel like i need Structured results here) 
-        state_vars <-  liftVM$ concat `fmap` ( mapM typeToArBBLocalVar t' )
-        liftIO$ putStrLn $ "state_vars: " ++ (show state_vars)
-        liftIO$ putStrLn $ "body: " ++ (show body)
-        
+        t   <- mapM (typecheckNID dag) st 
+     
+        -- liftIO$ putStrLn$ show t 
+        state_vars <-  liftVM$ concat `fmap` ( mapM typeToArBBLocalVar t )
+     
         -- extend the environment.. 
-        let vars' = fst (unzip vars) 
-        let vis = is ++ (zip vars' state_vars) 
-        liftIO$ putStrLn (show vis)
+        let vis = is ++ (zip vars state_vars) 
+      
+        (vt,notused) <- get   
+        let newVT = Map.union vt (Map.fromList (zip vars t))
+        liftIO$ putStrLn $ show newVT
+        put (newVT,notused) -- huh ?
+        -- t'  <- mapM (typecheckNID dag) body -- ensure locals exist in typemap
+        -- t'' <- typecheckNID dag cond'
+      
         
-        (vt,_) <- get   
-        let newVT = Map.union vt (Map.fromList (zip vars' t'))
-        
-        
-         -- process initial state
+        -- process initial state
         vs <- liftVM$ accmBody dag st vt funm vis 
+      
         liftVM$ copyAll state_vars vs
-       
-        -- [v1] <-  genBody' dag cond' {- typem-} funm vis 
-        --[v1] <- 
-        -- TODO: condition variables need to be local. 
-        --bt <- liftVM$ VM.getScalarType_ VM.ArbbBoolean
-        --cond <- liftVM$ VM.createLocal_ bt "cond" 
-        -- Ensure that cond is local 
-        --liftVM$ VM.copy_ cond v1     
         
-       
-        -- genstate <- get 
-        liftVM$ VM.while_ (do [c] <- accmBody dag [cond'] newVT funm vis; return c {-return cond-}) 
+        [special] <- liftVM$ typeToArBBLocalVar (Scalar VM.ArbbI32)
+        
+        --TODO: Figure out what is so special about the loop variable 
+        --      If anything.. (things break down here)
+        
+        -- the actual loop 
+        liftVM$ VM.while_ (do [c] <- accmBody dag [cond'] newVT funm vis; return c ) 
            ( do 
-                c1 <- accmBody dag body {-typem-} newVT funm vis
-                liftIO$ putStrLn $ "c1: " ++ show c1
-                liftIO$ putStrLn $ "sv: " ++ show state_vars
+                c1 <- accmBody dag body newVT funm vis
                 copyAll state_vars c1 -- update state
            )
-        addNode thisNid state_vars
-        return state_vars
+        i <- liftVM$ VM.int32_ 768
+        liftVM $ VM.copy_ special i -- (last state_vars) 
+        addNode thisNid (init state_vars ++ [special]) -- state_vars
+        return (init state_vars ++ [special])
         
-        
-        --error $ show a
        
 
 genLiteral :: Literal -> Gen VM.Variable

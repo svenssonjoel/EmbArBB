@@ -35,6 +35,8 @@ capture f =
     fn <- getFunName 
     let ((e,tins',touts),(_,vt))    = runState (emb f) (0,Map.empty) 
         (nids,dag) = accmDAGMaker e -- runDAGMaker (constructDAG e) 
+        
+    liftIO$ putStrLn$ show dag
         -- TODO: Interleave typechecking with codeGen ! so 
         -- that local variables can be added as it moves along. 
         -- tc         = typecheckDAG dag vt
@@ -48,9 +50,9 @@ capture f =
     (funMap,_) <- get
     fd <- liftVM$ VM.funDef_ fn (concat arbbOuts) (concat arbbIns) $ \ os is -> 
       do 
-        vs <- accmBody dag nids {-tc-} vt funMap (zip names is) 
-        lift$ putStrLn $ "os :" ++ show os 
-        lift$ putStrLn $ "vs :" ++ show vs
+        vs <- accmBody dag nids vt funMap (zip names is) 
+         -- lift$ putStrLn $ "os :" ++ show os 
+         -- lift$ putStrLn $ "vs :" ++ show vs
         copyAll os vs 
 
     addFunction fn fd tins touts                                                         

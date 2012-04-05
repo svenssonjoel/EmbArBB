@@ -32,7 +32,7 @@ data Node = NLit Literal
             
             --Hmm dont know about this... 
           | NFor NodeID [NodeID]   
-          | NFor' [(Variable,Type)] NodeID [NodeID] [NodeID]
+          | NFor' [Variable] NodeID [NodeID] [NodeID]
             
           deriving (Eq,Show)
 
@@ -124,7 +124,7 @@ constructDAG (LFor' l vars e1 body st) =
   do 
     m <- get 
     case Map.lookup l m of 
-      (Just nid) -> return [l] -- WILL CHANGE 
+      (Just nid) -> return [l] 
       Nothing -> 
         do 
           [e1'] <- constructDAG e1
@@ -134,12 +134,7 @@ constructDAG (LFor' l vars e1 body st) =
           let m'' = Map.insert l (NFor' vars e1' body' st') m'
           put m'' 
           return [l]
---constructDAG (LFor l cond body state1) = 
---do 
---    m <- get 
---    case Map.lookup l m of 
---      (Just nid) -> return l 
---      Nothing ->  undefined  
+
           
 constructDAG x = error $ show x 
           
