@@ -33,10 +33,12 @@ capture :: EmbFun a b => (a -> b) -> ArBB (Function (InType a b) (OutType b))
 capture f = 
   do  
     fn <- getFunName 
-    let ((e,tins,touts),(_,vt))    = runState (emb f) (0,Map.empty) 
+    let ((e,tins',touts),(_,vt))    = runState (emb f) (0,Map.empty) 
         (nids,dag) = accmDAGMaker e -- runDAGMaker (constructDAG e) 
         tc         = typecheckDAG dag vt
         --  Now I should have all parts needed to generate the function.
+    
+    let (names,tins) = unzip tins'
     
     arbbIns  <- liftVM$ mapM toArBBType tins 
     arbbOuts <- liftVM$ mapM toArBBType touts
@@ -44,7 +46,7 @@ capture f =
     (funMap,_) <- get
     fd <- liftVM$ VM.funDef_ fn (concat arbbOuts) (concat arbbIns) $ \ os is -> 
       do 
-        vs <- accmBody dag nids tc funMap is 
+        vs <- accmBody dag nids tc funMap (zip names is) 
         
         copyAll os vs 
 
@@ -76,13 +78,14 @@ addType v t =
 ----------------------------------------------------------------------------       
 -- 
 
-type IOs = [Type]
-    
+type Outs = [Type]
+type Ins = [(Variable,Type)]    
+           
 class EmbFun a b where 
   type InType a b
   type OutType b 
   
-  emb :: (a -> b) -> VarGenerator ([LExp], IOs, IOs) 
+  emb :: (a -> b) -> VarGenerator ([LExp], Ins, Outs) 
   
 -- TODO: What is a good way to make this work with many outputs
 instance Data (Exp b) => EmbFun () (Exp b) where
@@ -106,7 +109,7 @@ instance (Data (Exp b), Data a) => EmbFun (Exp a) (Exp b) where
         t_in = typeOf (undefined :: a) 
         t_out = typeOf exp -- (undefined :: b)
     addType v t_in
-    return ([e],[t_in],[t_out]) 
+    return ([e],[(v,t_in)],[t_out]) 
     
     
  
@@ -123,7 +126,7 @@ instance (Data b, Data c, Data a) => EmbFun (Exp a) (Exp b, Exp c) where
         t_out2 = typeOf (undefined :: c)
         -- t_out1 = typeOf (undefined :: b,undefined :: c)
     addType v t_in
-    return ([e1,e2],[t_in],[Tuple [t_out1,t_out2]])
+    return ([e1,e2],[(v,t_in)],[Tuple [t_out1,t_out2]])
    
   
 instance (Data a, EmbFun c d) => EmbFun (Exp a) (c -> d) where 
@@ -136,7 +139,7 @@ instance (Data a, EmbFun c d) => EmbFun (Exp a) (c -> d) where
         t_in = typeOf (undefined :: a) 
     addType v t_in 
     (exp,ins,outs) <- emb (f (myVar)) 
-    return (exp, t_in:ins, outs)
+    return (exp, (v,t_in):ins, outs)
   
   
   

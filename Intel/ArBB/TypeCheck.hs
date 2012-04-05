@@ -88,6 +88,12 @@ typecheckNID d n =
       do
         ts <- mapM (typecheckNID dag) ns 
         return$ typeOfOp op ts 
+    typecheckNode dag (NFor' vars cond body st) = 
+      do 
+        typecheckNID dag cond 
+        mapM (typecheckNID dag) body
+        ts <- mapM (typecheckNID dag) st 
+        return$ Just$ Tuple ts -- TODO: Structured result ?
       
     typecheckLiteral (LitInt8 _)   = return$ Just$ Scalar ArBB.ArbbI8
     typecheckLiteral (LitInt16 _)  = return$ Just$ Scalar ArBB.ArbbI16

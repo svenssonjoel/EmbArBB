@@ -29,7 +29,7 @@ genBody :: DAG
            -> NodeID 
            -> NodeIDType 
            -> (Map.Map FunctionName (VM.ConvFunction,[Type],[Type]))
-           -> [VM.Variable] 
+           -> [(Variable, VM.Variable)] 
            -> VM.EmitArbb [VM.Variable] 
 genBody dag nid typem funm is = evalStateT (genBody' dag nid typem funm is) (Map.empty) 
 
@@ -37,7 +37,7 @@ accmBody :: DAG
             -> [NodeID] 
             -> NodeIDType 
             -> (Map.Map FunctionName (VM.ConvFunction,[Type],[Type]))
-            -> [VM.Variable] 
+            -> [(Variable, VM.Variable)] 
             -> VM.EmitArbb [VM.Variable]
 accmBody dag nids typem funm is = liftM fst $ doBody nids (Map.empty) 
 
@@ -85,7 +85,7 @@ genBody' :: DAG
            -> NodeID 
            -> NodeIDType 
            -> (Map.Map FunctionName (VM.ConvFunction,[Type],[Type])) 
-           -> [VM.Variable] 
+           -> [(Variable,VM.Variable)] 
            -> Gen [VM.Variable] 
 genBody' dag nid typem funm is = 
   do 
@@ -103,8 +103,12 @@ genBody' dag nid typem funm is =
       do 
         v <- genLiteral l 
         return [v] 
-    genNode thisNid (NVar (Variable nom)) = 
-        return$ [is !! (read (nom L.\\ "v") :: Int)]  -- inputs
+        
+        -- Updated this is preparation for the For loop variables. 
+    genNode thisNid (NVar v) =  --(Variable nom)) = 
+      let v' = fromJust $ L.lookup v is 
+      in return [v'] 
+         -- [is !! (read (nom L.\\ "v") :: Int)]  -- inputs
 
     genNode thisNid (NResIndex n i) = 
       do 
@@ -155,6 +159,10 @@ genBody' dag nid typem funm is =
           )
         addNode thisNid imm 
         return imm
+    genNode thisNid a@(NFor' vars cond body st) = 
+      do 
+        -- declare variables.  
+      error $ show a
       
 genLiteral :: Literal -> Gen VM.Variable
 genLiteral (LitInt8 i)  = lift$ VM.int8_ i 
