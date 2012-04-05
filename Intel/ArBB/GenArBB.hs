@@ -229,16 +229,16 @@ genBody' dag nid {- typem -} funm is =
         liftVM$ copyAll state_vars vs
        
         -- [v1] <-  genBody' dag cond' {- typem-} funm vis 
-        [v1] <- liftVM$ accmBody dag [cond'] newVT funm vis
+        --[v1] <- 
         -- TODO: condition variables need to be local. 
-        bt <- liftVM$ VM.getScalarType_ VM.ArbbBoolean
-        cond <- liftVM$ VM.createLocal_ bt "cond" 
+        --bt <- liftVM$ VM.getScalarType_ VM.ArbbBoolean
+        --cond <- liftVM$ VM.createLocal_ bt "cond" 
         -- Ensure that cond is local 
-        liftVM$ VM.copy_ cond v1     
+        --liftVM$ VM.copy_ cond v1     
         
        
         -- genstate <- get 
-        liftVM$ VM.while_ (return cond) 
+        liftVM$ VM.while_ (do [c] <- accmBody dag [cond'] newVT funm vis; return c {-return cond-}) 
            ( do 
                 c1 <- accmBody dag body {-typem-} newVT funm vis
                 liftIO$ putStrLn $ "c1: " ++ show c1
