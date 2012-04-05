@@ -81,6 +81,9 @@ getTypeOfNode' n m = return$ fromJust$ Map.lookup n m
 
 ----------------------------------------------------------------------------
 -- The real worker
+
+
+
 genBody' :: DAG 
            -> NodeID 
            -> NodeIDType 
@@ -159,10 +162,45 @@ genBody' dag nid typem funm is =
           )
         addNode thisNid imm 
         return imm
-    genNode thisNid a@(NFor' vars cond body st) = 
+        
+    -- Experimental For loop! (really more of a while loop) 
+    -- TODO: Extend typem with the types of the variables 
+    genNode thisNid a@(NFor' vars cond' body st) = 
       do 
+        liftIO$ putStrLn "NFOR"
         -- declare variables.  
-      error $ show a
+        t <- mapM (\x -> getTypeOfNode' x typem) st  -- starting state 
+        
+        liftIO$ putStrLn (show t)
+        
+        -- lift concat! (feel like i need Structured results here) 
+        state_vars <-  lift$ concat `fmap` ( mapM typeToArBBLocalVar t )
+        liftIO$ putStrLn (show state_vars)
+        
+        -- extend the environment.. 
+        let vis = is ++ (zip vars state_vars) 
+        liftIO$ putStrLn (show vis)
+        -- Copied from if node (but on extended environment) 
+        
+        [v1] <- genBody' dag cond' typem funm vis 
+        -- TODO: condition variables need to be local. 
+        bt <- lift$ VM.getScalarType_ VM.ArbbBoolean
+        cond <- lift$ VM.createLocal_ bt "cond" 
+        -- Ensure that cond is local 
+        lift$ VM.copy_ cond v1     
+        
+        
+        -- genstate <- get 
+        lift$ VM.while_ (return cond) 
+           ( do 
+                c1 <- accmBody dag body typem funm vis
+                copyAll state_vars c1 -- update state
+           )
+        addNode thisNid state_vars
+        return state_vars
+        
+        
+        --error $ show a
       
 genLiteral :: Literal -> Gen VM.Variable
 genLiteral (LitInt8 i)  = lift$ VM.int8_ i 
