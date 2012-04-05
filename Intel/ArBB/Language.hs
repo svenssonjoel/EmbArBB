@@ -10,6 +10,10 @@ module Intel.ArBB.Language where
 import Intel.ArBB.Vector 
 import Intel.ArBB.Syntax 
 import Intel.ArBB.Data.Int 
+import Intel.ArBB.Data
+import Intel.ArBB.Types
+
+import qualified Intel.ArbbVM as VM
 
 import Data.Int
 import Data.Word
@@ -253,10 +257,10 @@ for cond f (E s,E i)  = E $ LFor (newLabel ()) cond' f' [s,i]
     f'    [a,b] = let (E r1, E r2) = f (E a, E b)
                   in [r1,r2]
 
-for' :: ((Exp a,Exp Int32) -> Exp Bool)
+for' :: Data (Exp a) => ((Exp a,Exp Int32) -> Exp Bool)
        -> ((Exp a,Exp Int32) -> (Exp a,Exp Int32))
        -> (Exp a, Exp Int32) -> Exp a 
-for' cond f (E s, E i) = E $ LFor' (newLabel ()) [var,ix] c body [s,i]
+for' cond f (s'@(E s), E i) = E $ LFor' (newLabel ()) [(var,t1),(ix,Scalar VM.ArbbI32)] c body [s,i]
  where 
    l1   = newLabel ()
    l2   = newLabel () 
@@ -267,6 +271,8 @@ for' cond f (E s, E i) = E $ LFor' (newLabel ()) [var,ix] c body [s,i]
    (E v1', E v2')  = f (v1,v2)           
    body = [v1',v2'] 
    (E c) = cond  (v1,v2) 
+   -- TODO: Grabbing types here is a bit of a hack. 
+   t1 = typeOf s' 
    -- (E c) = E $ LLit (newLabel ()) $ LitBool True
      
 -- [LOp 18 Add [LVar 19 (Variable "v0"),LVar 20 (Variable "l13")],LOp 21 Add [LVar 16 (Variable "l14"),LLit 22 (LitInt32 1)]] [LVar 19 (Variable "v0"),LLit 23 (LitInt32 0)]

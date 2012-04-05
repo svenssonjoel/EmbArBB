@@ -13,6 +13,7 @@ import Intel.ArBB.Syntax
 import qualified Intel.ArbbVM as ArBB
 
 import Control.Monad.State 
+import Control.Monad.Identity
 import qualified Data.Map as Map 
 
 
@@ -23,17 +24,21 @@ type VarType      = Map.Map Variable Type
 
 type NodeIDType   = Map.Map NodeID Type 
 
-type CheckState a = State (VarType,NodeIDType) a 
+type CheckState' m a = StateT (VarType,NodeIDType) m a 
+type TypeChecker m a = StateT (VarType,NodeIDType) m a
 
+runTypeChecker :: Monad m => TypeChecker m a -> VarType -> m a 
+runTypeChecker c vt = evalStateT c (vt,Map.empty)
 
+type CheckState a = CheckState' Identity a 
 
-varType :: Variable -> CheckState (Maybe Type) 
+varType :: Monad m => Variable -> TypeChecker m (Maybe Type)
 varType v = 
   do 
     varsTypes <- liftM fst $ get 
     return $ Map.lookup v varsTypes 
   
-addNodeIDType :: NodeID -> Type -> CheckState () 
+addNodeIDType :: Monad  m => NodeID -> Type -> TypeChecker m () 
 addNodeIDType n t = 
   do 
     (v,nodts) <- get
@@ -43,12 +48,12 @@ addNodeIDType n t =
 ----------------------------------------------------------------------------
 -- The type checker
 -- Knowing the types at every node is required to generate the ArBB code. 
-typecheckDAG :: DAG -> VarType -> NodeIDType
-typecheckDAG dag vt = 
-  snd $ snd $ runState (mapM_ (typecheckNID dag) (Map.keys dag)) (vt,Map.empty) 
+--typecheckDAG :: DAG -> VarType -> NodeIDType
+--typecheckDAG dag vt = 
+--  snd $ snd $ runState (mapM_ (typecheckNID dag) (Map.keys dag)) (vt,Map.empty) 
 
 -- helper               start
-typecheckNID :: DAG -> NodeID -> CheckState Type
+typecheckNID :: Monad m => DAG -> NodeID -> TypeChecker m Type
 typecheckNID d n = 
   do 
     let node = case Map.lookup n d of 

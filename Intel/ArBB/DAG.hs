@@ -5,6 +5,7 @@ module Intel.ArBB.DAG where
 import Intel.ArBB.Syntax
 
 import Intel.ArBB.Vector -- Should not really be needed here (?)
+import Intel.ArBB.Types
 
 import Data.Word
 import Data.Int
@@ -31,7 +32,7 @@ data Node = NLit Literal
             
             --Hmm dont know about this... 
           | NFor NodeID [NodeID]   
-          | NFor' [Variable] NodeID [NodeID] [NodeID]
+          | NFor' [(Variable,Type)] NodeID [NodeID] [NodeID]
             
           deriving (Eq,Show)
 
