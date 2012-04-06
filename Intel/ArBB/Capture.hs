@@ -36,7 +36,6 @@ capture f =
     let ((e,tins',touts),(_,vt))    = runState (emb f) (0,Map.empty) 
         (nids,dag) = accmDAGMaker e -- runDAGMaker (constructDAG e) 
         
-    liftIO$ putStrLn$ show dag
         -- TODO: Interleave typechecking with codeGen ! so 
         -- that local variables can be added as it moves along. 
         -- tc         = typecheckDAG dag vt
