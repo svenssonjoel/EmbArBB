@@ -387,6 +387,28 @@ testFor =
                        (v,0)
       in (x+x,y)
                             
+testFor2 = 
+  withArBB $  
+  do
+    f <- capture fun
+   
+    str <- serialize f
+    liftIO$ putStrLn str
+  
+    
+    -- execute f 
+    (dat,i) <- execute f 1
+    liftIO$ putStrLn$ show dat
+    liftIO$ putStrLn$ show i
+    
+
+  where
+    fun :: Exp Int32 -> (Exp Int32,Exp Int32)
+    fun v = 
+      let (x,y) = for' (\(v',i)  -> i <* 10)  
+                       (\(v',i) -> (v + v',i+1))
+                       (v,0)
+      in (x+1,y+1)
 
 
 

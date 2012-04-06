@@ -622,8 +622,6 @@ typeToArBBLocalVar t =
     return ys 
     
 
-    
-
 copyAll [] [] = return ()    
 copyAll (x:xs) (y:ys) = 
   do 
