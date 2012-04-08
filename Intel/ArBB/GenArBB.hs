@@ -4,7 +4,8 @@
 module Intel.ArBB.GenArBB (accmBody, 
                            toArBBType,
                            copyAll,
-                           typeToArBBGlobalVar) 
+                           typeToArBBGlobalVar,
+                           denseTypeSizeToGlobalVar) 
                            where 
 
 import Intel.ArBB.DAG
@@ -613,6 +614,20 @@ typeToArBBGlobalVar t =
     gs <- mapM (\t -> VM.createGlobal_nobind_ t "noname") ts 
     ys <- mapM VM.variableFromGlobal_ gs 
     return ys 
+
+-- HACK HACK (That doesnt do any good) 
+denseTypeSizeToGlobalVar :: Type -> Int -> VM.EmitArbb [VM.Variable]
+denseTypeSizeToGlobalVar t@(Dense I scal) s = 
+  do 
+    [ts] <- toArBBType t 
+    g <- VM.createGlobal_nobind_ ts "noname"
+    y <- VM.variableFromGlobal_ g 
+    
+    s' <- VM.usize_ (fromIntegral s) 
+    VM.opDynamicImm_ VM.ArbbOpAlloc [y] [s']
+    return [y]
+denseTypeSizeToGlobalVar (t) s = error $ show t      
+    
 
 typeToArBBLocalVar :: Type -> VM.EmitArbb [VM.Variable]
 typeToArBBLocalVar t = 

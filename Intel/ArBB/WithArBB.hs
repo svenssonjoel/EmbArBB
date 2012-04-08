@@ -89,18 +89,21 @@ execute (Function fn) inputs  =
       (m,_) <- get 
       case Map.lookup fn m of 
         Nothing -> error "execute: Invalid function" 
-        (Just (f,tins,touts)) -> 
+        (Just (f,tins,[Tuple [t1,t2]] )) -> 
           do 
             ins <- arbbULoad inputs 
-            
-            ys <- liftM concat $ liftVM $ mapM typeToArBBGlobalVar touts
-
-            liftVM$ VM.execute_ f ys ins
+      
          
-            result <- arbbDLoad  ys
+            --ys <- liftM concat $ liftVM $ mapM typeToArBBGlobalVar touts
+            y1 <- liftVM $ denseTypeSizeToGlobalVar t1 40
+            ys <- liftVM$ typeToArBBGlobalVar t2
+
+            liftVM$ VM.execute_ f (y1++ys) ins
+         
+            result <- arbbDLoad  (y1++ys)
             
             return result
-                     
+      
     
 class ArBBIO a where 
   arbbULoad :: a -> ArBB [VM.Variable]
