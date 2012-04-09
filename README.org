@@ -11,6 +11,7 @@
   + Add the Nested data parallelism operations (needs a new Nested container type) 
   + Support (DVector dim (a1,..,an)) by some kind of Dense_of_tuple to Tuple_of_dense
     transformation. 
+  + Add Mutable output vectors. (the programmer must provide target vectors for ArBB Functions) 
 * Notes
   + If an ArBB function outputs a dense, a container of its size must have been 
     allocated explicitly before running the function. Big inconvenience for EmbArBB. 

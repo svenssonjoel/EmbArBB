@@ -8,6 +8,7 @@
 module Intel.ArBB.Vector where 
 
 import qualified Data.Vector.Storable as V
+import qualified Data.Vector.Storable.Mutable as M 
 import Intel.ArBB.Data -- Embeddable
 import Intel.ArBB.Types 
 import Intel.ArBB.Syntax 
@@ -55,3 +56,10 @@ DenseOfScal(Exp (DVector Dim0 a),Scalar)
 DenseOfScal(Exp (DVector Dim1 a),Dense I)
 DenseOfScal(Exp (DVector Dim2 a),Dense II)
 DenseOfScal(Exp (DVector Dim3 a),Dense III)
+
+----------------------------------------------------------------------------
+-- Mutable Vectors 
+
+-- Figure out how to use these.. and how to handle that s parameter... 
+data MDVector s d a = MVector {mVectorData  :: M.MVector s a, 
+                               mVectorShape :: Dim} 
