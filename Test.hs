@@ -343,7 +343,7 @@ testScalar =
   
 
 -- DONE: shows a bug. The two scalar outputs are messed up. 
---       (SIMPLE FIX: unrelated to the but that appears in the loop example)  
+--       (SIMPLE FIX: unrelated to the bug that appears in the loop example)  
 testScalar2 = 
   withArBB $  
   do
