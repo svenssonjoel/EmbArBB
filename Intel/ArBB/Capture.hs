@@ -36,7 +36,7 @@ capture f =
     let ((e,tins',touts),(_,vt))    = runState (emb f) (0,Map.empty) 
         (nids,dag) = accmDAGMaker e -- runDAGMaker (constructDAG e) 
         
-        -- TODO: Interleave typechecking with codeGen ! so 
+        -- DONE: Interleave typechecking with codeGen ! so 
         -- that local variables can be added as it moves along. 
         -- tc         = typecheckDAG dag vt
         --  Now I should have all parts needed to generate the function.
@@ -131,6 +131,22 @@ instance (Data b, Data c, Data a) => EmbFun (Exp a) (Exp b, Exp c) where
         -- t_out1 = typeOf (undefined :: b,undefined :: c)
     addType v t_in
     return ([e1,e2],[(v,t_in)],[Tuple [t_out1,t_out2]])
+    
+instance (Data b, Data c, Data d, Data a) => EmbFun (Exp a) (Exp b, Exp c, Exp d) where 
+  type InType (Exp a) (Exp b,Exp c, Exp d)  = a 
+  type OutType (Exp b,Exp c, Exp d) = (b,c,d)
+  
+  emb f = do 
+    v <- getVar 
+    let myVar = E (LVar (newLabel ()) v)
+        (e1'@(E e1),e2'@(E e2),e3'@(E e3)) = f myVar
+        t_in = typeOf (undefined :: a) 
+        t_out1 = typeOf (undefined :: b)
+        t_out2 = typeOf (undefined :: c)
+        t_out3 = typeOf (undefined :: d) 
+        -- t_out1 = typeOf (undefined :: b,undefined :: c)
+    addType v t_in
+    return ([e1,e2,e3],[(v,t_in)],[Tuple [t_out1,t_out2,t_out3]])    
    
   
 instance (Data a, EmbFun c d) => EmbFun (Exp a) (c -> d) where 

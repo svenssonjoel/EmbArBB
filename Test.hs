@@ -341,6 +341,9 @@ testScalar =
     fun :: Exp Int32 -> Exp Int32
     fun v = v+v
   
+
+-- DONE: shows a bug. The two scalar outputs are messed up. 
+--       (SIMPLE FIX: unrelated to the but that appears in the loop example)  
 testScalar2 = 
   withArBB $  
   do
@@ -352,14 +355,18 @@ testScalar2 =
     let v1 = Vector (V.fromList [0..9::Int32]) (One 10)
     
     -- execute f 
-    (Vector vout n,dat) <- execute f (v1 :- 10)
+    (Vector vout n,dat, r) <- execute f (v1 :- 10)
     liftIO$ putStrLn$ show vout
     liftIO$ putStrLn$ show dat
+    liftIO$ putStrLn$ show r
+    
     
   where 
-    fun :: Exp (Vector Int32) -> Exp Int32 -> (Exp (Vector Int32), Exp Int32)
-    fun v i = (v + v,i + i)
-
+    fun :: Exp (Vector Int32) -> Exp Int32 -> (Exp (Vector Int32), Exp Int32, Exp Int32)
+    fun v i = (v'+v',k,i+j)
+      where v' = v + v 
+            j  = index1 v' 3
+            k  = index0 (addReduce0 v)
 
 
 testFor = 
@@ -374,18 +381,19 @@ testFor =
     let v1 = Vector (V.fromList [0..9::Int32]) (One 10)
     
     -- execute f 
-    (Vector dat n,i) <- execute f v1
-    liftIO$ putStrLn$ show dat
+    -- (Vector dat n,i) <- execute f v1
+    i <- execute f v1
+    -- liftIO$ putStrLn$ show dat
     liftIO$ putStrLn$ show i
     
 
   where
-    fun :: Exp (DVector Dim1 Int32) -> (Exp (DVector Dim1 Int32),Exp Int32)
+    fun :: Exp (DVector Dim1 Int32) -> ({-Exp (DVector Dim1 Int32),-}Exp Int32)
     fun v = 
       let (x,y) = for' (\(v',i)  -> i <* 10)  
                        (\(v',i) -> (v + v',i+1))
                        (v,0)
-      in (x+x,y)
+      in (y+index1 x 4)
                             
 testFor2 = 
   withArBB $  

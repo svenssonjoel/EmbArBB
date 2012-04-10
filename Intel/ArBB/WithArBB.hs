@@ -264,3 +264,19 @@ instance (ArBBIO a, ArBBIO b) => ArBBIO (a,b) where
 
       return (v1,v2)
  
+  
+instance (ArBBIO a, ArBBIO b, ArBBIO c) => ArBBIO (a,b,c) where 
+  arbbULoad (a,b,c) = 
+    do 
+      v1 <- arbbULoad a 
+      v2 <- arbbULoad b 
+      v3 <- arbbULoad c 
+      return $ v1 ++ v2 ++ v3
+  arbbDLoad [a,b,c] = 
+    do 
+      v1 <- arbbDLoad [a]
+      v2 <- arbbDLoad [b] 
+      v3 <- arbbDLoad [c]       
+
+      return (v1,v2,v3)
+   
