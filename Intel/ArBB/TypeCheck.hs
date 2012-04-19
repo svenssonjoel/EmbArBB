@@ -51,7 +51,7 @@ addNodeIDType n t =
 ----------------------------------------------------------------------------
 -- Knowing the types at every node is required to generate the ArBB code. 
 
--- TODO: MUCH Cheatinh going on here. 
+-- TODO: MUCH Cheating going on here. 
 --       But on the other hand, the phantom type system that wraps the "Language" 
 --       should provide some guarantees. (Maybe can be quite relaxed here) 
 typecheckNID :: Monad m => DAG -> NodeID -> TypeChecker m Type
