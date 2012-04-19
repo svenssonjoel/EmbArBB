@@ -49,13 +49,11 @@ addNodeIDType n t =
     put (v,nodts')
 
 ----------------------------------------------------------------------------
--- The type checker
 -- Knowing the types at every node is required to generate the ArBB code. 
---typecheckDAG :: DAG -> VarType -> NodeIDType
---typecheckDAG dag vt = 
---  snd $ snd $ runState (mapM_ (typecheckNID dag) (Map.keys dag)) (vt,Map.empty) 
 
--- helper               start
+-- TODO: MUCH Cheatinh going on here. 
+--       But on the other hand, the phantom type system that wraps the "Language" 
+--       should provide some guarantees. (Maybe can be quite relaxed here) 
 typecheckNID :: Monad m => DAG -> NodeID -> TypeChecker m Type
 typecheckNID d n = 
   do 
@@ -114,6 +112,7 @@ typecheckNID d n =
     same t1 t2 = if t1 == t2 then Just t1 else Nothing 
     
     -- LOTS of cheating going on 
+    -- TODO: replace all "undefined" with something useful. 
     typeOfOp :: Op -> [Type] -> Maybe Type
     typeOfOp Add [t1,t2] = same t1 t2
     typeOfOp Mul [t1,t2] = same t1 t2
