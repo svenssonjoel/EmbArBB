@@ -62,11 +62,11 @@ data LExp = LLit Label Literal
           | LMap  Label FunctionName [LExp]   
             
           -- Experimental  
-          | LFor Label ([LExp] -> LExp)   -- loop condition 
-                       ([LExp] -> [LExp]) -- loop body 
-                       [LExp]             -- start state
-          | LFor' Label [Variable] LExp [LExp] [LExp]
-
+          --  | LFor Label ([LExp] -> LExp)   -- loop condition 
+          --               ([LExp] -> [LExp]) -- loop body 
+          --               [LExp]             -- start state
+          --  | LFor' Label [Variable] LExp [LExp] [LExp]
+          | LWhile Label [Variable] LExp [LExp] [LExp]
                  
           | LIf  Label LExp LExp LExp 
             

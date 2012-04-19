@@ -96,7 +96,7 @@ typecheckNID d n =
       do
         ts <- mapM (typecheckNID dag) ns 
         return$ typeOfOp op ts 
-    typecheckNode dag (NFor' vars cond body st) = 
+    typecheckNode dag (NWhile vars cond body st) = 
       do 
         typecheckNID dag cond 
         mapM (typecheckNID dag) body

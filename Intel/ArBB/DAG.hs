@@ -31,8 +31,8 @@ data Node = NLit Literal
           | NOp Op [NodeID] 
             
             --Hmm dont know about this... 
-          | NFor NodeID [NodeID]   
-          | NFor' [Variable] NodeID [NodeID] [NodeID]
+       --   | NFor NodeID [NodeID]   
+          | NWhile [Variable] NodeID [NodeID] [NodeID]
             
           deriving (Eq,Show)
 
@@ -120,7 +120,7 @@ constructDAG (LOp l op es)  =
           let m'' = Map.insert l (NOp op es') m'
           put m''     
           return [l] 
-constructDAG (LFor' l vars e1 body st) =           
+constructDAG (LWhile l vars e1 body st) =           
   do 
     m <- get 
     case Map.lookup l m of 
@@ -131,7 +131,7 @@ constructDAG (LFor' l vars e1 body st) =
           body' <- constrAll body 
           st' <- constrAll st
           m' <- get 
-          let m'' = Map.insert l (NFor' vars e1' body' st') m'
+          let m'' = Map.insert l (NWhile vars e1' body' st') m'
           put m'' 
           return [l]
 

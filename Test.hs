@@ -369,7 +369,7 @@ testScalar2 =
             k  = index0 (addReduce0 v)
 
 
-testFor = 
+testWhile = 
   withArBB $  
   do
     f <- capture fun
@@ -378,7 +378,7 @@ testFor =
     liftIO$ putStrLn str
   
   
-    let v1 = Vector (V.fromList [0..99999999::Int32]) (One 100000000)
+    let v1 = Vector (V.fromList [0..9999::Int32]) (One 10000)
     
     -- execute f 
     -- (Vector dat n,i) <- execute f v1
@@ -390,12 +390,12 @@ testFor =
   where
     fun :: Exp (DVector Dim1 Int32) -> ({-Exp (DVector Dim1 Int32),-}Exp Int32)
     fun v = 
-      let (x,y) = for' (\(v',i)  -> i <* 10)  
-                       (\(v',i) -> (v + v',i+1))
-                       (v,0)
-      in (y+index1 x 999999)
+      let (x,y) = while (\(v',i)  -> i <* 10)  
+                        (\(v',i) -> (v + v',i+1))
+                        (v,0)
+      in (y+ index0 (addReduce0 x))
                             
-testFor2 = 
+testWhile2 = 
   withArBB $  
   do
     f <- capture fun
@@ -413,9 +413,9 @@ testFor2 =
   where
     fun :: Exp Int32 -> (Exp Int32,Exp Int32)
     fun v = 
-      let (x,y) = for' (\(v',i) -> i <* 10)  
-                       (\(v',i) -> (v + v',i+1))
-                       (v,0)
+      let (x,y) = while (\(v',i) -> i <* 10)  
+                        (\(v',i) -> (v + v',i+1))
+                        (v,0)
       in (x+1,y+1)
 
 

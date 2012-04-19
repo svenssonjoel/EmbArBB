@@ -248,7 +248,7 @@ genBody' dag nid funm is =
         
     -- Experimental For loop! (really more of a while loop) 
     -- TODO: Extend typem with the types of the "lx" variables. 
-    genNode thisNid a@(NFor' vars cond' body st) = 
+    genNode thisNid a@(NWhile vars cond' body st) = 
       do 
      
         -- declare variables.  
