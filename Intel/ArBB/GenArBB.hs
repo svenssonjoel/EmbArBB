@@ -166,7 +166,7 @@ genBody' dag nid funm is =
     case Map.lookup nid m of 
       (Just v) -> 
         do 
-          liftIO$ putStrLn$ "already generated : " ++ show nid 
+          -- liftIO$ putStrLn$ "already generated : " ++ show nid 
             
           return v 
       Nothing   -> 
@@ -262,7 +262,7 @@ genBody' dag nid funm is =
       
         (vt,notused) <- get   
         let newVT = Map.union vt (Map.fromList (zip vars t))
-        liftIO$ putStrLn $ show newVT
+        -- liftIO$ putStrLn $ show newVT
         put (newVT,notused) -- huh ?
         -- t'  <- mapM (typecheckNID dag) body -- ensure locals exist in typemap
         -- t'' <- typecheckNID dag cond'
