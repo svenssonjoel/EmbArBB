@@ -368,7 +368,8 @@ testScalar2 =
             j  = index1 v' 3
             k  = index0 (addReduce0 v)
 
-
+-- TODO: Works if using -larbb_dev and ARBB_OPT_LEVEL=O2.
+--       Breaks on all other settings.. 
 testWhile = 
   withArBB $  
   do
