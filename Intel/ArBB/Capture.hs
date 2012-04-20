@@ -56,8 +56,36 @@ capture f =
 
     addFunction fn fd tins touts                                                         
     return $ embFun fn f            
+{-     
+capture2 :: (VarGen a, EmbIn a, EmbOut b) => (a -> b) -> ArBB (Function (IT a) (OT b))  
+capture2 f = 
+  do  
+    fn <- getFunName 
+    let ((e,tins',touts),(_,vt))    = runState (emb f) (0,Map.empty) 
+        (nids,dag) = accmDAGMaker e -- runDAGMaker (constructDAG e) 
+        
+        -- DONE: Interleave typechecking with codeGen ! so 
+        -- that local variables can be added as it moves along. 
+        -- tc         = typecheckDAG dag vt
+        --  Now I should have all parts needed to generate the function.
     
+    let (names,tins) = unzip tins'
     
+    arbbIns  <- liftVM$ mapM toArBBType tins 
+    arbbOuts <- liftVM$ mapM toArBBType touts
+    
+    (funMap,_) <- get
+    fd <- liftVM$ VM.funDef_ fn (concat arbbOuts) (concat arbbIns) $ \ os is -> 
+      do 
+        vs <- accmBody dag nids vt funMap (zip names is) 
+         -- lift$ putStrLn $ "os :" ++ show os 
+         -- lift$ putStrLn $ "vs :" ++ show vs
+        copyAll os vs 
+
+    addFunction fn fd tins touts                                                         
+    return $ embFun fn f                
+-}     
+
 embFun :: EmbFun a b => String -> (a -> b) -> Function (InType a b) (OutType b) 
 embFun name f = Function name 
 
@@ -119,7 +147,7 @@ instance (Data (Exp b), Data a) => EmbFun (Exp a) (Exp b) where
  
 instance (Data b, Data c, Data a) => EmbFun (Exp a) (Exp b, Exp c) where 
   type InType (Exp a) (Exp b,Exp c)  = a 
-  type OutType (Exp b,Exp c) = (b,c)
+  type OutType (Exp b,Exp c) = (b :- c)
   
   emb f = do 
     v <- getVar 
@@ -134,7 +162,7 @@ instance (Data b, Data c, Data a) => EmbFun (Exp a) (Exp b, Exp c) where
     
 instance (Data b, Data c, Data d, Data a) => EmbFun (Exp a) (Exp b, Exp c, Exp d) where 
   type InType (Exp a) (Exp b,Exp c, Exp d)  = a 
-  type OutType (Exp b,Exp c, Exp d) = (b,c,d)
+  type OutType (Exp b,Exp c, Exp d) = (b :- c :- d)
   
   emb f = do 
     v <- getVar 
