@@ -154,7 +154,7 @@ test6' =
     liftIO$ putStrLn str
     
     --  execute f 
-    ((Vector dat n),Vector ranks n2) <- execute f v1
+    ((Vector dat n) :- Vector ranks n2) <- execute f v1
     liftIO$ putStrLn$ show dat  ++ " " ++ show ranks   
  
 test6'' = 
@@ -169,7 +169,7 @@ test6'' =
     liftIO$ putStrLn str
     
     -- execute f 
-    ((Vector dat n),Vector ranks n2) <- execute f v1
+    (Vector dat n ,Vector ranks n2) <- execute f v1
     liftIO$ putStrLn$ show dat  ++ " " ++ show ranks   
 
    
@@ -355,7 +355,7 @@ testScalar2 =
     let v1 = Vector (V.fromList [0..9::Int32]) (One 10)
     
     -- execute f 
-    (Vector vout n,dat, r) <- execute f (v1 :- 10)
+    (Vector vout n :- dat :- r) <- execute f (v1 :- 10)
     liftIO$ putStrLn$ show vout
     liftIO$ putStrLn$ show dat
     liftIO$ putStrLn$ show r
@@ -406,7 +406,7 @@ testWhile2 =
   
     
     -- execute f 
-    (dat,i) <- execute f 1
+    (dat :- i) <- execute f 1
     liftIO$ putStrLn$ show dat
     liftIO$ putStrLn$ show i
     

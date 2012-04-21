@@ -245,8 +245,14 @@ instance (ArBBIO a, ArBBIO b) => ArBBIO (a :- b) where
     do 
       [v] <- arbbULoad a1   -- correct? 
       vs  <- arbbULoad rest  
-      return $ (v:vs) 
-  arbbDLoad v = error "arbbDLoad: not supported" 
+      return (v:vs) 
+  -- TODO: Fix this. Again, probably needs to maintain some structure.
+  --       as long as the type 'a' is not a tuple this should be ok. 
+  arbbDLoad (a1:rest) =
+    do 
+      r1 <- arbbDLoad [a1] 
+      rs <- arbbDLoad rest
+      return (r1 :- rs)  
  
 
 ----------------------------------------------------------------------------
