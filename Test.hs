@@ -394,7 +394,7 @@ testWhile =
       let (x,y) = while (\(v',i)  -> i <* 10)  
                         (\(v',i) -> (v + v',i+1))
                         (v,0)
-      in (y+ index0 (addReduce0 x))
+      in (y + index0 (addReduce0 x))
                             
 testWhile2 = 
   withArBB $  

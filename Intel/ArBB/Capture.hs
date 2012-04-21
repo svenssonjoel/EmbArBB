@@ -27,6 +27,10 @@ import qualified Intel.ArbbVM.Convenience as VM
 import Control.Monad.State hiding (liftIO)
 import qualified Data.Map as Map
 
+import Data.IORef
+import Data.Int
+import Data.Word
+
 ----------------------------------------------------------------------------
 -- 
 capture :: EmbFun a b => (a -> b) -> ArBB (Function (InType a b) (OutType b))
@@ -56,6 +60,31 @@ capture f =
 
     addFunction fn fd tins touts                                                         
     return $ embFun fn f            
+
+type family IT a 
+type instance IT (Exp Int) = Int 
+type instance IT (Exp Int8) = Int8
+type instance IT (Exp Int16) = Int16
+type instance IT (Exp Int32) = Int32
+type instance IT (Exp Int64) = Int64
+type instance IT (Exp Word) = Word
+type instance IT (Exp Word8) = Word8
+type instance IT (Exp Word16) = Word16
+type instance IT (Exp Word32) = Word32
+type instance IT (Exp Word64) = Word64
+
+type family OT a 
+type instance OT (Exp Int) = IORef Int
+type instance OT (Exp Int8) = IORef Int8
+type instance OT (Exp Int16) = IORef Int16
+type instance OT (Exp Int32) = IORef Int32
+type instance OT (Exp Int64) = IORef Int64
+type instance OT (Exp Word) = IORef Word
+type instance OT (Exp Word8) = IORef Word8
+type instance OT (Exp Word16) = IORef Word16
+type instance OT (Exp Word32) = IORef Word32
+type instance OT (Exp Word64) = IORef Word64
+
 {-     
 capture2 :: (VarGen a, EmbIn a, EmbOut b) => (a -> b) -> ArBB (Function (IT a) (OT b))  
 capture2 f = 
