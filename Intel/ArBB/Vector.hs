@@ -61,5 +61,6 @@ DenseOfScal(Exp (DVector Dim3 a),Dense III)
 -- Mutable Vectors 
 
 -- Figure out how to use these.. and how to handle that s parameter... 
-data MDVector s d a = MVector {mVectorData  :: M.MVector s a, 
-                               mVectorShape :: Dim} 
+-- TODO: IOVector ?
+data MDVector d a = MVector {mVectorData  :: M.IOVector a, 
+                             mVectorShape :: Dim} 

@@ -72,6 +72,8 @@ type instance IT (Exp Word8) = Word8
 type instance IT (Exp Word16) = Word16
 type instance IT (Exp Word32) = Word32
 type instance IT (Exp Word64) = Word64
+type instance IT (Exp (DVector t a)) = DVector t a  
+
 
 type family OT a 
 type instance OT (Exp Int) = IORef Int
@@ -84,6 +86,7 @@ type instance OT (Exp Word8) = IORef Word8
 type instance OT (Exp Word16) = IORef Word16
 type instance OT (Exp Word32) = IORef Word32
 type instance OT (Exp Word64) = IORef Word64
+type instance OT (Exp (DVector t a)) = MDVector t a
 
 {-     
 capture2 :: (VarGen a, EmbIn a, EmbOut b) => (a -> b) -> ArBB (Function (IT a) (OT b))  
