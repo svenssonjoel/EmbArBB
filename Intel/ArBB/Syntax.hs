@@ -167,16 +167,10 @@ data Exp a = E LExp
 type FunctionName = String
 
 data Function i o = Function FunctionName 
-
+   deriving Show                     
 ----------------------------------------------------------------------------
 data a :- b = a :- b 
 infixr :- 
-
-test :: Function (Exp a :- Exp b :- Exp c :- ()) (Exp d)
-test = Function "apa" 
-
-test2 :: Function (Exp a :- Exp b :- Exp c) (Exp d :- Exp e) 
-test2 = Function "apa" 
 
 class ArgList a where 
   argList :: a -> [LExp] 

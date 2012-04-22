@@ -66,6 +66,35 @@ capture f =
 embFun :: EmbFun a b => String -> (a -> b) -> Function (InType a b) (OutType b) 
 embFun name f = Function name 
 
+
+
+capture2 :: (EmbIn a b, EmbOut (a -> b), EmbF a b ) 
+            => (a -> b) 
+            -> ArBB (Function (EIn a b) (EOut b))
+capture2 f = 
+  do
+    fn <- getFunName 
+    let (e,(_,vt))  = runState (embF f) (0,Map.empty)
+        (nids,dag)  = accmDAGMaker e
+        tins  = inTypes f
+        touts = outTypes f
+        
+    arbbIns <- liftVM$ mapM toArBBType tins
+    arbbOuts <- liftVM$ mapM toArBBType touts 
+    
+    (funMap,_) <- get 
+    fd <- liftVM$ VM.funDef_ fn (concat arbbOuts) (concat arbbIns) $ \ os is -> 
+      do 
+        vs <- accmBody dag nids vt funMap (zip names is) 
+        copyAll os vs
+    addFunction fn fd tins touts
+    
+    return (Function fn)
+      where 
+        names = [Variable ("v"++show i) | i <- [0..]]
+
+
+
 ----------------------------------------------------------------------------
 -- 
         
@@ -180,8 +209,8 @@ class EmbIn a b where
   
   inTypes :: (a -> b)  -> [Type]
   
-class (EmbIn a b , EmbOut b) => EmbF a b where 
-  embF :: (a -> b) -> VarGenerator ([LExp], Ins, Outs) 
+class EmbF a b where 
+  embF :: (a -> b) -> VarGenerator [LExp] 
   
   
 ----------------------------------------------------------------------------
@@ -192,6 +221,8 @@ OScalar(Int8)
 OScalar(Int16) 
 OScalar(Int32) 
 OScalar(Int64) 
+
+OScalar(Float) 
 
 instance Data (Exp (DVector t a))  => EmbOut (Exp (DVector t a)) where 
   type EOut (Exp (DVector t a)) = MDVector t a 
@@ -228,3 +259,43 @@ instance (Data  a, EmbIn b c) => EmbIn (Exp a) (b -> c) where
   inTypes f = typeOf (undefined :: a) : inTypes (f nonsence) 
     where 
       nonsence = E (LVar 0 (Variable "nonsence"))
+      
+----------------------------------------------------------------------------
+
+
+instance  Data a => EmbF (Exp a) (Exp b) where 
+  embF f = do  
+    v <- getVar
+    let myVar = E (LVar (newLabel ()) v) 
+        t_in = typeOf (undefined :: a) 
+    addType v t_in 
+    let (E exp) =  f myVar
+    return [exp] 
+
+instance  Data a => EmbF (Exp a) (Exp b,Exp c) where 
+  embF f = do  
+    v <- getVar
+    let myVar = E (LVar (newLabel ()) v) 
+        t_in = typeOf (undefined :: a) 
+    addType v t_in 
+    let (E exp1,E exp2) =  f myVar
+    return [exp1,exp2] 
+
+instance  Data a => EmbF (Exp a) (Exp b,Exp c, Exp d) where 
+  embF f = do  
+    v <- getVar
+    let myVar = E (LVar (newLabel ()) v) 
+        t_in = typeOf (undefined :: a) 
+    addType v t_in 
+    let (E exp1,E exp2,E exp3) =  f myVar
+    return [exp1,exp2,exp3] 
+
+instance (Data a, EmbF b c) => EmbF (Exp a) (b -> c) where 
+  embF f = do 
+    v <- getVar 
+    let myVar = E (LVar (newLabel ()) v) 
+        t_in = typeOf (undefined :: a) 
+    addType v t_in 
+    embF (f myVar)
+    
+----------------------------------------------------------------------------

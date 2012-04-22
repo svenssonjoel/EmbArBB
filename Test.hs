@@ -430,7 +430,10 @@ testAPA=
     let i = inTypes fun 
         o = outTypes fun 
         
+    c <- capture2 fun
+    
     liftIO$ putStrLn $ show i ++ " ## " ++ show o 
+    liftIO$ putStrLn $ show c 
   
   where 
     fun :: Exp Int32 -> Exp (Vector Int32) -> Exp Int32
