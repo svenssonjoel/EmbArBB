@@ -20,6 +20,7 @@ import Foreign.Ptr
 
 import Data.Int 
 import Data.Word
+import Data.IORef
 import qualified Data.Map as Map
 import Control.Monad.State hiding (liftIO)
 
@@ -432,9 +433,17 @@ testAPA=
         
     c <- capture2 fun
     
-    liftIO$ putStrLn $ show i ++ " ## " ++ show o 
-    liftIO$ putStrLn $ show c 
+    a <- liftIO$ newIORef (0 :: Int32) 
+    
+    execute2 c 10 a 
+    
+    a' <- liftIO$ readIORef a 
+    
+    liftIO$ putStrLn $ show a' 
+    
+    -- liftIO$ putStrLn $ show i ++ " ## " ++ show o 
+    -- liftIO$ putStrLn $ show c 
   
   where 
-    fun :: Exp Int32 -> Exp (Vector Int32) -> Exp Int32
-    fun i v = i+i
+    fun :: Exp Int32 -> Exp Int32
+    fun i = i+i

@@ -27,6 +27,8 @@ import Foreign.Marshal.Array
 import Data.Int 
 import Data.Word
 
+import Data.IORef
+
 import Intel.ArBB.Syntax  
 import Intel.ArBB.Vector 
 import Intel.ArBB.Types 
@@ -103,13 +105,30 @@ execute (Function fn) inputs  =
             result <- arbbDLoad  ys
             
             return result
-      
+            
+execute2 :: (ArBBIn a, ArBBOut b) => Function a b -> a -> b -> ArBB ()       
+execute2 f a b = return () 
     
+class ArBBIn a where                  
+  arbbUp :: a -> ArBB [VM.Variable] 
+
+
+class ArBBOut a where 
+  -- use the list of variables to access data 
+  -- to store into the a (will be a mutable of some kind) 
+  arbbDown :: a -> [VM.Variable] -> ArBB () 
+                 
 class ArBBIO a where 
   arbbULoad :: a -> ArBB [VM.Variable]
   -- TODO: look at again when supporting multiple outputs 
   arbbDLoad :: [VM.Variable] -> ArBB a         
   
+instance ArBBIn Int32 where
+  arbbUp = undefined 
+  
+instance ArBBOut (IORef Int32) where 
+  arbbDown = undefined 
+
 instance ArBBIO () where 
   arbbULoad _ = return []
   arbbDLoad _ = return () 
