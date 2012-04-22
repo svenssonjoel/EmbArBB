@@ -35,6 +35,7 @@ import Intel.ArBB.Types
 import Intel.ArBB.GenArBB
 import Intel.ArBB.IsScalar
 import Intel.ArBB.Data.Int
+import Intel.ArBB.Data
 
 ----------------------------------------------------------------------------
 -- ArBB Monad 
@@ -119,7 +120,8 @@ execute2 (Function fn) a b =
           -- if necessary also allocate the output storage
           -- This is the entire point of having the user pass in 
           -- mutable storage (to get sizes from) 
-          ys <- liftM concat $ liftVM $ mapM typeToArBBGlobalVar touts
+          --ys <- liftM concat $ liftVM $ mapM typeToArBBGlobalVar touts
+          ys <- arbbAlloc b 
           
           liftVM$ VM.execute_ f ys ins 
           
@@ -133,14 +135,15 @@ class ArBBOut a where
   -- use the list of variables to access data 
   -- to store into the a (will be a mutable of some kind) 
   arbbDown :: a -> [VM.Variable] -> ArBB () 
+  arbbAlloc :: a -> ArBB [VM.Variable]
   
 #define UpScalar(ty,load) instance ArBBIn (ty) where {arbbUp a = liftM (:[]) $ liftVM$ VM.load a} 
-#define DownScalar(ty) instance ArBBOut (ty) where {  arbbDown i [v] = do val <-  liftVM (VM.readScalar_ v); liftIO (writeIORef i val) } 
+#define DownScalar(ty,typ) instance ArBBOut (ty) where {arbbDown i [v] = do {val <-  liftVM (VM.readScalar_ v); liftIO (writeIORef i val)}; arbbAlloc a = liftVM $ typeToArBBGlobalVar (typeOf (undefined :: typ)) } 
 UpScalar(Int,int64_)  -- fix for 64/32 bit archs
 UpScalar(Int32,int32_)
 
-DownScalar(IORef Int)
-DownScalar(IORef Int32)
+DownScalar(IORef Int,Int)
+DownScalar(IORef Int32,Int32)
 
 
   

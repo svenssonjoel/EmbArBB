@@ -25,6 +25,7 @@ class Data a where
   
 #define ScalarData(ht,arbbt,s) instance Data (ht) where { typeOf _ = Scalar VM.arbbt; sizeOf _ = s}
 
+ScalarData(Exp Int,ArbbI64,4) -- fix for 32bit arch also! 
 ScalarData(Exp Int8,ArbbI8,1) 
 ScalarData(Exp Int16,ArbbI16,2) 
 ScalarData(Exp Int32,ArbbI32,4) 
@@ -38,6 +39,7 @@ ScalarData(Exp Double,ArbbF64,8)
 ScalarData(Exp USize,ArbbUsize,(S.sizeOf (undefined :: Word)))
 ScalarData(Exp ISize,ArbbIsize,(S.sizeOf (undefined :: Int)))
 
+ScalarData(Int,ArbbI64,4)
 ScalarData(Int8,ArbbI8,1) 
 ScalarData(Int16,ArbbI16,2) 
 ScalarData(Int32,ArbbI32,4) 
