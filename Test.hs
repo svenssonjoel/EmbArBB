@@ -441,9 +441,6 @@ testAPA=
     
     liftIO$ putStrLn $ show a' 
     
-    -- liftIO$ putStrLn $ show i ++ " ## " ++ show o 
-    -- liftIO$ putStrLn $ show c 
-  
   where 
     fun :: Exp Int32 -> Exp Int32
     fun i = i+i

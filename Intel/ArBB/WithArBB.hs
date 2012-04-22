@@ -107,27 +107,54 @@ execute (Function fn) inputs  =
             return result
             
 execute2 :: (ArBBIn a, ArBBOut b) => Function a b -> a -> b -> ArBB ()       
-execute2 f a b = return () 
+execute2 (Function fn) a b = 
+  do 
+    (m,_) <- get 
+    case Map.lookup fn m of 
+      Nothing -> error "execute2: Invalid function" 
+      (Just (f,tins,touts)) -> 
+        do 
+          ins <- arbbUp a 
+          
+          -- if necessary also allocate the output storage
+          -- This is the entire point of having the user pass in 
+          -- mutable storage (to get sizes from) 
+          ys <- liftM concat $ liftVM $ mapM typeToArBBGlobalVar touts
+          
+          liftVM$ VM.execute_ f ys ins 
+          
+          arbbDown b ys 
+          return ()
     
 class ArBBIn a where                  
   arbbUp :: a -> ArBB [VM.Variable] 
-
 
 class ArBBOut a where 
   -- use the list of variables to access data 
   -- to store into the a (will be a mutable of some kind) 
   arbbDown :: a -> [VM.Variable] -> ArBB () 
-                 
+  
+#define UpScalar(ty,load) instance ArBBIn (ty) where {arbbUp a = liftM (:[]) $ liftVM$ VM.load a} 
+#define DownScalar(ty) instance ArBBOut (ty) where {  arbbDown i [v] = do val <-  liftVM (VM.readScalar_ v); liftIO (writeIORef i val) } 
+UpScalar(Int,int64_)  -- fix for 64/32 bit archs
+UpScalar(Int32,int32_)
+
+DownScalar(IORef Int)
+DownScalar(IORef Int32)
+
+
+  
+----------------------------------------------------------------------------                 
 class ArBBIO a where 
   arbbULoad :: a -> ArBB [VM.Variable]
   -- TODO: look at again when supporting multiple outputs 
   arbbDLoad :: [VM.Variable] -> ArBB a         
   
-instance ArBBIn Int32 where
-  arbbUp = undefined 
+--instance ArBBIn Int32 where
+--  arbbUp = undefined 
   
-instance ArBBOut (IORef Int32) where 
-  arbbDown = undefined 
+--instance ArBBOut (IORef Int32) where 
+--  arbbDown = undefined 
 
 instance ArBBIO () where 
   arbbULoad _ = return []
