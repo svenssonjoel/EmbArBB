@@ -325,7 +325,7 @@ testIndex =
   where 
     fun :: Exp (DVector Dim1 Int32) -> Exp Int32
     fun v = index1 v 3
-    
+   
 testScalar = 
   withArBB $  
   do
@@ -421,3 +421,17 @@ testWhile2 =
 
 
 
+
+
+----------------------------------------------------------------------------
+testAPA= 
+  withArBB $  
+  do
+    let i = inTypes fun 
+        o = outTypes fun 
+        
+    liftIO$ putStrLn $ show i ++ " ## " ++ show o 
+  
+  where 
+    fun :: Exp Int32 -> Exp (Vector Int32) -> Exp Int32
+    fun i v = i+i

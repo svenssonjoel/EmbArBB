@@ -4,8 +4,10 @@
              MultiParamTypeClasses,
              FlexibleInstances,
              FlexibleContexts,
+             UndecidableInstances,
              TypeFamilies,
-             TypeOperators #-}
+             TypeOperators, 
+             CPP #-}
 
 module Intel.ArBB.Capture where 
 
@@ -61,70 +63,12 @@ capture f =
     addFunction fn fd tins touts                                                         
     return $ embFun fn f            
 
-type family IT a 
-type instance IT (Exp Int) = Int 
-type instance IT (Exp Int8) = Int8
-type instance IT (Exp Int16) = Int16
-type instance IT (Exp Int32) = Int32
-type instance IT (Exp Int64) = Int64
-type instance IT (Exp Word) = Word
-type instance IT (Exp Word8) = Word8
-type instance IT (Exp Word16) = Word16
-type instance IT (Exp Word32) = Word32
-type instance IT (Exp Word64) = Word64
-type instance IT (Exp (DVector t a)) = DVector t a  
-
-
-type family OT a 
-type instance OT (Exp Int) = IORef Int
-type instance OT (Exp Int8) = IORef Int8
-type instance OT (Exp Int16) = IORef Int16
-type instance OT (Exp Int32) = IORef Int32
-type instance OT (Exp Int64) = IORef Int64
-type instance OT (Exp Word) = IORef Word
-type instance OT (Exp Word8) = IORef Word8
-type instance OT (Exp Word16) = IORef Word16
-type instance OT (Exp Word32) = IORef Word32
-type instance OT (Exp Word64) = IORef Word64
-type instance OT (Exp (DVector t a)) = MDVector t a
-
-{-     
-capture2 :: (VarGen a, EmbIn a, EmbOut b) => (a -> b) -> ArBB (Function (IT a) (OT b))  
-capture2 f = 
-  do  
-    fn <- getFunName 
-    let ((e,tins',touts),(_,vt))    = runState (emb f) (0,Map.empty) 
-        (nids,dag) = accmDAGMaker e -- runDAGMaker (constructDAG e) 
-        
-        -- DONE: Interleave typechecking with codeGen ! so 
-        -- that local variables can be added as it moves along. 
-        -- tc         = typecheckDAG dag vt
-        --  Now I should have all parts needed to generate the function.
-    
-    let (names,tins) = unzip tins'
-    
-    arbbIns  <- liftVM$ mapM toArBBType tins 
-    arbbOuts <- liftVM$ mapM toArBBType touts
-    
-    (funMap,_) <- get
-    fd <- liftVM$ VM.funDef_ fn (concat arbbOuts) (concat arbbIns) $ \ os is -> 
-      do 
-        vs <- accmBody dag nids vt funMap (zip names is) 
-         -- lift$ putStrLn $ "os :" ++ show os 
-         -- lift$ putStrLn $ "vs :" ++ show vs
-        copyAll os vs 
-
-    addFunction fn fd tins touts                                                         
-    return $ embFun fn f                
--}     
-
 embFun :: EmbFun a b => String -> (a -> b) -> Function (InType a b) (OutType b) 
 embFun name f = Function name 
 
 ----------------------------------------------------------------------------
 -- 
         
-
 type VarGenerator a = State (Integer,VarType) a 
 
 getVar :: VarGenerator Variable
@@ -144,6 +88,7 @@ addType v t =
 
 type Outs = [Type]
 type Ins = [(Variable,Type)]    
+
            
 class EmbFun a b where 
   type InType a b
@@ -222,4 +167,64 @@ instance (Data a, EmbFun c d) => EmbFun (Exp a) (c -> d) where
     return (exp, (v,t_in):ins, outs)
   
   
+---------------------------------------------------------------------------- 
+-- 
+
+class EmbOut a where 
+  type EOut a 
   
+  outTypes :: a -> [Type] 
+  
+class EmbIn a b where 
+  type EIn a b 
+  
+  inTypes :: (a -> b)  -> [Type]
+  
+class (EmbIn a b , EmbOut b) => EmbF a b where 
+  embF :: (a -> b) -> VarGenerator ([LExp], Ins, Outs) 
+  
+  
+----------------------------------------------------------------------------
+#define OScalar(a) instance Data a => EmbOut (Exp a) where {type EOut (Exp a) = IORef a; outTypes _ = [typeOf (undefined :: a)]}
+
+OScalar(Int) 
+OScalar(Int8) 
+OScalar(Int16) 
+OScalar(Int32) 
+OScalar(Int64) 
+
+instance Data (Exp (DVector t a))  => EmbOut (Exp (DVector t a)) where 
+  type EOut (Exp (DVector t a)) = MDVector t a 
+  outTypes a = [typeOf a]
+
+instance (EmbOut a, EmbOut b) => EmbOut (a,b) where 
+  type EOut (a,b) = (EOut a :- EOut b) 
+  outTypes (a,b) = outTypes a ++ outTypes b 
+
+instance (EmbOut a, EmbOut b, EmbOut c) => EmbOut (a,b,c) where 
+  type EOut (a,b,c) = (EOut a :- EOut b :- EOut c) 
+  outTypes (a,b,c) = outTypes a ++ outTypes b ++ outTypes c 
+
+instance EmbOut b => EmbOut (Exp a -> b) where 
+  type EOut ((Exp a) -> b) = EOut b 
+  outTypes f = outTypes (f nonsence) 
+    where 
+       nonsence = E (LVar 0 (Variable "nonsence"))
+----------------------------------------------------------------------------
+  
+instance Data a => EmbIn (Exp a) () where
+  type EIn (Exp a) () = a 
+  
+  inTypes a = [typeOf (undefined :: a)]
+  
+instance Data a => EmbIn (Exp a) (Exp b) where
+  type EIn (Exp a) (Exp b) = a 
+  
+  inTypes a = [typeOf (undefined :: a)]
+
+
+instance (Data  a, EmbIn b c) => EmbIn (Exp a) (b -> c) where
+  type EIn (Exp a) (b -> c) = a :- EIn b c 
+  inTypes f = typeOf (undefined :: a) : inTypes (f nonsence) 
+    where 
+      nonsence = E (LVar 0 (Variable "nonsence"))
