@@ -20,9 +20,11 @@ import qualified Intel.ArbbVM as VM
 import qualified Intel.ArbbVM.Convenience as VM
 
 import qualified Data.Vector.Storable as V 
+import qualified Data.Vector.Storable.Mutable as M
 import Foreign.ForeignPtr 
 import Foreign.Ptr
 import Foreign.Marshal.Array
+import Foreign.Marshal.Utils
 
 import Data.Int 
 import Data.Word
@@ -160,6 +162,43 @@ UpScalar(Int32,int32_)
 
 DownScalar(IORef Int,Int)
 DownScalar(IORef Int32,Int32)
+
+instance (V.Storable a, IsScalar a) => ArBBIn (Vector a) where 
+  arbbUp (Vector dat (One n)) = 
+    do 
+      [st] <- liftVM$ toArBBType (scalarType (undefined :: a)) 
+      dt <- liftVM$ VM.getDenseType_ st 1 
+      
+      let (fptr,n') = V.unsafeToForeignPtr0 dat
+          ptr = unsafeForeignPtrToPtr fptr
+      
+      inb <- liftVM$ VM.createDenseBinding_ (castPtr ptr) 
+                                            1 
+                                            [fromIntegral n] 
+                                            [fromIntegral $ scalarSize (undefined :: a)] 
+      gin <- liftVM$ VM.createGlobal_ dt "input" inb 
+      vin <- liftVM$ VM.variableFromGlobal_ gin
+      
+      return$ [vin]
+
+instance (Data a, V.Storable a, IsScalar a) => ArBBOut (MDVector Dim1 a) where 
+  arbbAlloc (MVector _ (One n)) = 
+    do 
+      [st] <- liftVM$ toArBBType (scalarType (undefined :: a)) 
+      dt <- liftVM$ VM.getDenseType_ st 1 
+      
+      gout <- liftVM$ VM.createGlobal_nobind_ dt "output"
+      vout <- liftVM$ VM.variableFromGlobal_ gout 
+      
+      s <- liftVM$ VM.usize_ n 
+      liftVM$ VM.opDynamicImm_ VM.ArbbOpAlloc [vout] [s] 
+      return [vout]
+    
+  arbbDown  (MVector dat (One n)) [v] = 
+    do 
+      arbbdat <- liftVM$ VM.mapToHost_ v [fromIntegral n] VM.ArbbReadOnlyRange 
+      let (ptr,i) = M.unsafeToForeignPtr0 dat
+      liftIO$  copyBytes (unsafeForeignPtrToPtr ptr) (castPtr arbbdat) (n * sizeOf (undefined :: a)) 
 
 
   

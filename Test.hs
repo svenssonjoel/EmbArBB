@@ -21,6 +21,8 @@ import Foreign.Ptr
 import Data.Int 
 import Data.Word
 import Data.IORef
+
+
 import qualified Data.Map as Map
 import Control.Monad.State hiding (liftIO)
 
@@ -441,3 +443,29 @@ testAPA=
   where 
     fun :: Exp Int32 -> Exp Int32
     fun i = i+i+5
+
+
+testBEPA = 
+  withArBB $  
+  do
+    c <- capture2 fun
+    
+    str <- serialize c
+    liftIO$ putStrLn str
+  
+
+    let inp = Vector (V.fromList [0..9::Int32]) (One 10)
+    outp <- liftIO$ new1D 10 
+  
+    execute2 c inp outp 
+    
+    let (MVector dat _) = outp
+    dat' <- liftIO$ V.freeze dat
+    
+    liftIO$ putStrLn $ show dat'
+    return c
+    
+  where 
+    fun :: Exp (Vector Int32) -> Exp (Vector Int32)
+    fun v = v+v
+

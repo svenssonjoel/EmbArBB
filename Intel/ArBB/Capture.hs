@@ -67,6 +67,8 @@ embFun :: EmbFun a b => String -> (a -> b) -> Function (InType a b) (OutType b)
 embFun name f = Function name 
 
 
+----------------------------------------------------------------------------
+-- 
 
 capture2 :: (EmbIn a b, EmbOut (a -> b), EmbF a b ) 
             => (a -> b) 
@@ -201,7 +203,6 @@ instance (Data a, EmbFun c d) => EmbFun (Exp a) (c -> d) where
 
 class EmbOut a where 
   type EOut a 
-  
   outTypes :: a -> [Type] 
   
 class EmbIn a b where 
@@ -209,20 +210,30 @@ class EmbIn a b where
   
   inTypes :: (a -> b)  -> [Type]
   
+
 class EmbF a b where 
   embF :: (a -> b) -> VarGenerator [LExp] 
   
   
 ----------------------------------------------------------------------------
-#define OScalar(a) instance Data a => EmbOut (Exp a) where {type EOut (Exp a) = IORef a; outTypes _ = [typeOf (undefined :: a)]}
+#define OScalar(a)                          \
+  instance Data a => EmbOut (Exp a) where { \
+    type EOut (Exp a) = IORef a;            \
+    outTypes _ = [typeOf (undefined :: a)]}
 
 OScalar(Int) 
 OScalar(Int8) 
 OScalar(Int16) 
 OScalar(Int32) 
 OScalar(Int64) 
-
 OScalar(Float) 
+OScalar(Double) 
+OScalar(Word)
+OScalar(Word8)
+OScalar(Word16)
+OScalar(Word32)
+OScalar(Word64)
+
 
 instance Data (Exp (DVector t a))  => EmbOut (Exp (DVector t a)) where 
   type EOut (Exp (DVector t a)) = MDVector t a 

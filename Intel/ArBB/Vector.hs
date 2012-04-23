@@ -64,3 +64,20 @@ DenseOfScal(Exp (DVector Dim3 a),Dense III)
 -- TODO: IOVector ?
 data MDVector d a = MVector {mVectorData  :: M.IOVector a, 
                              mVectorShape :: Dim} 
+                    
+                    
+freeze :: M.Storable a => MDVector d a -> IO (DVector d a) 
+freeze (MVector dat dim) = 
+  do 
+    dat' <- V.freeze dat 
+    return $ Vector dat' dim
+
+    
+
+
+new1D :: M.Storable a => Int -> IO (MDVector Dim1 a) 
+new1D n = 
+  do 
+   vec <- M.new n 
+   return $ MVector vec (One n)
+   
