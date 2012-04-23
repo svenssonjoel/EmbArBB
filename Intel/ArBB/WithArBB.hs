@@ -40,6 +40,9 @@ import Intel.ArBB.Data
 ----------------------------------------------------------------------------
 -- ArBB Monad 
 
+-- Keeps track of what functions have been JITed so far
+type ArBB a = StateT ArBBState VM.EmitArbb a  
+
 type ArBBState = (Map.Map FunctionName (VM.ConvFunction, [Type], [Type]) , Integer)
                             
 
@@ -56,9 +59,8 @@ getFunName = do
   put (m,i+1) 
   return $ "f" ++ show i 
 
--- Keeps track of what functions have been JITed so far
-type ArBB a = StateT ArBBState VM.EmitArbb a  
-
+----------------------------------------------------------------------------
+-- Perform IO and VM operations in the ArBB monad.
 liftIO :: IO a -> ArBB a 
 liftIO = lift . VM.liftIO
 
@@ -94,19 +96,25 @@ execute (Function fn) inputs  =
         Nothing -> error "execute: Invalid function" 
         (Just (f,tins,touts  )) -> 
           do 
+            -- upload the input (creates ArBB variables) 
             ins <- arbbULoad inputs 
       
-            -- TODO: Big changes here when user needs to supply result vectors.
+            -- ys holds the output 
             ys <- liftM concat $ liftVM $ mapM typeToArBBGlobalVar touts
-            --y1 <- liftVM $ denseTypeSizeToGlobalVar t1 40
-            --ys <- liftVM$ typeToArBBGlobalVar t2
-
+          
             liftVM$ VM.execute_ f ys ins
          
             result <- arbbDLoad  ys
             
             return result
             
+-- Execute is "incorrect" and actually should not work. 
+-- If the outputs are vectors these must have been allocated in the ArBB space.             
+-- The execute function ignores allocating any such memory and for some reason 
+-- it still works in many cases ! :/ 
+-- execute2 tries to solve this, the programmer supplies mutable vectors 
+-- that get filled with data from the computation. The sizes of the             
+-- mutable vectors are(will be) used to allocate same sized storage on the ArBB side      
 execute2 :: (ArBBIn a, ArBBOut b) => Function a b -> a -> b -> ArBB ()       
 execute2 (Function fn) a b = 
   do 
@@ -117,10 +125,7 @@ execute2 (Function fn) a b =
         do 
           ins <- arbbUp a 
           
-          -- if necessary also allocate the output storage
-          -- This is the entire point of having the user pass in 
-          -- mutable storage (to get sizes from) 
-          --ys <- liftM concat $ liftVM $ mapM typeToArBBGlobalVar touts
+          -- if a vector, then allocate space.
           ys <- arbbAlloc b 
           
           liftVM$ VM.execute_ f ys ins 
@@ -128,6 +133,8 @@ execute2 (Function fn) a b =
           arbbDown b ys 
           return ()
     
+----------------------------------------------------------------------------    
+-- ArBBIn, ArBBOut : used by execute2            
 class ArBBIn a where                  
   arbbUp :: a -> ArBB [VM.Variable] 
 
@@ -137,8 +144,17 @@ class ArBBOut a where
   arbbDown :: a -> [VM.Variable] -> ArBB () 
   arbbAlloc :: a -> ArBB [VM.Variable]
   
-#define UpScalar(ty,load) instance ArBBIn (ty) where {arbbUp a = liftM (:[]) $ liftVM$ VM.load a} 
-#define DownScalar(ty,typ) instance ArBBOut (ty) where {arbbDown i [v] = do {val <-  liftVM (VM.readScalar_ v); liftIO (writeIORef i val)}; arbbAlloc a = liftVM $ typeToArBBGlobalVar (typeOf (undefined :: typ)) } 
+-- CPP Hackery 
+#define UpScalar(ty,load)                      \
+  instance ArBBIn (ty) where {                 \
+    arbbUp a = liftM (:[]) $ liftVM$ VM.load a}
+#define DownScalar(ty,typ)                                 \
+  instance ArBBOut (ty) where {                            \
+    arbbDown i [v] = do {val <-  liftVM (VM.readScalar_ v);\
+                         liftIO (writeIORef i val)};       \
+    arbbAlloc a = liftVM $ typeToArBBGlobalVar (typeOf (undefined :: typ)) } 
+
+
 UpScalar(Int,int64_)  -- fix for 64/32 bit archs
 UpScalar(Int32,int32_)
 
@@ -148,16 +164,11 @@ DownScalar(IORef Int32,Int32)
 
   
 ----------------------------------------------------------------------------                 
+-- ArBBIO : used by execute
 class ArBBIO a where 
   arbbULoad :: a -> ArBB [VM.Variable]
   -- TODO: look at again when supporting multiple outputs 
   arbbDLoad :: [VM.Variable] -> ArBB a         
-  
---instance ArBBIn Int32 where
---  arbbUp = undefined 
-  
---instance ArBBOut (IORef Int32) where 
---  arbbDown = undefined 
 
 instance ArBBIO () where 
   arbbULoad _ = return []
@@ -167,7 +178,11 @@ instance ArBBIO () where
 -- Base
   
 -- Scalars
-#define ArBBScalar(ty,load) instance ArBBIO ty where {arbbULoad a = liftM (:[]) $ liftVM$ VM.load a; arbbDLoad [v] = liftVM$ VM.readScalar_ v } 
+  
+#define ArBBScalar(ty,load)                        \
+  instance ArBBIO ty where {                       \
+    arbbULoad a = liftM (:[]) $ liftVM$ VM.load a; \
+    arbbDLoad [v] = liftVM$ VM.readScalar_ v } 
 
 ArBBScalar(Int8,int8_)
 ArBBScalar(Int16,int16_)

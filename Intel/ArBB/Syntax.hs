@@ -130,24 +130,6 @@ data Op = Add | Sub  | Mul | Div
         | AddMerge | AddMergeScalar
                      
           deriving (Eq, Show) 
-                   
-isReduceOp Add = True 
-isReduceOp Mul = True
-isReduceOp Max = True
-isReduceOp Min = True 
-isReduceOp And = True
-isReduceOp Ior = True 
-isReduceOp Xor = True
-isReduceOp _   = False                    
-   
-isScanOp Add = True 
-isScanOp Mul = True
-isScanOp Max = True
-isScanOp Min = True 
-isScanOp And = True
-isScanOp Ior = True 
-isScanOp Xor = True
-isScanOp _   = False                    
 
 ----------------------------------------------------------------------------                   
 -- 

@@ -428,9 +428,6 @@ testWhile2 =
 testAPA= 
   withArBB $  
   do
-    let i = inTypes fun 
-        o = outTypes fun 
-        
     c <- capture2 fun
     
     a <- liftIO$ newIORef (0 :: Int32) 
@@ -443,4 +440,4 @@ testAPA=
     
   where 
     fun :: Exp Int32 -> Exp Int32
-    fun i = i+i
+    fun i = i+i+5
