@@ -444,7 +444,7 @@ testAPA=
     fun :: Exp Int32 -> Exp Int32
     fun i = i+i+5
 
-
+-- Mutable vector interface test..
 testBEPA = 
   withArBB $  
   do
@@ -456,13 +456,12 @@ testBEPA =
 
     let inp = Vector (V.fromList [0..9::Int32]) (One 10)
     outp <- liftIO$ new1D 10 
-  
+    
     execute2 c inp outp 
     
-    let (MVector dat _) = outp
-    dat' <- liftIO$ V.freeze dat
+    Vector dat _ <- liftIO$ freeze outp
     
-    liftIO$ putStrLn $ show dat'
+    liftIO$ putStrLn $ show dat
     return c
     
   where 
