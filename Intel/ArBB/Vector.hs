@@ -81,3 +81,14 @@ new1D n =
    vec <- M.new n 
    return $ MVector vec (One n)
    
+new2D :: M.Storable a => Int -> Int -> IO (MDVector Dim2 a) 
+new2D n1 n2 = 
+  do 
+    vec <- M.new (n1*n2) 
+    return $ MVector vec (Two n1 n2)
+    
+new3D :: M.Storable a => Int -> Int -> Int -> IO (MDVector Dim3 a) 
+new3D n1 n2 n3 = 
+  do 
+    vec <- M.new (n1*n2*n3) 
+    return $ MVector vec (Three n1 n2 n3)    

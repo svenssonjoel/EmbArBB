@@ -22,7 +22,6 @@ import Data.Int
 import Data.Word
 import Data.IORef
 
-
 import qualified Data.Map as Map
 import Control.Monad.State hiding (liftIO)
 
@@ -466,5 +465,53 @@ testBEPA =
     
   where 
     fun :: Exp (Vector Int32) -> Exp (Vector Int32)
+    fun v = v+v
+
+
+testCEPA = 
+  withArBB $  
+  do
+    c <- capture2 fun
+    
+    str <- serialize c
+    liftIO$ putStrLn str
+  
+
+    let inp = Vector (V.fromList [0..9::Int32]) (Two 5 2)
+    outp <- liftIO$ new2D 5 2 
+    
+    execute2 c inp outp 
+    
+    Vector dat _ <- liftIO$ freeze outp
+    
+    liftIO$ putStrLn $ show dat
+    return c
+    
+  where 
+    fun :: Exp (DVector Dim2 Int32) -> Exp (DVector Dim2 Int32)
+    fun v = v+v
+
+
+testDEPA = 
+  withArBB $  
+  do
+    c <- capture2 fun
+    
+    str <- serialize c
+    liftIO$ putStrLn str
+  
+
+    let inp = Vector (V.fromList [0..19::Int32]) (Three 5 2 2)
+    outp <- liftIO$ new3D 5 2 2 
+    
+    execute2 c inp outp 
+    
+    Vector dat _ <- liftIO$ freeze outp
+    
+    liftIO$ putStrLn $ show dat
+    return c
+    
+  where 
+    fun :: Exp (DVector Dim3 Int32) -> Exp (DVector Dim3 Int32)
     fun v = v+v
 
