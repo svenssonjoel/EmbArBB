@@ -92,3 +92,5 @@ new3D n1 n2 n3 =
   do 
     vec <- M.new (n1*n2*n3) 
     return $ MVector vec (Three n1 n2 n3)    
+    
+    
