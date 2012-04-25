@@ -90,7 +90,7 @@ serialize (Function fn)  =
           
 ----------------------------------------------------------------------------
 -- | Execute an ArBB function
-execute :: (ArBBIO a, ArBBIO b) =>  Function a b -> a -> ArBB b             
+execute :: (ArBBIn a, ArBBIO b) =>  Function a b -> a -> ArBB b             
 execute (Function fn) inputs  = 
     do 
       (m,_) <- get 
@@ -99,7 +99,7 @@ execute (Function fn) inputs  =
         (Just (f,tins,touts  )) -> 
           do 
             -- upload the input (creates ArBB variables) 
-            ins <- arbbULoad inputs 
+            ins <- arbbUp inputs 
       
             -- ys holds the output 
             ys <- liftM concat $ liftVM $ mapM typeToArBBGlobalVar touts
@@ -158,10 +158,33 @@ class ArBBOut a where
 
 
 UpScalar(Int,int64_)  -- fix for 64/32 bit archs
+UpScalar(Int8,int8_)
+UpScalar(Int16,int16_)
 UpScalar(Int32,int32_)
+UpScalar(Int64,int64_)
+UpScalar(Word,uint64_) -- fir for 64/32 bit archs
+UpScalar(Word8,uint8_)
+UpScalar(Word16,uint16_)
+UpScalar(Word32,uint32_)
+UpScalar(Word64,uint64_)
+UpScalar(Float,float32_)
+UpScalar(Double,float64_)
 
 DownScalar(IORef Int,Int)
+DownScalar(IORef Int8,Int8)
+DownScalar(IORef Int16,Int16)
 DownScalar(IORef Int32,Int32)
+DownScalar(IORef Int64,Int64)
+DownScalar(IORef Word,Word) 
+DownScalar(IORef Word8,Word8) 
+DownScalar(IORef Word16,Word16) 
+DownScalar(IORef Word32,Word32) 
+DownScalar(IORef Word64,Word64) 
+DownScalar(IORef Float,Float)
+DownScalar(IORef Double,Double)
+
+instance ArBBIn () where 
+  arbbUp () = return []
 
 instance (V.Storable a, IsScalar a) => ArBBIn (DVector Dim1 a) where 
   arbbUp (Vector dat (One n)) = 
@@ -225,8 +248,17 @@ instance (V.Storable a, IsScalar a) => ArBBIn (DVector Dim3 a) where
       return$ [vin]
         where 
           s = fromIntegral $ scalarSize (undefined :: a)
-      
 
+instance (ArBBIn a, ArBBIn b) => ArBBIn (a :- b) where 
+  arbbUp (a :- b) = 
+    do 
+      a' <- arbbUp a 
+      b' <- arbbUp b
+      return $ a' ++ b'
+
+      
+---------------------------------------------------------------------------- 
+-- Out instances 
 instance (Data a, V.Storable a, IsScalar a) => ArBBOut (MDVector Dim1 a) where 
   arbbAlloc (MVector _ (One n)) = 
     do 

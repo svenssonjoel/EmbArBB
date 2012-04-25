@@ -23,13 +23,17 @@ class Data a where
 -- Base Data Types  
   
   
-#define ScalarData(ht,arbbt,s) instance Data (ht) where { typeOf _ = Scalar VM.arbbt; sizeOf _ = s}
+#define ScalarData(ht,arbbt,s)   \
+  instance Data (ht) where    {  \
+     typeOf _ = Scalar VM.arbbt; \
+     sizeOf _ = s}
 
 ScalarData(Exp Int,ArbbI64,4) -- fix for 32bit arch also! 
 ScalarData(Exp Int8,ArbbI8,1) 
 ScalarData(Exp Int16,ArbbI16,2) 
 ScalarData(Exp Int32,ArbbI32,4) 
 ScalarData(Exp Int64,ArbbI64,8) 
+ScalarData(Exp Word,ArbbU64,8) -- fix for 32bit arch also! 
 ScalarData(Exp Word8,ArbbU8,1) 
 ScalarData(Exp Word16,ArbbU16,2) 
 ScalarData(Exp Word32,ArbbU32,4) 
@@ -44,6 +48,7 @@ ScalarData(Int8,ArbbI8,1)
 ScalarData(Int16,ArbbI16,2) 
 ScalarData(Int32,ArbbI32,4) 
 ScalarData(Int64,ArbbI64,8) 
+ScalarData(Word,ArbbU64,8);
 ScalarData(Word8,ArbbU8,1) 
 ScalarData(Word16,ArbbU16,2) 
 ScalarData(Word32,ArbbU32,4) 

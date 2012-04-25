@@ -28,10 +28,12 @@ newLabel () = unsafePerformIO $ do
 
 ---------------------------------------------------------------------------- 
 -- Literals and Variables
-data Literal = LitInt8   Int8  
+data Literal = LitInt    Int
+             | LitInt8   Int8  
              | LitInt16  Int16
              | LitInt32  Int32
              | LitInt64  Int64
+             | LitWord   Word
              | LitWord8  Word8
              | LitWord16 Word16
              | LitWord32 Word32 
