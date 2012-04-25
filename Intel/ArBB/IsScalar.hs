@@ -17,7 +17,11 @@ class IsScalar a where
   scalarSize :: a -> Int 
   
 
-#define scalar(i,j,k) instance IsScalar i where { scalarType _ = Scalar VM.j; scalarSize _ = k } 
+#define scalar(i,j,k)           \
+  instance IsScalar i where {   \
+    scalarType _ = Scalar VM.j; \
+    scalarSize _ = k }
+
 scalar(Int8,ArbbI8,1)
 scalar(Int16,ArbbI16,2)
 scalar(Int32,ArbbI32,4)
@@ -49,3 +53,7 @@ instance IsScalar Word where
                n -> error "scalarType: <Word> Strage size"
   scalarSize a = S.sizeOf a 
 
+instance IsScalar Bool where 
+  scalarType a = 
+    Scalar VM.ArbbBoolean
+  scalarSize a = S.sizeOf (undefined :: Int)

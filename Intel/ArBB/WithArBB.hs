@@ -134,7 +134,13 @@ execute2 (Function fn) a b =
           
           arbbDown b ys 
           return ()
-    
+-- useful ?              
+freeBindings :: [VM.Binding] -> ArBB ()
+freeBindings [] = return () 
+freeBindings (b:bs) = 
+  do 
+    liftVM $ VM.freeBinding_ b
+    freeBindings bs
 ----------------------------------------------------------------------------    
 -- ArBBIn, ArBBOut : used by execute2            
 class ArBBIn a where                  
@@ -143,8 +149,9 @@ class ArBBIn a where
 class ArBBOut a where 
   -- use the list of variables to access data 
   -- to store into the a (will be a mutable of some kind) 
-  arbbDown :: a -> [VM.Variable] -> ArBB () 
+  arbbDown  :: a -> [VM.Variable] -> ArBB () 
   arbbAlloc :: a -> ArBB [VM.Variable]
+  
   
 -- CPP Hackery 
 #define UpScalar(ty,load)                      \
@@ -154,7 +161,7 @@ class ArBBOut a where
   instance ArBBOut (ty) where {                            \
     arbbDown i [v] = do {val <-  liftVM (VM.readScalar_ v);\
                          liftIO (writeIORef i val)};       \
-    arbbAlloc a = liftVM $ typeToArBBGlobalVar (typeOf (undefined :: typ)) } 
+    arbbAlloc a = liftVM $ typeToArBBGlobalVar (typeOf (undefined :: typ)); } 
 
 
 UpScalar(Int,int64_)  -- fix for 64/32 bit archs
@@ -326,6 +333,8 @@ instance (Data a, V.Storable a, IsScalar a) => ArBBOut (MDVector Dim3 a) where
       liftIO$  copyBytes (unsafeForeignPtrToPtr ptr) 
                          (castPtr arbbdat) 
                          (n1 * n2 * n3 * sizeOf (undefined :: a)) 
+      -- needs to know of the binding (or memory will leak!  
+      -- liftVM$ VM.freeBidning [binding of v] 
 
 
   
@@ -365,9 +374,6 @@ ArBBScalar(USize,usize_)
 ArBBScalar(ISize,isize_)
 
 ----------------------------------------------------------------------------
-
--- TODO: way to remove the IsScalar requirement (Big change !!) 
-
 -- Vectors 
 instance (V.Storable a, IsScalar a) => ArBBIO (Vector a) where 
   arbbULoad (Vector dat (One n)) = 

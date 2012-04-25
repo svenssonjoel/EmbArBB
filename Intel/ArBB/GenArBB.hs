@@ -4,8 +4,7 @@
 module Intel.ArBB.GenArBB (accmBody, 
                            toArBBType,
                            copyAll,
-                           typeToArBBGlobalVar,
-                           denseTypeSizeToGlobalVar) 
+                           typeToArBBGlobalVar) 
                            where 
 
 import Intel.ArBB.DAG
@@ -471,14 +470,14 @@ isOpDynamic Pow = False
 isOpDynamic Rsh = False 
 isOpDynamic Bit_xor = False 
 isOpDynamic Select = False 
-isOpDynamic Gather = False  
-isOpDynamic Scatter = False 
+isOpDynamic Gather = True  
+isOpDynamic Scatter = True 
 isOpDynamic Pack = False 
 isOpDynamic Unpack = False  
 isOpDynamic Shuffle = False 
 isOpDynamic Unshuffle = False 
 isOpDynamic Repeat = False   
-isOpDynamic Distribute = False  
+isOpDynamic Distribute = True
 isOpDynamic RepeatRow = False   
 isOpDynamic RepeatCol = False  
 isOpDynamic RepeatPage = False
@@ -486,10 +485,10 @@ isOpDynamic Transpose = False
 isOpDynamic SwapCol = False  
 isOpDynamic SwapRow = False 
 isOpDynamic SwapPage = False  
-isOpDynamic ShiftConst = False  
-isOpDynamic ShiftClamp = False 
-isOpDynamic ShiftConstRev = False  
-isOpDynamic ShiftClampRev = False 
+isOpDynamic ShiftConst = True
+isOpDynamic ShiftClamp = True
+isOpDynamic ShiftConstRev = True 
+isOpDynamic ShiftClampRev = True
 isOpDynamic Rotate = True
 isOpDynamic RotateRev = True  
 isOpDynamic Reverse = False 
@@ -508,8 +507,8 @@ isOpDynamic Flatten = False
 isOpDynamic ConstVector = False  
 isOpDynamic Sort = False  
 isOpDynamic SortRank = False  
-isOpDynamic Replace = False  
-isOpDynamic SetRegularNesting = False  
+isOpDynamic Replace = True  
+isOpDynamic SetRegularNesting = True
 isOpDynamic ReplaceRow = False  
 isOpDynamic ReplaceCol = False  
 isOpDynamic ReplacePage = False  
@@ -519,9 +518,9 @@ isOpDynamic GetNPages = False
 isOpDynamic ExtractRow = False  
 isOpDynamic ExtractCol = False  
 isOpDynamic ExtractPage = False 
-isOpDynamic Section = False  
+isOpDynamic Section = True  
 isOpDynamic Segment = False  
-isOpDynamic ReplaceSegment = False  
+isOpDynamic ReplaceSegment = True 
 isOpDynamic Alloc = False  
 isOpDynamic ReplaceElem = False  
 isOpDynamic GetEltCoord = False 
@@ -615,20 +614,8 @@ typeToArBBGlobalVar t =
     ys <- mapM VM.variableFromGlobal_ gs 
     return ys 
 
--- HACK HACK (That doesnt do any good) 
-denseTypeSizeToGlobalVar :: Type -> Int -> VM.EmitArbb [VM.Variable]
-denseTypeSizeToGlobalVar t@(Dense I scal) s = 
-  do 
-    [ts] <- toArBBType t 
-    g <- VM.createGlobal_nobind_ ts "noname"
-    y <- VM.variableFromGlobal_ g 
     
-    s' <- VM.usize_ (fromIntegral s) 
-    VM.opDynamicImm_ VM.ArbbOpAlloc [y] [s']
-    return [y]
-denseTypeSizeToGlobalVar (t) s = error $ show t      
-    
-
+-- | declare local
 typeToArBBLocalVar :: Type -> VM.EmitArbb [VM.Variable]
 typeToArBBLocalVar t = 
   do 

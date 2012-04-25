@@ -63,31 +63,16 @@ data LExp = LLit Label Literal
           | LCall Label FunctionName [LExp]  
           | LMap  Label FunctionName [LExp]   
             
-          -- Experimental  
-          --  | LFor Label ([LExp] -> LExp)   -- loop condition 
-          --               ([LExp] -> [LExp]) -- loop body 
-          --               [LExp]             -- start state
-          --  | LFor' Label [Variable] LExp [LExp] [LExp]
           | LWhile Label [Variable] LExp [LExp] [LExp]
                  
           | LIf  Label LExp LExp LExp 
-            
-            -- Experiment: Encode all ArBBOps in this constr
+
           | LOp Label Op [LExp]   
             
           deriving (Show)
-                   
-instance Show (a->b) where 
-  show _ = "func" 
 
 instance Eq LExp where 
   a == b = getLabel a == getLabel b
-
- 
--- TODO: Figure out how to get the ArBB looping constructs into the Expr 
---       datatype.
-
-
                    
 ----------------------------------------------------------------------------                   
 -- Operations (binary, unary, reductions-ops all mixed up) 
@@ -106,7 +91,7 @@ data Op = Add | Sub  | Mul | Div
         | Lsh | Mod 
         | Neq | Pow | Rsh 
         | Bit_xor | Select
-         -- Experimental
+
         | Gather | Scatter | Pack | Unpack
         | Shuffle | Unshuffle | Repeat
         | Distribute | RepeatRow | RepeatCol | RepeatPage
@@ -130,7 +115,6 @@ data Op = Add | Sub  | Mul | Div
         | AddScan | MulScan | MaxScan | MinScan | AndScan 
         | IorScan | XorScan 
         | AddMerge | AddMergeScalar
-                     
           deriving (Eq, Show) 
 
 ----------------------------------------------------------------------------                   
@@ -141,6 +125,12 @@ getLabel (LVar l _) = l
 getLabel (LLit l _) = l 
 getLabel (LOp l _ _) = l 
 getLabel (LIf l _ _ _) = l 
+getLabel (LWhile l _ _ _ _) = l
+getLabel (LIndex0 l _) = l 
+getLabel (LResIndex l _ _) = l 
+getLabel (LCall l _ _) = l
+getLabel (LMap l _ _) = l
+
 ---------------------------------------------------------------------------- 
 -- add a layer of types 
 
