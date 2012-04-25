@@ -228,7 +228,7 @@ typecheckNID d n =
                                             Scalar ArBB.ArbbUsize, 
                                             Scalar ArBB.ArbbUsize]
     typeOfOp BitwiseCast xs = undefined -- TODO: not sure what to do here! 
-    typeOfOp GetNeighbor [Dense _ t,t2,t3,t4] = t
+    typeOfOp GetNeighbor [Dense _ t,t2,t3,t4] = Just $ Scalar t
     typeOfOp ExpectSize xs = undefined    -- used for optimization
     typeOfOp AddReduce [v,l] = decrRank v  
     typeOfOp MulReduce [v,l] = decrRank v 
