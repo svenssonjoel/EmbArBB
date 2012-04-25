@@ -246,6 +246,7 @@ ifThenElse (E b) (E e1) (E e2) = E $ LIf (newLabel ()) b e1 e2
 
 ----------------------------------------------------------------------------
 -- TODO: Enable more kinds of loop state . 
+{- 
 while :: Data (Exp a) => ((Exp a,Exp Int32) -> Exp Bool)
        -> ((Exp a,Exp Int32) -> (Exp a,Exp Int32))
        -> (Exp a, Exp Int32) -> (Exp a, Exp Int32) 
@@ -262,6 +263,53 @@ while cond f (s'@(E s), E i) = (fstPair loop, sndPair loop)
    body = [v1',v2'] 
    (E c) = cond  (v1,v2) 
      
+-} 
+
+while :: LoopState state 
+          => (state -> Exp Bool)    
+          -> (state -> state) 
+          -> state 
+          -> state 
+while cond f state = loopFinalState loop
+  where 
+    loop = E $ LWhile (newLabel ()) vars c body (loopState state)
+    (curr,vars) = loopVars state
+    (E c) = cond curr
+    body = loopState (f curr)
+
+-- TODO: Supporting Tuples of Tuples in the loop state would be nice. 
+--       Then [LExp] will not cut it anymore.
+class LoopState a where 
+  loopState :: a -> [LExp]           -- TODO: Again. will structure be needed?
+  loopVars :: a -> (a,[Variable])
+  loopFinalState :: Exp s -> a 
+
+  
+instance LoopState (Exp a) where   
+  loopState (E e1) = [e1]  
+  loopVars  (E e1) = ((e1'),[l1v])
+    where 
+      l1 = newLabel () 
+      l1v = Variable ("l" ++ show l1)
+      e1' = E $ LVar (newLabel ()) l1v 
+  loopFinalState (E e) = (E e) -- deconstr then reconstr (to get type right) 
+
+
+instance LoopState (Exp a,Exp b) where   
+  loopState (E e1,E e2) = [e1,e2]  
+  loopVars  (E e1,E e2) = ((e1',e2'),[l1v,l2v])
+    where 
+      l1 = newLabel () 
+      l2 = newLabel () 
+      l1v = Variable ("l" ++ show l1)
+      l2v = Variable ("l" ++ show l2) 
+      e1' = E $ LVar (newLabel ()) l1v 
+      e2' = E $ LVar (newLabel ()) l2v 
+  loopFinalState (E e) = (E $ LResIndex (newLabel ()) e 0, 
+                          E $ LResIndex (newLabel ()) e 1) 
+ 
+  
+      
 
 
 ----------------------------------------------------------------------------
