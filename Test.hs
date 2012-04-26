@@ -515,3 +515,34 @@ testDEPA =
     fun :: Exp (DVector Dim3 Int32) -> Exp (DVector Dim3 Int32)
     fun v = v+v
 
+
+
+testWhileM = 
+  withArBB $  
+  do
+    f <- capture2 fun
+   
+    str <- serialize f
+    liftIO$ putStrLn str
+  
+  
+    let v1 = Vector (V.fromList [0..9999::Int32]) (One 10000)
+    o1 <- liftIO$ new1D 10000
+    
+    -- execute f 
+    -- (Vector dat n,i) <- execute f v1
+    execute2 f v1 o1 
+    
+    (Vector i _)  <- liftIO$ freeze o1 
+    
+    -- liftIO$ putStrLn$ show dat
+    liftIO$ putStrLn$ show i
+    
+
+  where
+    fun :: Exp (DVector Dim1 Int32) -> (Exp (DVector Dim1 Int32))
+    fun v = 
+      let (x,y,z) = while (\(_,i,_)  -> i <* 10)  
+                          (\(v',i,j) -> (v + v',i+1,j+10))
+                          (v,0 :: Exp Int32,1 :: Exp Int32)
+      in x

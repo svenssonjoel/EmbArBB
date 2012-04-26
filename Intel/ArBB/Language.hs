@@ -245,25 +245,7 @@ ifThenElse (E b) (E e1) (E e2) = E $ LIf (newLabel ()) b e1 e2
 
 
 ----------------------------------------------------------------------------
--- TODO: Enable more kinds of loop state . 
-{- 
-while :: Data (Exp a) => ((Exp a,Exp Int32) -> Exp Bool)
-       -> ((Exp a,Exp Int32) -> (Exp a,Exp Int32))
-       -> (Exp a, Exp Int32) -> (Exp a, Exp Int32) 
-while cond f (s'@(E s), E i) = (fstPair loop, sndPair loop)
- where 
-   loop = E $ LWhile (newLabel ()) [var,ix] c body [s,i]
-   l1   = newLabel ()
-   l2   = newLabel () 
-   var  = Variable ("l" ++ show l1)
-   ix   = Variable ("l" ++ show l2)
-   v1   = E $ LVar (newLabel ()) var
-   v2   = E $ LVar (newLabel ()) ix 
-   (E v1', E v2')  = f (v1,v2)           
-   body = [v1',v2'] 
-   (E c) = cond  (v1,v2) 
-     
--} 
+--  While Loops 
 
 while :: LoopState state 
           => (state -> Exp Bool)    
@@ -308,6 +290,19 @@ instance LoopState (Exp a,Exp b) where
   loopFinalState (E e) = (E $ LResIndex (newLabel ()) e 0, 
                           E $ LResIndex (newLabel ()) e 1) 
  
+
+instance LoopState (Exp a,Exp b,Exp c) where   
+  loopState (e1,e2,e3) = loopState e1 ++ loopState e2 ++ loopState e3  
+  loopVars  (e1,e2,e3) = ((e1',e2',e3'),ls1 ++ ls2 ++ ls3 )
+    where 
+      (e1',ls1) = loopVars e1
+      (e2',ls2) = loopVars e2
+      (e3',ls3) = loopVars e3
+  
+  loopFinalState (E e) = (E $ LResIndex (newLabel ()) e 0, 
+                          E $ LResIndex (newLabel ()) e 1,
+                          E $ LResIndex (newLabel ()) e 2) 
+
   
       
 
