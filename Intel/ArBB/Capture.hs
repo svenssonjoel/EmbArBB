@@ -252,18 +252,16 @@ instance EmbOut b => EmbOut (Exp a -> b) where
   outTypes f = outTypes (f nonsence) 
     where 
        nonsence = E (LVar 0 (Variable "nonsence"))
-----------------------------------------------------------------------------
-  
-instance Data a => EmbIn (Exp a) () where
-  type EIn (Exp a) () = a 
-  
-  inTypes a = [typeOf (undefined :: a)]
-  
-instance Data a => EmbIn (Exp a) (Exp b) where
-  type EIn (Exp a) (Exp b) = a 
-  
-  inTypes a = [typeOf (undefined :: a)]
+----------------------------------------------------------------------------  
+#define BaseIn(rt)                               \
+   instance Data a => EmbIn (Exp a) (rt) where { \
+     type EIn (Exp a) (rt) = a;                  \
+     inTypes a = [typeOf (undefined :: a)]     } 
 
+BaseIn(())
+BaseIn(Exp b)
+BaseIn((Exp b, Exp c)) 
+BaseIn((Exp b, Exp c, Exp d)) 
 
 instance (Data  a, EmbIn b c) => EmbIn (Exp a) (b -> c) where
   type EIn (Exp a) (b -> c) = a :- EIn b c 

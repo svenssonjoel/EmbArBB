@@ -528,21 +528,23 @@ testWhileM =
   
     let v1 = Vector (V.fromList [0..9999::Int32]) (One 10000)
     o1 <- liftIO$ new1D 10000
+    r  <- liftIO$ newIORef 0 
     
     -- execute f 
     -- (Vector dat n,i) <- execute f v1
-    execute2 f v1 o1 
+    execute2 f v1 (o1 :- r) 
     
-    (Vector i _)  <- liftIO$ freeze o1 
-    
+    (Vector i _)  <- liftIO$ freeze o1
+    r' <- liftIO$ readIORef r 
     -- liftIO$ putStrLn$ show dat
     liftIO$ putStrLn$ show i
+    liftIO$ putStrLn$ show r' 
     
 
   where
-    fun :: Exp (DVector Dim1 Int32) -> (Exp (DVector Dim1 Int32))
+    fun :: Exp (DVector Dim1 Int32) -> (Exp (DVector Dim1 Int32),Exp Int32)
     fun v = 
       let (x,y,z) = while (\(_,i,_)  -> i <* 10)  
                           (\(v',i,j) -> (v + v',i+1,j+10))
                           (v,0 :: Exp Int32,1 :: Exp Int32)
-      in x
+      in (x,z)

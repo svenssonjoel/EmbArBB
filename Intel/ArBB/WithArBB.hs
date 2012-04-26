@@ -336,6 +336,17 @@ instance (Data a, V.Storable a, IsScalar a) => ArBBOut (MDVector Dim3 a) where
       -- needs to know of the binding (or memory will leak!  
       -- liftVM$ VM.freeBidning [binding of v] 
 
+instance (ArBBOut a, ArBBOut b) => ArBBOut (a :- b) where 
+  arbbAlloc (a :- b) = 
+    do 
+      v1 <- arbbAlloc a 
+      v2 <- arbbAlloc b
+      return $ v1++v2
+  arbbDown (a :- b) [v1,v2] = 
+    do 
+      arbbDown a [v1] 
+      arbbDown b [v2]
+
 
   
 ----------------------------------------------------------------------------                 
