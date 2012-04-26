@@ -1,0 +1,70 @@
+Name:           EmbArBB
+Version:        0.1.0.0
+
+License:                BSD3
+License-file:           LICENSE
+Stability:              Beta
+Maintainer:		Joel Svensson<svenssonjoel@yahoo.se>
+Author:			Joel Svensson<svenssonjoel@yahoo.se>
+
+Copyright:              Copyright (c) 2012 Joel Svensson
+Synopsis:               Embedded language using the Haskell arbb-vm bindings.
+HomePage:               https://github.com/svenssonjoel/EmbArbb
+Description: 
+   Embedded language for parallel programming targeting multicore processors 
+   and their SSE,AVX units. Requires Intel ArBB (http://software.intel.com/en-us/articles/intel-array-building-blocks/) 
+   and the Haskell arbb bindings.
+
+Category: Language
+Cabal-Version: >=1.8
+Tested-With: GHC == 7.0.4
+
+build-type: Simple
+
+-- extra-source-files:
+--     examples/tests/Test_DotProd.hs
+
+
+source-repository head
+  type:     git
+  location: git://github.com/svenssonjoel/EmbArBB.git
+
+----------------------------------------------------------------------------------------------------
+Library
+  build-depends: base >= 4 && < 5
+               , mtl >= 2.0
+               , directory
+               , containers
+               , vector
+               , arbb-vm >= 0.1.1.6
+
+
+
+  exposed-modules: Intel.ArBB.Syntax
+                 , Intel.ArBB.Capture
+                 , Intel.ArBB.DAG
+                 , Intel.ArBB.TypeCheck
+                 , Intel.ArBB.Vector
+                 , Intel.ArBB.Language
+                 , Intel.ArBB.GenArBB
+                 , Intel.ArBB.Types
+                 , Intel.ArBB.Data
+                 , Intel.ArBB.WithArBB
+                 , Intel.ArBB.Data.Int
+
+--  other-modules: 
+
+--  GHC-Options: 
+-- -O2 
+--extra-libraries: tbb, arbb, pthread
+--  include-dirs: /opt/intel/arbb/latest/include
+
+  -- FIXME: How do we read an environment variable?
+--  if arch( x86_64 ) 
+--    extra-lib-dirs: /opt/intel/arbb/latest/lib/intel64
+--  else
+--    extra-lib-dirs: /opt/intel/arbb/latest/lib/ia32
+
+--  C-sources: 
+
+-- Include-Dirs: 

@@ -1,9 +1,12 @@
 * EmbArBB 
   + Embedded language for data-parallel programming targetting Intel ArBB.
   + Uses the Haskell/ArBB bindings (svenssonjoel/arbb-vm.git on github) 
-
+ 
 * Status 
   + Generates ArBB functions from functions in the embedded language. 
+  + Currently things work better when using the dev library (-larbb_dev)
+    and the O2 optimization setting. I dont know if this is up to bugs in 
+    ArBB or in EmbArBB. 
 
 * TODOs 
   + Add functionality (cover as many as possible of the ops supported by ArBB) 
@@ -11,12 +14,16 @@
   + Add the Nested data parallelism operations (needs a new Nested container type) 
   + Support (DVector dim (a1,..,an)) by some kind of Dense_of_tuple to Tuple_of_dense
     transformation. 
-  + Add Mutable output vectors. (the programmer must provide target vectors for ArBB Functions) 
+
+* Help Wanted. 
+  + If you are interested in helping to improve this library just contact me.
+   
+
 * Notes
   + If an ArBB function outputs a dense, a container of its size must have been 
     allocated explicitly before running the function. Big inconvenience for EmbArBB. 
     Might need to track size and dimensionality through the function. 
-
+   
   + ArBB Supplies the operations Rotate and RotateRev to the programmer. It seems 
     to me that RotateRev is compiled into a Rotate operation with a negated distance. 
   + Scan direction seems broken. Setting direction to 0 and 1 gives same resulting 
