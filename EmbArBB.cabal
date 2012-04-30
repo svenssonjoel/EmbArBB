@@ -51,6 +51,8 @@ Library
                  , Intel.ArBB.Data
                  , Intel.ArBB.WithArBB
                  , Intel.ArBB.Data.Int
+                 , Intel.ArBB.IsScalar
+                 , Intel.ArBB
 
 --  other-modules: 
 
