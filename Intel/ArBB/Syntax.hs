@@ -56,14 +56,15 @@ data LExp = LLit Label Literal
           | LVar Label Variable 
             
           | LIndex0 Label LExp 
-     
             -- ArBB Functions may compute several results 
           | LResIndex Label LExp Int 
+            
             -- Function with correct name and type must exist in some kind of environment
           | LCall Label FunctionName [LExp]  
           | LMap  Label FunctionName [LExp]   
             
           | LWhile Label [Variable] LExp [LExp] [LExp]
+            
                  
           | LIf  Label LExp LExp LExp 
 

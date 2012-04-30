@@ -333,9 +333,7 @@ instance (Data a, V.Storable a, IsScalar a) => ArBBOut (MDVector Dim3 a) where
       liftIO$  copyBytes (unsafeForeignPtrToPtr ptr) 
                          (castPtr arbbdat) 
                          (n1 * n2 * n3 * sizeOf (undefined :: a)) 
-      -- needs to know of the binding (or memory will leak!  
-      -- liftVM$ VM.freeBidning [binding of v] 
-
+  
 instance (ArBBOut a, ArBBOut b) => ArBBOut (a :- b) where 
   arbbAlloc (a :- b) = 
     do 
