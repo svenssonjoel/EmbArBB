@@ -48,18 +48,21 @@ capture f =
         --  Now I should have all parts needed to generate the function.
     
     let (names,tins) = unzip tins'
-    
+    liftIO$ putStrLn $ "a1" 
     arbbIns  <- liftVM$ mapM toArBBType tins 
     arbbOuts <- liftVM$ mapM toArBBType touts
-    
+    liftIO$ putStrLn $ "a2" 
     (funMap,_) <- get
     fd <- liftVM$ VM.funDef_ fn (concat arbbOuts) (concat arbbIns) $ \ os is -> 
       do 
+        lift$ putStrLn $ "a3" 
         vs <- accmBody dag nids vt funMap (zip names is) 
          -- lift$ putStrLn $ "os :" ++ show os 
          -- lift$ putStrLn $ "vs :" ++ show vs
+        lift$ putStrLn $ "a4" 
         copyAll os vs 
-
+        lift$ putStrLn $ "a5" 
+    liftIO$ putStrLn $ "a6" 
     addFunction fn fd tins touts                                                         
     return $ embFun fn f            
 

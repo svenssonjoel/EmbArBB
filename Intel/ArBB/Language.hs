@@ -68,6 +68,14 @@ xorReduce :: Exp (DVector (():.t) Bool) -> Exp USize -> Exp (DVector t Bool)
 xorReduce (E vec) (E lev) = 
   E $ LOp (newLabel ()) XorReduce [vec,lev]
 
+---------------------------------------------------------------------------- 
+-- Add Merge
+-- TODO: what is the type really supposed to be here ?
+addMerge :: Exp (DVector (():.t) a) -> Exp (DVector (():.t) USize) -> Exp USize -> Exp (DVector (():.t) a) 
+addMerge (E b) (E v) (E u) = 
+  E $ LOp (newLabel ()) AddMerge [b,v,u]
+
+
 ----------------------------------------------------------------------------
 
 -- | zero dimensional vector to scalar
