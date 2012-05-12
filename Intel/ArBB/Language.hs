@@ -18,6 +18,22 @@ import Data.Int
 import Data.Word
 import Data.Bits
 
+
+----------------------------------------------------------------------------
+-- Create vectors
+
+constVector :: Exp a -> Exp USize -> Exp (DVector Dim1 a) 
+constVector (E a) (E s) = 
+  E $ LOp (newLabel ()) ConstVector [a,s]
+
+
+----------------------------------------------------------------------------
+-- Specific casts 
+toUSize :: Exp (DVector t a) -> Exp (DVector t USize) 
+toUSize (E a) = 
+  E $ LOp (newLabel ()) Cast [a]
+
+
 ---------------------------------------------------------------------------- 
 -- Reductions 
 
@@ -71,10 +87,10 @@ xorReduce (E vec) (E lev) =
 ---------------------------------------------------------------------------- 
 -- Add Merge
 -- TODO: what is the type really supposed to be here ?
+-- | Add merge..  
 addMerge :: Exp (DVector (():.t) a) -> Exp (DVector (():.t) USize) -> Exp USize -> Exp (DVector (():.t) a) 
 addMerge (E b) (E v) (E u) = 
   E $ LOp (newLabel ()) AddMerge [b,v,u]
-
 
 ----------------------------------------------------------------------------
 

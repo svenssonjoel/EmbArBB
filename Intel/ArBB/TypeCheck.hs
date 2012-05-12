@@ -192,7 +192,12 @@ typecheckNID d n =
     typeOfOp ApplyNesting xs = undefined 
     typeOfOp GetNesting xs = undefined 
     typeOfOp Cat [t1,t2] = same t1 t2 
-    typeOfOp Cast xs = undefined  -- TODO: not sure what to do here! 
+
+    -- TODO: Big Cheat ! 
+    typeOfOp Cast xs = Just $ Dense I ArBB.ArbbUsize 
+    -- TODO: Replace with  
+    -- typeOfOf CastTo t xs = t 
+
     
     typeOfOp Extract [Dense I a,i] = Just $ Scalar a 
     typeOfOp Extract [Dense II a,i,j] = Just $ Scalar a 
