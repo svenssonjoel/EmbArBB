@@ -20,6 +20,7 @@ import Intel.ArBB.IsScalar
 
 data DVector d a = Vector {vectorData  :: V.Vector a, 
                            vectorShape :: Dim} 
+                 deriving Show
 
 data Dim = Zero 
          | One Int
@@ -43,7 +44,9 @@ type Vector   = DVector Dim1
 type Vector2D = DVector Dim2               
 type Vector3D = DVector Dim3
   
-                
+fromList :: M.Storable a => [a] -> Vector a 
+fromList xs = Vector (V.fromList xs) (One (length xs))                
+
 ----------------------------------------------------------------------------
 -- 
 unS (Scalar a) = a
