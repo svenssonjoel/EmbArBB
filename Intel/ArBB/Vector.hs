@@ -30,6 +30,7 @@ data Dim = Zero
 
 -- | Encode Dimensionality in the type of vectors                    
 data a :. b = a :. b  
+infixr :. 
 
 type Dim0 = ()                
 type Dim1 = () :. Dim0 

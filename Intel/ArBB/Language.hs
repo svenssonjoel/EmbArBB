@@ -125,7 +125,11 @@ extractCol (E vec) (E col) = E $ LOp (newLabel ()) ExtractCol [vec,col]
 extractPage :: Exp (DVector Dim3 a) -> Exp USize -> Exp (DVector Dim2 a) 
 extractPage (E vec) (E page) = E $ LOp (newLabel ()) ExtractPage [vec,page]
 
+----------------------------------------------------------------------------
+-- Repeat
 
+repeatRow :: Exp (DVector Dim1 a) -> Exp USize -> Exp (DVector Dim2 a) 
+repeatRow (E vec) (E u) = E $ LOp (newLabel ()) RepeatRow [vec,u]
 
 ---------------------------------------------------------------------------- 
 -- Scans 
