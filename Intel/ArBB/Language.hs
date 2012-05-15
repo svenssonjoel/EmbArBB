@@ -28,7 +28,8 @@ constVector (E a) (E s) =
 
 
 ----------------------------------------------------------------------------
--- Specific casts 
+-- Specific casts (BIG CHEATS GOING ON HERE) 
+
 toUSize :: Exp (DVector t a) -> Exp (DVector t USize) 
 toUSize (E a) = 
   E $ LOp (newLabel ()) Cast [a]
@@ -134,6 +135,15 @@ repeatRow (E vec) (E u) = E $ LOp (newLabel ()) RepeatRow [vec,u]
 replaceCol :: Exp (DVector Dim2 a) -> Exp USize -> Exp (DVector Dim1 a) -> Exp (DVector Dim2 a) 
 replaceCol (E m) (E u) (E v) = 
   E $ LOp (newLabel ()) ReplaceCol [m,u,v]
+
+replaceRow :: Exp (DVector Dim2 a) -> Exp USize -> Exp (DVector Dim1 a) -> Exp (DVector Dim2 a) 
+replaceRow (E m) (E u) (E v) = 
+  E $ LOp (newLabel ()) ReplaceRow [m,u,v]
+
+replacePage :: Exp (DVector Dim3 a) -> Exp USize -> Exp (DVector Dim2 a) -> Exp (DVector Dim3 a) 
+replacePage (E m) (E u) (E v) = 
+  E $ LOp (newLabel ()) ReplacePage [m,u,v]
+
 
 ---------------------------------------------------------------------------- 
 -- Scans 
