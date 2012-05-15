@@ -306,7 +306,7 @@ instance LoopState (Exp a) where
       l1 = newLabel () 
       l1v = Variable ("l" ++ show l1)
       e1' = E $ LVar (newLabel ()) l1v 
-  loopFinalState (E e) = (E e) -- deconstr then relconstr (to get type right) 
+  loopFinalState (E e) = (E e) -- deconstr then reconstr (to get type right) 
 
 
 instance LoopState (Exp a,Exp b) where   
