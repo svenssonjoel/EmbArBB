@@ -126,10 +126,14 @@ extractPage :: Exp (DVector Dim3 a) -> Exp USize -> Exp (DVector Dim2 a)
 extractPage (E vec) (E page) = E $ LOp (newLabel ()) ExtractPage [vec,page]
 
 ----------------------------------------------------------------------------
--- Repeat
+-- Repeat, Replace
 
 repeatRow :: Exp (DVector Dim1 a) -> Exp USize -> Exp (DVector Dim2 a) 
 repeatRow (E vec) (E u) = E $ LOp (newLabel ()) RepeatRow [vec,u]
+
+replaceCol :: Exp (DVector Dim2 a) -> Exp USize -> Exp (DVector Dim1 a) -> Exp (DVector Dim2 a) 
+replaceCol (E m) (E u) (E v) = 
+  E $ LOp (newLabel ()) ReplaceCol [m,u,v]
 
 ---------------------------------------------------------------------------- 
 -- Scans 
@@ -302,7 +306,7 @@ instance LoopState (Exp a) where
       l1 = newLabel () 
       l1v = Variable ("l" ++ show l1)
       e1' = E $ LVar (newLabel ()) l1v 
-  loopFinalState (E e) = (E e) -- deconstr then reconstr (to get type right) 
+  loopFinalState (E e) = (E e) -- deconstr then relconstr (to get type right) 
 
 
 instance LoopState (Exp a,Exp b) where   
