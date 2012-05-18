@@ -1,5 +1,5 @@
 Name:           EmbArBB
-Version:        0.1.0.4
+Version:        0.1.0.6
 
 License:                BSD3
 License-file:           LICENSE
@@ -19,7 +19,8 @@ Category: Language
 Cabal-Version: >=1.8
 Tested-With: GHC == 7.0.4
 
-build-type: Simple
+build-type: Configure
+-- Simple
 
 
 source-repository head
@@ -29,7 +30,7 @@ source-repository head
 ----------------------------------------------------------------------------------------------------
 Library 
   build-depends: base 
-               , mtl >= 2.0
+               , mtl 
      --          , directory
                , containers
                , vector
