@@ -33,3 +33,6 @@ testMatMul =
      r <- liftIO$ freeze r1
               
      liftIO$ putStrLn$ show r
+
+
+main = testMatMul

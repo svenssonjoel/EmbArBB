@@ -2,8 +2,6 @@
 
 {- 2012 Joel Svensson -} 
 
-module Test where 
-
 import Intel.ArBB 
 
 import qualified Data.Vector.Storable as V 
@@ -47,7 +45,7 @@ testHist =
 testHist2 =
   do  
     ptr <- mallocBytes (256 * 256) 
-    withBinaryFile "Samples/window.raw" ReadMode $ \ handle -> 
+    withBinaryFile "window.raw" ReadMode $ \ handle -> 
       hGetBuf handle ptr (256 * 256) 
     ls <- peekArray (256 * 256) ptr
 
@@ -75,7 +73,7 @@ testHist2 =
 
        
         liftIO $ sequence_ [lineH pt2 i 0 (scale 256 m  (r' !! i)) | i <- [0..255]]
-        liftIO $ withBinaryFile "Samples/out.raw" WriteMode $ \ handle -> 
+        liftIO $ withBinaryFile "out.raw" WriteMode $ \ handle -> 
             hPutBuf handle pt2 (256 * 256 * 3)   
 
 
@@ -87,3 +85,6 @@ lineH pt2 y x1 x2 =
     $ concat [[pokeElemOff pt2 ((y*256+x)*3) (255 :: Word8),
                pokeElemOff pt2 ((y*256+x)*3+1) (255 :: Word8),
                pokeElemOff pt2 ((y*256+x)*3+2) (255 :: Word8)] | x <- [x1..x2]]
+
+
+main = testHist2
