@@ -29,4 +29,8 @@
   + Scan direction seems broken. Setting direction to 0 and 1 gives same resulting 
     output array (or did i missunderstand what the direction is supposed to mean).
   + OpDynamic_ is for those ops that work with different number of inputs (right?) 
-  
+  + The labeled AST and the {-# NOINLINE counter #-} approach to discovering 
+    sharing seems to break down when I compile the library separately from the 
+    examples. I have no idea why this happens. 
+
+
