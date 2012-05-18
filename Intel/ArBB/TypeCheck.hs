@@ -12,7 +12,7 @@ import Intel.ArBB.Syntax
 
 import qualified Intel.ArbbVM as ArBB
 
-import Control.Monad.State 
+import Control.Monad.State.Lazy 
 import Control.Monad.Identity
 import qualified Data.Map as Map 
 

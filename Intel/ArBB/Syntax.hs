@@ -18,13 +18,16 @@ import Data.IORef
 type Label = Word32
 
 {-# NOINLINE counter #-}
-counter = unsafePerformIO (newIORef 0) 
+counter :: IORef Label
+counter = unsafePerformIO (newIORef 0)
+
 
 newLabel :: () -> Word32
 newLabel () = unsafePerformIO $ do 
   p <- readIORef counter
   writeIORef counter (p+1)
   return p 
+
 
 ---------------------------------------------------------------------------- 
 -- Literals and Variables
