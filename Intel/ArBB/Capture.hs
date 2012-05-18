@@ -78,31 +78,31 @@ capture2 :: (EmbIn a b, EmbOut (a -> b), EmbF a b )
             -> ArBB (Function (EIn a b) (EOut b))
 capture2 f = 
   do
-    liftIO$ putStrLn "cap1"
+    --liftIO$ putStrLn "cap1"
     fn <- getFunName 
-    liftIO$ putStrLn "cap2"
+    --liftIO$ putStrLn "cap2"
     let (e,(_,vt))  = runState (embF f) (0,Map.empty)
         (nids,dag)  = accmDAGMaker e
         tins  = inTypes f
         touts = outTypes f
 
-    liftIO$ putStrLn "cap3"
+    --liftIO$ putStrLn "cap3"
         
     arbbIns <- liftVM$ mapM toArBBType tins
     arbbOuts <- liftVM$ mapM toArBBType touts 
     
-    liftIO$ putStrLn "cap4"
+    --liftIO$ putStrLn "cap4"
     (funMap,_) <- get 
-    liftIO$ putStrLn "cap5"
+    --liftIO$ putStrLn "cap5"
     fd <- liftVM$ VM.funDef_ fn (concat arbbOuts) (concat arbbIns) $ \ os is -> 
       do 
-        lift$ putStrLn "capFun 1"
+        --lift$ putStrLn "capFun 1"
         vs <- accmBody dag nids vt funMap (zip names is) 
-        lift$ putStrLn "capFun 2"
+        --lift$ putStrLn "capFun 2"
         copyAll os vs
-    liftIO$ putStrLn "cap6"
+    --liftIO$ putStrLn "cap6"
     addFunction fn fd tins touts
-    liftIO$ putStrLn "cap7"
+    --liftIO$ putStrLn "cap7"
     return (Function fn)
       where 
         names = [Variable ("v"++show i) | i <- [0..]]

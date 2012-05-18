@@ -21,7 +21,7 @@ import qualified Data.Map as Map
 import qualified Data.List as L
 import Data.Maybe 
 
-import Control.Monad.State.Lazy
+import Control.Monad.State
 ---------------------------------------------------------------------------- 
 -- 
 
@@ -117,7 +117,7 @@ accmBody dag nids vt funm is = liftM fst $ doBody nids ((vt,Map.empty),Map.empty
     doBody [] m = return ([],m) 
     doBody (x:xs) m =
       do 
-          liftIO$ putStrLn "doBody"
+          -- liftIO$ putStrLn "doBody"
           (vs,s) <- runGenAllState (genBody' dag x  funm is) m
           (vss,s') <- doBody xs s
           return (vs++vss,s')
