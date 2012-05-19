@@ -52,6 +52,35 @@ data Literal = LitInt    Int
 
 data Variable = Variable String 
               deriving (Eq, Ord, Show)
+
+----------------------------------------------------------------------------
+--  Expression type. 
+--   Now without labels. Will try to discover the sharing using the 
+--   StableName method. (System.Mem.StableName)
+data Expr = Lit Literal
+          | Var Variable 
+            
+          | Index0 Expr 
+            -- ArBB Functions may compute several results 
+          | ResIndex LExp Int 
+            
+            -- Function with correct name and type must exist in some kind of environment
+          | Call FunctionName [Expr]  
+          | Map  FunctionName [Expr]   
+            
+
+          -- This one might need some rework! 
+          --  I Will not be able to generate unique variables until 
+          --  a later stage. 
+          | While [Variable] Expr [Expr] [Expr] 
+            
+                 
+          | If Expr Expr Expr 
+
+          | Op Op [Expr]   
+            
+          deriving (Show)
+
                
 ---------------------------------------------------------------------------- 
 -- Labeled Expression
