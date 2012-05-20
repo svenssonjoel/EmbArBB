@@ -50,7 +50,7 @@ Library
                  , Intel.ArBB.WithArBB
                  , Intel.ArBB.Data.Int
                  , Intel.ArBB.IsScalar
-		 , Intel.ArBB.ExpToLExp
+                 , Intel.ArBB.ExpToLExp
                  , Intel.ArBB
 
 
