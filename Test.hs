@@ -81,7 +81,7 @@ sca v1 = addScan v1 0 0
 
 ----------------------------------------------------------------------------
 cond :: () -> (Exp Int32) 
-cond () = ifThenElse (E $ LLit (newLabel ()) $ LitBool True) 1  2 
+cond () = ifThenElse (E $ Lit $ LitBool True) 1  2 
 
 
 
@@ -372,6 +372,7 @@ testScalar2 =
 
 -- TODO: Works if using -larbb_dev and ARBB_OPT_LEVEL=O2.
 --       Breaks on all other settings.. 
+{- 
 testWhile = 
   withArBB $  
   do
@@ -422,7 +423,7 @@ testWhile2 =
       in (x+1,y+1)
 
 
-
+-} 
 
 
 ----------------------------------------------------------------------------
@@ -516,7 +517,7 @@ testDEPA =
     fun v = v+v
 
 
-
+{- 
 testWhileM = 
   withArBB $  
   do
@@ -548,3 +549,5 @@ testWhileM =
                           (\(v',i,j) -> (v + v',i+1,j+10))
                           (v,0 :: Exp Int32,1 :: Exp Int32)
       in (x,z)
+
+-} 

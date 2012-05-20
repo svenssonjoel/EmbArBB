@@ -62,7 +62,7 @@ data Expr = Lit Literal
             
           | Index0 Expr 
             -- ArBB Functions may compute several results 
-          | ResIndex LExp Int 
+          | ResIndex Expr Int 
             
             -- Function with correct name and type must exist in some kind of environment
           | Call FunctionName [Expr]  
@@ -72,7 +72,7 @@ data Expr = Lit Literal
           -- This one might need some rework! 
           --  I Will not be able to generate unique variables until 
           --  a later stage. 
-          | While [Variable] Expr [Expr] [Expr] 
+          | While {-[Variable]-} Expr [Expr] [Expr] 
             
                  
           | If Expr Expr Expr 
@@ -167,7 +167,7 @@ getLabel (LMap l _ _) = l
 ---------------------------------------------------------------------------- 
 -- add a layer of types 
 
-data Exp a = E LExp
+data Exp a = E Expr
 
 ----------------------------------------------------------------------------
 -- And functions 
@@ -180,7 +180,7 @@ data a :- b = a :- b
 infixr :- 
 
 class ArgList a where 
-  argList :: a -> [LExp] 
+  argList :: a -> [Expr] 
 
 instance ArgList () where -- needed = 
   argList () = [] 

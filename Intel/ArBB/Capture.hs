@@ -22,6 +22,9 @@ import Intel.ArBB.WithArBB
 import Intel.ArBB.GenArBB
 import Intel.ArBB.IsScalar
 
+-- TODO: remove this dependency
+import Intel.ArBB.ExpToLExp 
+
 
 import qualified Intel.ArbbVM as VM 
 import qualified Intel.ArbbVM.Convenience as VM
@@ -40,7 +43,8 @@ capture f =
   do  
     fn <- getFunName 
     let ((e,tins',touts),(_,vt))    = runState (emb f) (0,Map.empty) 
-        (nids,dag) = accmDAGMaker e -- runDAGMaker (constructDAG e) 
+    labeled_e <- liftIO$ labelExps e
+    let (nids,dag) = accmDAGMaker labeled_e -- (map expToLExp e) -- runDAGMaker (constructDAG e) 
         
         -- DONE: Interleave typechecking with codeGen ! so 
         -- that local variables can be added as it moves along. 
@@ -82,7 +86,8 @@ capture2 f =
     fn <- getFunName 
     --liftIO$ putStrLn "cap2"
     let (e,(_,vt))  = runState (embF f) (0,Map.empty)
-        (nids,dag)  = accmDAGMaker e
+    labeled_e <- liftIO$ labelExps e 
+    let (nids,dag)  = accmDAGMaker labeled_e -- (map expToLExp e)
         tins  = inTypes f
         touts = outTypes f
 
@@ -137,7 +142,7 @@ class EmbFun a b where
   type InType a b
   type OutType b 
   
-  emb :: (a -> b) -> VarGenerator ([LExp], Ins, Outs) 
+  emb :: (a -> b) -> VarGenerator ([Expr], Ins, Outs) 
   
 -- TODO: What is a good way to make this work with many outputs
 instance Data (Exp b) => EmbFun () (Exp b) where
@@ -156,7 +161,7 @@ instance (Data (Exp b), Data a) => EmbFun (Exp a) (Exp b) where
   
   emb f = do 
     v <- getVar 
-    let myVar = E (LVar (newLabel ()) v)
+    let myVar = E (Var v)
         exp@(E e) = f myVar
         t_in = typeOf (undefined :: a) 
         t_out = typeOf exp -- (undefined :: b)
@@ -171,7 +176,7 @@ instance (Data b, Data c, Data a) => EmbFun (Exp a) (Exp b, Exp c) where
   
   emb f = do 
     v <- getVar 
-    let myVar = E (LVar (newLabel ()) v)
+    let myVar = E (Var v)
         (e1'@(E e1),e2'@(E e2)) = f myVar
         t_in = typeOf (undefined :: a) 
         t_out1 = typeOf (undefined :: b)
@@ -186,7 +191,7 @@ instance (Data b, Data c, Data d, Data a) => EmbFun (Exp a) (Exp b, Exp c, Exp d
   
   emb f = do 
     v <- getVar 
-    let myVar = E (LVar (newLabel ()) v)
+    let myVar = E (Var  v)
         (e1'@(E e1),e2'@(E e2),e3'@(E e3)) = f myVar
         t_in = typeOf (undefined :: a) 
         t_out1 = typeOf (undefined :: b)
@@ -203,7 +208,7 @@ instance (Data a, EmbFun c d) => EmbFun (Exp a) (c -> d) where
   
   emb f = do 
     v <- getVar
-    let myVar = E (LVar (newLabel ()) v) 
+    let myVar = E (Var v) 
         t_in = typeOf (undefined :: a) 
     addType v t_in 
     (exp,ins,outs) <- emb (f (myVar)) 
@@ -224,7 +229,7 @@ class EmbIn a b where
   
 
 class EmbF a b where 
-  embF :: (a -> b) -> VarGenerator [LExp] 
+  embF :: (a -> b) -> VarGenerator [Expr] 
   
   
 ----------------------------------------------------------------------------
@@ -263,7 +268,7 @@ instance EmbOut b => EmbOut (Exp a -> b) where
   type EOut ((Exp a) -> b) = EOut b 
   outTypes f = outTypes (f nonsence) 
     where 
-       nonsence = E (LVar 0 (Variable "nonsence"))
+       nonsence = E (Var (Variable "nonsence"))
 ----------------------------------------------------------------------------  
 #define BaseIn(rt)                               \
    instance Data a => EmbIn (Exp a) (rt) where { \
@@ -279,7 +284,7 @@ instance (Data  a, EmbIn b c) => EmbIn (Exp a) (b -> c) where
   type EIn (Exp a) (b -> c) = a :- EIn b c 
   inTypes f = typeOf (undefined :: a) : inTypes (f nonsence) 
     where 
-      nonsence = E (LVar 0 (Variable "nonsence"))
+      nonsence = E (Var (Variable "nonsence"))
       
 ----------------------------------------------------------------------------
 
@@ -287,7 +292,7 @@ instance (Data  a, EmbIn b c) => EmbIn (Exp a) (b -> c) where
 instance  Data a => EmbF (Exp a) (Exp b) where 
   embF f = do  
     v <- getVar
-    let myVar = E (LVar (newLabel ()) v) 
+    let myVar = E (Var v) 
         t_in = typeOf (undefined :: a) 
     addType v t_in 
     let (E exp) =  f myVar
@@ -296,7 +301,7 @@ instance  Data a => EmbF (Exp a) (Exp b) where
 instance  Data a => EmbF (Exp a) (Exp b,Exp c) where 
   embF f = do  
     v <- getVar
-    let myVar = E (LVar (newLabel ()) v) 
+    let myVar = E (Var v) 
         t_in = typeOf (undefined :: a) 
     addType v t_in 
     let (E exp1,E exp2) =  f myVar
@@ -305,7 +310,7 @@ instance  Data a => EmbF (Exp a) (Exp b,Exp c) where
 instance  Data a => EmbF (Exp a) (Exp b,Exp c, Exp d) where 
   embF f = do  
     v <- getVar
-    let myVar = E (LVar (newLabel ()) v) 
+    let myVar = E (Var v) 
         t_in = typeOf (undefined :: a) 
     addType v t_in 
     let (E exp1,E exp2,E exp3) =  f myVar
@@ -314,7 +319,7 @@ instance  Data a => EmbF (Exp a) (Exp b,Exp c, Exp d) where
 instance (Data a, EmbF b c) => EmbF (Exp a) (b -> c) where 
   embF f = do 
     v <- getVar 
-    let myVar = E (LVar (newLabel ()) v) 
+    let myVar = E (Var v) 
         t_in = typeOf (undefined :: a) 
     addType v t_in 
     embF (f myVar)
