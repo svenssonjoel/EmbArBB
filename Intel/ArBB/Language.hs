@@ -288,7 +288,67 @@ ifThenElse (E b) (E e1) (E e2) = E $ If b e1 e2
 
 ----------------------------------------------------------------------------
 --  While Loops 
+while :: LoopState state 
+          => (state -> Exp Bool)    
+          -> (state -> state) 
+          -> state 
+          -> state 
+while cond f state = loopFinalState loop
+  where 
+    loop = E $ While c body (loopState state)
+  --  (curr,vars) = loopVars state
+    c = loopCond cond
+    body = loopBody f
+--    body = loopState (f curr)
 
+-- TODO: Supporting Tuples of Tuples in the loop state would be nice. 
+--       Then [LExp] will not cut it anymore.
+class LoopState a where 
+  loopState :: a -> [Expr]           -- TODO: Again. will structure be needed?
+  loopCond :: (a -> Exp Bool) -> [Expr] -> Expr
+  loopBody :: (a -> a) -> [Expr] -> [Expr] 
+--   loopVars :: a -> (a,[Variable])
+  loopFinalState :: Exp s -> a 
+
+  
+instance LoopState (Exp a) where   
+  loopState (E e1) = [e1]  
+  loopCond f [e] = let (E e') = f (E e) in e' 
+  loopBody f [e] = let (E e') = f (E e) in [e'] 
+--  loopVars  (E e1) = ((e1'),[l1v])
+--    where 
+--      l1 = newLabel () 
+--      l1v = Variable ("l" ++ show l1)
+--      e1' = E $ LVar (newLabel ()) l1v 
+  loopFinalState (E e) = (E e) -- deconstr then reconstr (to get type right) 
+
+{- 
+instance LoopState (Exp a,Exp b) where   
+  loopState (E e1,E e2) = [e1,e2]  
+--  loopVars  (E e1,E e2) = ((e1',e2'),[l1v,l2v])
+--    where 
+--      l1 = newLabel () 
+--      l2 = newLabel () 
+--      l1v = Variable ("l" ++ show l1)
+--      l2v = Variable ("l" ++ show l2) 
+--      e1' = E $ LVar (newLabel ()) l1v 
+--      e2' = E $ LVar (newLabel ()) l2v 
+  loopFinalState (E e) = (E $ ResIndex e 0, 
+                          E $ ResIndex e 1) 
+ 
+
+instance LoopState (Exp a,Exp b,Exp c) where   
+  loopState (e1,e2,e3) = loopState e1 ++ loopState e2 ++ loopState e3  
+--  loopVars  (e1,e2,e3) = ((e1',e2',e3'),ls1 ++ ls2 ++ ls3 )
+--    where 
+--      (e1',ls1) = loopVars e1
+--      (e2',ls2) = loopVars e2
+--      (e3',ls3) = loopVars e3
+  
+  loopFinalState (E e) = (E $ ResIndex e 0, 
+                          E $ ResIndex e 1,
+                          E $ ResIndex e 2) 
+-} 
 {- 
 while :: LoopState state 
           => (state -> Exp Bool)    
@@ -353,8 +413,9 @@ instance LoopState (Exp a,Exp b,Exp c) where
 ----------------------------------------------------------------------------
 -- instances 
 
+
 instance Show (Exp a) where 
-  show (E a) = show a
+  show (E a) = "exp"
 
 instance Eq (Exp a) where 
   (==) = undefined -- compare labels here

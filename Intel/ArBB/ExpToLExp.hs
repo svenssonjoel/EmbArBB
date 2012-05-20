@@ -81,7 +81,12 @@ label e@(Map fn exprs) =
       l <- addExp e 
       exprs' <- mapM label exprs 
       return (LMap l fn exprs')
-label e@(While e1 es1 es2) = error "While is not implemented" 
+-- TODO: Figure this one out. 
+label e@(While e1 es1 es2) = 
+    do
+      l <- addExp e 
+      return $ error "While is not implemented" 
+
 label e@(If e1 e2 e3) = 
     do 
       l <- addExp e 
@@ -94,6 +99,9 @@ label e@(Op op exprs) =
       l <- addExp e 
       exprs' <- mapM label exprs
       return (LOp l op exprs') 
+
+createVariables :: [Expr] -> Labeler [Variable] 
+createVariables = undefined 
 
 
 ----------------------------------------------------------------------------

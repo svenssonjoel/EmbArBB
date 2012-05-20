@@ -72,14 +72,14 @@ data Expr = Lit Literal
           -- This one might need some rework! 
           --  I Will not be able to generate unique variables until 
           --  a later stage. 
-          | While {-[Variable]-} Expr [Expr] [Expr] 
+          | While ([Expr] -> Expr)  ([Expr] -> [Expr])  [Expr] 
             
                  
           | If Expr Expr Expr 
 
           | Op Op [Expr]   
             
-          deriving (Show)
+--          deriving (Show)
 
                
 ---------------------------------------------------------------------------- 
