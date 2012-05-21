@@ -60,12 +60,8 @@ testHist2 =
         execute2 f v1 r1
               
         (Vector r _) <- liftIO$ freeze r1
-              
-        -- liftIO$ putStrLn$ show r
         
         let r' = V.toList r
-                    
-        liftIO$ putStrLn$ show r'
 
         pt2 <- liftIO$ mallocBytes (256 * 256 * 3) 
         liftIO $ pokeArray pt2 (replicate (256*256*3) 0) 
@@ -75,6 +71,7 @@ testHist2 =
         liftIO $ sequence_ [lineH pt2 i 0 (scale 256 m  (r' !! i)) | i <- [0..255]]
         liftIO $ withBinaryFile "out.raw" WriteMode $ \ handle -> 
             hPutBuf handle pt2 (256 * 256 * 3)   
+        liftIO $ putStrLn "Result is stored in: out.raw" 
 
 
 scale w m x = round (fromIntegral w / fromIntegral m * fromIntegral x)
