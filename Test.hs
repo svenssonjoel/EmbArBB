@@ -372,7 +372,7 @@ testScalar2 =
 
 -- TODO: Works if using -larbb_dev and ARBB_OPT_LEVEL=O2.
 --       Breaks on all other settings.. 
-{- 
+
 testWhile = 
   withArBB $  
   do
@@ -382,7 +382,7 @@ testWhile =
     liftIO$ putStrLn str
   
   
-    let v1 = Vector (V.fromList [0..9999::Int32]) (One 10000)
+    let v1 = Vector (V.fromList [0..9::Int32]) (One 10)
     
     -- execute f 
     -- (Vector dat n,i) <- execute f v1
@@ -398,7 +398,7 @@ testWhile =
                         (\(v',i) -> (v + v',i+1))
                         (v,0)
       in (y + index0 (addReduce0 x))
-                            
+                           
 testWhile2 = 
   withArBB $  
   do
@@ -423,7 +423,7 @@ testWhile2 =
       in (x+1,y+1)
 
 
--} 
+ 
 
 
 ----------------------------------------------------------------------------
@@ -462,7 +462,7 @@ testBEPA =
     Vector dat _ <- liftIO$ freeze outp
     
     liftIO$ putStrLn $ show dat
-    return c
+    -- return c
     
   where 
     fun :: Exp (Vector Int32) -> Exp (Vector Int32)
@@ -517,7 +517,7 @@ testDEPA =
     fun v = v+v
 
 
-{- 
+ 
 testWhileM = 
   withArBB $  
   do
@@ -550,4 +550,4 @@ testWhileM =
                           (v,0 :: Exp Int32,1 :: Exp Int32)
       in (x,z)
 
--} 
+ 

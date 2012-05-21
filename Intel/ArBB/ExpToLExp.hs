@@ -15,7 +15,7 @@ import Data.Word
 
 import Control.Monad.State hiding (liftIO) 
 
-type LabelMap = M.Map Int Word32
+type LabelMap = M.Map Int (Word32,StableName Expr) 
 
 type Labeler a = StateT (Word32, LabelMap)  IO a 
 
@@ -46,10 +46,13 @@ addExp e =
             do
               -- TODO: Can you use the hash directly without using a map at all. 
               --        In this hack probably, yes. 
-              let s' = M.insert hnom l s
+              let s' = M.insert hnom (l,nom) s
               put (l+1,s') 
               return l 
-        (Just l) -> return l 
+        (Just (l,sn)) -> 
+            do
+              when (sn /= nom) (error "same hash but stablenames mismatch")
+              return l 
 
 ----------------------------------------------------------------------------
 label :: Expr -> Labeler LExp 
@@ -81,12 +84,22 @@ label e@(Map fn exprs) =
       l <- addExp e 
       exprs' <- mapM label exprs 
       return (LMap l fn exprs')
--- TODO: Figure this one out. 
-label e@(While e1 es1 es2) = 
+
+
+label e@(While cond body init_state) = 
     do
       l <- addExp e 
-      return $ error "While is not implemented" 
+      variables <- createVariables init_state
+      
+      let vexps = map Var variables
+          cond' = cond vexps 
+          body' = body vexps 
+      i' <- mapM label init_state
+      c' <- label cond'
+      b' <- mapM label body' 
 
+      return $ LWhile l variables c' b' i'
+    
 label e@(If e1 e2 e3) = 
     do 
       l <- addExp e 
@@ -101,7 +114,13 @@ label e@(Op op exprs) =
       return (LOp l op exprs') 
 
 createVariables :: [Expr] -> Labeler [Variable] 
-createVariables = undefined 
+createVariables [] = return []
+createVariables (x:xs) = do 
+  l <- newLabel 
+  let v = Variable ("l"++show l)
+  vs <- createVariables xs 
+  return (v:vs) 
+  
 
 
 ----------------------------------------------------------------------------

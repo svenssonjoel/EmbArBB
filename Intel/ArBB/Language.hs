@@ -322,9 +322,12 @@ instance LoopState (Exp a) where
 --      e1' = E $ LVar (newLabel ()) l1v 
   loopFinalState (E e) = (E e) -- deconstr then reconstr (to get type right) 
 
-{- 
+ 
 instance LoopState (Exp a,Exp b) where   
   loopState (E e1,E e2) = [e1,e2]  
+  loopCond f [e1,e2] = let (E e) = f (E e1, E e2) in e
+  loopBody f [e1,e2] = let (E e1',E e2') = f (E e1, E e2) in [e1',e2']
+  
 --  loopVars  (E e1,E e2) = ((e1',e2'),[l1v,l2v])
 --    where 
 --      l1 = newLabel () 
@@ -339,6 +342,9 @@ instance LoopState (Exp a,Exp b) where
 
 instance LoopState (Exp a,Exp b,Exp c) where   
   loopState (e1,e2,e3) = loopState e1 ++ loopState e2 ++ loopState e3  
+  loopCond f [e1,e2,e3] = let (E e) = f (E e1, E e2, E e3) in e
+  loopBody f [e1,e2,e3] = let (E e1',E e2', E e3') = f (E e1, E e2, E e3) in [e1',e2',e3']
+
 --  loopVars  (e1,e2,e3) = ((e1',e2',e3'),ls1 ++ ls2 ++ ls3 )
 --    where 
 --      (e1',ls1) = loopVars e1
@@ -348,7 +354,7 @@ instance LoopState (Exp a,Exp b,Exp c) where
   loopFinalState (E e) = (E $ ResIndex e 0, 
                           E $ ResIndex e 1,
                           E $ ResIndex e 2) 
--} 
+ 
 {- 
 while :: LoopState state 
           => (state -> Exp Bool)    

@@ -15,8 +15,10 @@ import System.IO.Unsafe
 import Data.IORef
 ---------------------------------------------------------------------------- 
 -- Label creator 
+
 type Label = Word32
 
+{-
 {-# NOINLINE counter #-}
 counter :: IORef Label
 counter = unsafePerformIO (newIORef 0)
@@ -27,7 +29,7 @@ newLabel () = unsafePerformIO $ do
   p <- readIORef counter
   writeIORef counter (p+1)
   return p 
-
+-}
 
 ---------------------------------------------------------------------------- 
 -- Literals and Variables
