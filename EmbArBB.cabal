@@ -1,5 +1,5 @@
 Name:           EmbArBB
-Version:        0.1.0.9
+Version:        0.1.0.10
 
 License:                BSD3
 License-file:           LICENSE
@@ -17,11 +17,9 @@ Description:
 
 Category: Language
 Cabal-Version: >=1.8
-Tested-With: GHC == 7.0.4
+Tested-With: GHC == 7.4.1
 
 build-type: Simple
--- Simple
-
 
 source-repository head
   type:     git
@@ -65,4 +63,4 @@ Library
     extra-lib-dirs: /opt/intel/arbb/latest/lib/ia32
 
   Includes: arbb_vmapi.h 
-  Extra-libraries: arbb_dev
+  Extra-libraries: arbb_dev, tbb

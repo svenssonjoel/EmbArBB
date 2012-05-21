@@ -14,7 +14,9 @@
   + Add the Nested data parallelism operations (needs a new Nested container type) 
   + Support (DVector dim (a1,..,an)) by some kind of Dense_of_tuple to Tuple_of_dense
     transformation. 
-
+  + Clean up the sharing detection. Right now the code is a big mess due to the 
+    switch from one method to another while trying to keep large chunk of code. 
+    
 * Help Wanted. 
   + If you are interested in helping to improve this library just contact me.
    
@@ -31,6 +33,7 @@
   + OpDynamic_ is for those ops that work with different number of inputs (right?) 
   + The labeled AST and the {-# NOINLINE counter #-} approach to discovering 
     sharing seems to break down when I compile the library separately from the 
-    examples. I have no idea why this happens. 
+    examples. I have no idea why this happens. Solving this by switching to using  
+    the StableName module.
 
 
