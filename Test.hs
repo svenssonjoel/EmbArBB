@@ -120,12 +120,14 @@ test5 =
         v2 = Vector (V.fromList [1.5,1.8,1.9]) (One 3)
     
     -- execute f with inputs v1 and v2 
-    (Vector dat n) <- execute f (v1 :- v2) 
-    liftIO$ putStrLn$ show dat
+    r <- execute f (v1 :- v2) 
+    liftIO$ putStrLn "result of first execution: "
+    liftIO$ putStrLn$ show r
     
     -- f can be used again and again (jit only once)
-    execute f (v2 :- v1) 
-
+    liftIO$ putStrLn "executing already JITed function again: "
+    execute f (v1 :- v2) 
+ 
 
 test6 = 
   withArBB $  
@@ -531,8 +533,6 @@ testWhileM =
     o1 <- liftIO$ new1D 10000
     r  <- liftIO$ newIORef 0 
     
-    -- execute f 
-    -- (Vector dat n,i) <- execute f v1
     execute2 f v1 (o1 :- r) 
     
     (Vector i _)  <- liftIO$ freeze o1
