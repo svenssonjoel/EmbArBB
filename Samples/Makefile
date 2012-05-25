@@ -16,4 +16,4 @@ clean:
 	rm matrix_vector
 	rm sgemm
 	rm *.o
-	rm *.hi
+	rm *.h
