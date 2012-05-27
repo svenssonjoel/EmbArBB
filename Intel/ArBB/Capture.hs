@@ -21,6 +21,7 @@ import Intel.ArBB.Data -- Embeddable
 import Intel.ArBB.WithArBB
 import Intel.ArBB.GenArBB
 import Intel.ArBB.IsScalar
+import Intel.ArBB.Data.Int
 
 -- TODO: remove this dependency
 import Intel.ArBB.ExpToLExp 
@@ -250,6 +251,8 @@ OScalar(Word8)
 OScalar(Word16)
 OScalar(Word32)
 OScalar(Word64)
+OScalar(USize)
+OScalar(ISize)
 
 
 instance Data (Exp (DVector t a))  => EmbOut (Exp (DVector t a)) where 

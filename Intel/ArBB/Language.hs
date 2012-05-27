@@ -290,6 +290,28 @@ snd3 (E a) = E $ ResIndex a 1
 trd3 :: Exp (a,b,c) -> Exp c
 trd3 (E a) = E $ ResIndex a 2 
 
+----------------------------------------------------------------------------
+-- Stencil (inside map) useful ops 
+
+getNeighbor :: Exp t -> Exp ISize -> Exp ISize -> Exp ISize -> Exp t
+getNeighbor (E v) (E p) (E r) (E c) =
+    E $ Op GetNeighbor [v,p,r,c]
+
+eltCoord1D :: () -> Exp USize 
+eltCoord1D () = (\(x,y,z) -> z) (getEltCoord ())
+
+eltCoord2D :: () -> (Exp USize, Exp USize) 
+eltCoord2D () = (\(x,y,z) -> (y,z)) r 
+    where  
+      r = (getEltCoord ())
+
+
+eltCoord3D = getEltCoord
+
+getEltCoord :: () -> (Exp USize, Exp USize, Exp USize) 
+getEltCoord () = (fst3 e, snd3 e, trd3 e) 
+    where e = E $ Op GetEltCoord [] 
+
 
 
 ----------------------------------------------------------------------------
