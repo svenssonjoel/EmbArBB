@@ -200,14 +200,8 @@ genBody' dag nid funm is =
  
     genNode thisNid (NOp op ns) = 
       do 
-        -- liftIO$ putStrLn$ "NOp :" ++ show op       
-        
         vs <- mapM (\n -> genBody' dag n  funm is) ns 
        
-        -- (vt,_) <- get 
-        -- liftIO$ putStrLn $ show vt
-        
-        --t <- getTypeOfNode' thisNid typem  
         t <- typecheckNID dag thisNid
         imm <- liftVM$ typeToArBBLocalVar t 
     
@@ -215,7 +209,6 @@ genBody' dag nid funm is =
           True -> liftVM$ VM.opDynamic_ (opToArBB op) imm (concat vs)
           False -> liftVM$ VM.op_ (opToArBB op) imm (concat vs) 
         
-        -- liftIO$ putStrLn "leaving NOp"
         return imm
         
     genNode thisNid (NIf n1 n2 n3) =  
@@ -288,6 +281,29 @@ genBody' dag nid funm is =
         
         addNode thisNid state_vars -- state_vars
         return state_vars
+    genNode thisNid (NMap f ns) = 
+      do 
+        vs <- liftM concat $ mapM (\n -> genBody' dag n  funm is) ns 
+       
+        let (Just (fun,ti,to)) = Map.lookup f funm
+        -- t <- typecheckNID dag thisNid
+        -- TODO: All this starts feeling a bit "hacky".
+        --       Put adding structure to the TODO list 
+ 
+        -- Cheat 
+        let [Scalar t] = to 
+            dt = Dense I t 
+                                 
+        imm <- liftVM$ typeToArBBLocalVar dt
+        --imm <- liftVM$ liftM concat $ mapM typeToArBBLocalVar to
+        
+        --case isOpDynamic op of 
+        --  True -> liftVM$ VM.opDynamic_ (opToArBB op) imm (concat vs)
+        --  False -> liftVM$ VM.op_ (opToArBB op) imm (concat vs) 
+        
+        liftVM $ VM.map_ fun imm vs 
+        
+        return imm
         
        
 

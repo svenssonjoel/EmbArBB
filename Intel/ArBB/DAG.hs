@@ -134,6 +134,18 @@ constructDAG (LWhile l vars e1 body st) =
           let m'' = Map.insert l (NWhile vars e1' body' st') m'
           put m'' 
           return [l]
+constructDAG (LMap l f es)  = 
+  do       
+    m <- get 
+    case Map.lookup l m of 
+      (Just nid) -> return [l] 
+      Nothing -> 
+        do 
+          es' <- constrAll es 
+          m' <- get 
+          let m'' = Map.insert l (NMap f es') m'
+          put m''     
+          return [l] 
 
           
 constructDAG x = error $ show x 

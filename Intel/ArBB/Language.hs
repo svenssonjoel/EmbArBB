@@ -11,6 +11,8 @@ import Intel.ArBB.Vector
 import Intel.ArBB.Syntax 
 import Intel.ArBB.Data.Int 
 import Intel.ArBB.Data
+-- TODO: remove this dependency
+import Intel.ArBB.Capture
 
 import qualified Intel.ArbbVM as VM
 
@@ -269,14 +271,25 @@ getNPages (E vec) = E $ Op GetNPages [vec]
 call :: ArgList t => Function t (Exp r) -> t -> (Exp r) 
 call (Function nom) ins = E $ Call nom (argList ins) 
 
+-- TODO: very limited types here. try to generalize
+-- TODO: Extremely messy type.. see what can be done 
+map :: ArgList (Exp t) => Function (EIn (Exp t) (Exp r)) (EOut (Exp r)) -> Exp (DVector d t) -> Exp (DVector d r) 
+map (Function nom) ins = E $ Map nom (argList ins) 
 
 ----------------------------------------------------------------------------
 -- unpairing. 
 fstPair :: Exp (a,b) -> Exp a 
-fstPair (E a) = E $ ResIndex a 0 
-
+fstPair (E a) = E $ ResIndex a 0
 sndPair :: Exp (a,b) -> Exp b
 sndPair (E a) = E $ ResIndex a 1 
+
+fst3 :: Exp (a,b,c) -> Exp a
+fst3 (E a) = E $ ResIndex a 0
+snd3 :: Exp (a,b,c) -> Exp b
+snd3 (E a) = E $ ResIndex a 1 
+trd3 :: Exp (a,b,c) -> Exp c
+trd3 (E a) = E $ ResIndex a 2 
+
 
 
 ----------------------------------------------------------------------------
