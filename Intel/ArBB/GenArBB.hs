@@ -281,31 +281,38 @@ genBody' dag nid funm is =
         
         addNode thisNid state_vars -- state_vars
         return state_vars
+    ------------------------------------------------------------------- 
+    -- TODO: This one should perform many checks.. 
+    --       There are quite a number of things that have to match up 
+    --       in an ArBB map call. 
+    -- TODO: Can map be used with nested vectors? 
     genNode thisNid (NMap f ns) = 
       do 
         vs <- liftM concat $ mapM (\n -> genBody' dag n  funm is) ns 
        
+        -- In order to obtain dimensionality of result. 
+        ts <- mapM (typecheckNID dag) ns
+        let    dim = (\(Dense d _) -> d) $ head ts 
+        
         let (Just (fun,ti,to)) = Map.lookup f funm
-        -- t <- typecheckNID dag thisNid
+      
         -- TODO: All this starts feeling a bit "hacky".
         --       Put adding structure to the TODO list 
  
-        -- Cheat 
-        let [Scalar t] = to 
-            dt = Dense I t 
-                                 
-        imm <- liftVM$ typeToArBBLocalVar dt
-        --imm <- liftVM$ liftM concat $ mapM typeToArBBLocalVar to
+        -- TODO: Look this code over again.
+        imm <- liftVM$ 
+               liftM concat $ 
+               mapM typeToArBBLocalVar $ 
+               map (makeDenseType (\s -> Dense dim s)) to
         
-        --case isOpDynamic op of 
-        --  True -> liftVM$ VM.opDynamic_ (opToArBB op) imm (concat vs)
-        --  False -> liftVM$ VM.op_ (opToArBB op) imm (concat vs) 
-        
+    
         liftVM $ VM.map_ fun imm vs 
         
         return imm
         
-       
+makeDenseType :: (VM.ScalarType -> Type) -> Type -> Type 
+makeDenseType f (Scalar t) = f t 
+makeDenseType f _ = error "denseType applied to nonscalar"        
 
 genLiteral :: Literal -> Gen VM.Variable
 genLiteral (LitInt8 i)  = liftVM$ VM.int8_ i 

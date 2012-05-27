@@ -7,6 +7,7 @@ all:
 	ghc --make matrix_vector.hs -i../
 	ghc --make sgemm.hs -i../
 	ghc --make addconst.hs -i../
+	ghc --make simplemap.hs -i../
 
 
 clean: 

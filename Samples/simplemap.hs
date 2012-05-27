@@ -14,7 +14,7 @@ mapper :: Function (EIn (Exp Word32) (Exp Word32)) (EOut (Exp Word32)) -> Exp (V
 mapper f v = map f v 
 
 
--- TODO: This causes: Dynamic compiler error.. 
+
 testMap = 
   withArBB $ 
   do 
