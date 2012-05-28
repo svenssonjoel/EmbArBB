@@ -124,6 +124,7 @@ typecheckNID d n =
     typeOfOp Add [t1,t2] = same t1 t2
     typeOfOp Mul [t1,t2] = same t1 t2
     typeOfOp Sub [t1,t2] = same t1 t2
+    typeOfOp Div [t1,t2] = same t1 t2
     typeOfOp Min [t1,t2] = same t1 t2
     typeOfOp Max [t1,t2] = same t1 t2
     typeOfOp Acos [t] = Just t 

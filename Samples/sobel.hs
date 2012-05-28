@@ -15,9 +15,6 @@ Gy =  |  0  0  0 |
 
 -} 
 
--- TODO: Should these computations be performed as word8?
--- TODO: I expect the values should be promoted to Floats.. 
---       Look it up.<xs
 gx :: Exp Float -> Exp Float  
 gx x = (-p0) + (-2) * p1 + (-p2) +  
          p3  +   2  * p4 +   p5 
@@ -36,19 +33,35 @@ gy x = (-p0) + (-2) * p1 + (-p2) +
   where 
     p0 = getNeighbor2D x  1   1
     p1 = getNeighbor2D x  1   0
+    
     p2 = getNeighbor2D x  1 (-1) 
     
     p3 = getNeighbor2D x (-1)   1 
     p4 = getNeighbor2D x (-1)   0
     p5 = getNeighbor2D x (-1) (-1)
 
+convertToFloat :: Exp Word8 -> Exp Float 
+convertToFloat x = (toFloat x) / (E $ Lit (LitFloat 255))
+
+convertToWord8 :: Exp Float -> Exp Word8 
+convertToWord8 x = toWord8 $ (clamp x)  * (E $ Lit (LitFloat 255))
+
+clamp :: Exp Float -> Exp Float
+clamp x = ifThenElse ((E $ Lit (LitFloat 1)) <* x) (E $ Lit (LitFloat 1)) x
 
 -- 8 bit per pixel greyscale image will be processed. 
 kernel :: Exp Word8 -> Exp Word8 
-kernel = undefined
-
+kernel x = convertToWord8 
+         $ body 
+         $ convertToFloat x
+  where 
+    body x = sqrt (x' * x' + y' * y') 
+     where 
+       x' = gx x 
+       y' = gy x
+       
 sobel :: Function (EIn (Exp Word8) (Exp Word8)) (EOut (Exp Word8)) -> Exp (DVector Dim2 Word8) -> Exp (DVector Dim2 Word8) 
-sobel = undefined 
+sobel = error "hello" 
 
 getCoord :: Exp Word32 -> Exp Word32
 getCoord x = x + getNeighbor x 0 0 (-1)
@@ -64,6 +77,13 @@ testMap =
 
      strf <- serialize f2
      liftIO$ putStrLn strf
+
+
+     f3 <- capture2 kernel     
+
+     strf <- serialize f3
+     liftIO$ putStrLn strf
+
 
      m2 <- capture2 (mapper f2) 
 

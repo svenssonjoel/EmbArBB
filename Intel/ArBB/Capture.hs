@@ -87,7 +87,9 @@ capture2 f =
     fn <- getFunName 
     --liftIO$ putStrLn "cap2"
     let (e,(_,vt))  = runState (embF f) (0,Map.empty)
+    --liftIO$ putStrLn "cap2a"    
     labeled_e <- liftIO$ labelExps e 
+    --liftIO$ putStrLn "cap2b"
     let (nids,dag)  = accmDAGMaker labeled_e -- (map expToLExp e)
         tins  = inTypes f
         touts = outTypes f

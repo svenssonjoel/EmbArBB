@@ -108,7 +108,7 @@ label e@(If e1 e2 e3) =
       e3' <- label e3 
       return (LIf l e1' e2' e3') 
 label e@(Op op exprs) = 
-    do 
+    do
       l <- addExp e 
       exprs' <- mapM label exprs
       return (LOp l op exprs') 
@@ -133,6 +133,9 @@ labelExps es = liftM fst (labelExps' es (0,M.empty))
       labelExps' [] s = return ([],s)
       labelExps' (x:xs) s = 
           do 
+            --putStrLn $ "labelExps'0"
             (x',s') <- runStateT (label x) s 
+            --putStrLn "labelExps'1"
             (xs',s'') <- labelExps' xs s'
+            --putStrLn "labelExps'2"
             return (x':xs',s')

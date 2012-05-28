@@ -602,7 +602,7 @@ instance Num (Exp Float) where
   abs = undefined 
   signum = undefined 
   
-  fromInteger a = E $ Lit $ LitFloat $ fromInteger a
+  fromInteger a = E $ Lit $ LitFloat $ (fromInteger a :: Float)
 
 instance Num (Exp Double) where 
   (+) (E a) (E b) = E $ Op Add [a,b]
@@ -657,7 +657,8 @@ instance (Num (Exp a), Bits a) => Bits (Exp a) where
 -- Floating stuff
 
 instance Fractional (Exp Float) where 
-  fromRational = undefined 
+  (/) (E a) (E b) = E $ Op Div [a,b]
+  fromRational = error "fromRational: APA"
 
 instance Floating (Exp Float) where
   pi = E $ Lit (LitFloat pi)

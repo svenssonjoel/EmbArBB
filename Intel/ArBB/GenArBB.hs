@@ -163,8 +163,8 @@ genBody' :: DAG
 genBody' dag nid funm is = 
   do 
     m <- lift get 
-  --  liftIO$ putStrLn $ "genBody' " ++ show nid
-  --  liftIO$ putStrLn $ "genBody' " ++ show dag
+    -- liftIO$ putStrLn $ "genBody' " ++ show nid
+    -- liftIO$ putStrLn $ "genBody' " ++ show dag
     case Map.lookup nid m of 
       (Just v) -> 
         do 
@@ -333,6 +333,7 @@ opToArBB :: Op -> VM.Opcode
 opToArBB Add = VM.ArbbOpAdd
 opToArBB Mul = VM.ArbbOpMul 
 opToArBB Sub = VM.ArbbOpSub
+opToArBB Div = VM.ArbbOpDiv
 opToArBB Min = VM.ArbbOpMin
 opToArBB Max = VM.ArbbOpMax
 opToArBB Acos = VM.ArbbOpAcos
@@ -456,6 +457,7 @@ isOpDynamic :: Op -> Bool
 isOpDynamic Add = False 
 isOpDynamic Mul = False 
 isOpDynamic Sub = False 
+isOpDynamic Div = False
 isOpDynamic Min = False 
 isOpDynamic Max = False 
 isOpDynamic Acos = False
