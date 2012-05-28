@@ -20,6 +20,7 @@ testMatMul =
   withArBB $ 
   do 
      f <- capture2 matmul
+     
      str <- serialize f
      liftIO$ putStrLn str
 
@@ -36,3 +37,4 @@ testMatMul =
 
 
 main = testMatMul
+

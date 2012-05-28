@@ -15,45 +15,37 @@ Gy =  |  0  0  0 |
 
 -} 
 
-gx :: Exp Float -> Exp Float  
-gx x = (-p0) + (-2) * p1 + (-p2) +  
-         p3  +   2  * p4 +   p5 
-  where 
-    p0 = getNeighbor2D x   1  1 
-    p1 = getNeighbor2D x   0  1
-    p2 = getNeighbor2D x (-1) 1 
-    
-    p3 = getNeighbor2D x   1  (-1)
-    p4 = getNeighbor2D x   0  (-1)
-    p5 = getNeighbor2D x (-1) (-1)
+-- Haskell lists and list comprehensions used as a tool
+s1 = [(1,1),(0,1),(-1,1),(1,-1),(0,-1),(-1,-1)]
+s2 = [(1,1),(1,0),(1,-1),(-1,1),(-1,0),(-1,-1)]
 
-gy :: Exp Float -> Exp Float 
-gy x = (-p0) + (-2) * p1 + (-p2) +  
-         p3  +   2  * p4 +   p3 
-  where 
-    p0 = getNeighbor2D x  1   1
-    p1 = getNeighbor2D x  1   0
-    p2 = getNeighbor2D x  1 (-1) 
-    
-    p3 = getNeighbor2D x (-1)   1 
-    p4 = getNeighbor2D x (-1)   0
-    p5 = getNeighbor2D x (-1) (-1)
+coeffs :: [Exp Float] 
+coeffs = [-1,-2,-1,1,2,1] 
 
-convertToFloat :: Exp Word8 -> Exp Float 
-convertToFloat x = (toFloat x) / 255
+
+gx :: Exp Word8 -> Exp Float  
+gx x = foldl (+) 0 
+     $ zipWith (*) [toFloat (getNeighbor2D x a b) / 255 
+                    | (a,b) <- s1] coeffs 
+
+gy :: Exp Word8 -> Exp Float 
+gy x = foldl (+) 0 
+     $ zipWith (*) [toFloat (getNeighbor2D x a b) / 255
+                   | (a,b) <- s2] coeffs 
+
+--convertToFloat :: Exp Word8 -> Exp Float 
+--convertToFloat x = (toFloat x) / 255
 
 convertToWord8 :: Exp Float -> Exp Word8 
 convertToWord8 x = toWord8 $ (clamp x)  * 255
 
 clamp :: Exp Float -> Exp Float
-clamp x = ifThenElse (1 <* x) 1 x
+clamp x = min x 1 -- ifThenElse (1 <* x) 1 x
           
 
 -- 8 bit per pixel greyscale image will be processed. 
 kernel :: Exp Word8 -> Exp Word8 
-kernel x = convertToWord8 
-         $ body 
-         $ convertToFloat x
+kernel x = convertToWord8 $ body x
   where 
     body x = sqrt (x'' + y'') 
      where 
@@ -61,6 +53,7 @@ kernel x = convertToWord8
        x'' = x' * x' 
        x' = gx x 
        y' = gy x
+        
        
 sobel :: Function (EIn (Exp Word8) (Exp Word8)) (EOut (Exp Word8)) -> Exp (DVector Dim2 Word8) -> Exp (DVector Dim2 Word8) 
 sobel = error "hello" 

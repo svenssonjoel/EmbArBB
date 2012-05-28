@@ -576,3 +576,28 @@ testShare =
     fun v = a + a 
       where a = v+v
     
+    
+    
+testShareIf = 
+  withArBB $  
+  do
+    c <- capture2 fun
+    
+    str <- serialize c
+    liftIO$ putStrLn str
+  
+
+    -- let inp = Vector (V.fromList [0..19::Int32]) (Three 5 2 2)
+    -- outp <- liftIO$ new3D 5 2 2 
+    r  <- liftIO$ newIORef 0 
+    execute2 c 6 r 
+    
+    r' <- liftIO$ readIORef r
+    
+    liftIO$ putStrLn $ show r'
+    
+  where 
+    fun :: Exp Int32 -> Exp Int32
+    fun v = ifThenElse (a <* 10) 1 a 
+      where a = v+v
+        

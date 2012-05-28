@@ -690,3 +690,6 @@ instance Floating (Exp Float) where
   acosh (E a) = undefined -- E $ Op Acosh [a]
 
 
+instance Ord (Exp Float) where 
+  min (E a) (E b) = E $ Op Min [a,b]
+  max (E a) (E b) = E $ Op Max [a,b]
