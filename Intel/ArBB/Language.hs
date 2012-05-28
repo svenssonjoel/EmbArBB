@@ -16,6 +16,9 @@ import Intel.ArBB.Capture
 
 import qualified Intel.ArbbVM as VM
 
+-- Type info needed in cast ops
+import Intel.ArBB.Types
+
 import Data.Int
 import Data.Word
 import Data.Bits
@@ -32,9 +35,9 @@ constVector (E a) (E s) =
 ----------------------------------------------------------------------------
 -- Specific casts (BIG CHEATS GOING ON HERE) 
 
-toUSize :: Exp (DVector t a) -> Exp (DVector t USize) 
+toUSize :: Exp (Vector a) -> Exp (Vector USize) 
 toUSize (E a) = 
-  E $ Op Cast [a]
+  E $ Op (Cast (Dense I VM.ArbbUsize)) [a]
 
 
 ---------------------------------------------------------------------------- 
@@ -297,13 +300,18 @@ getNeighbor :: Exp t -> Exp ISize -> Exp ISize -> Exp ISize -> Exp t
 getNeighbor (E v) (E p) (E r) (E c) =
     E $ Op GetNeighbor [v,p,r,c]
 
+getNeighbor2D :: Exp t -> Exp ISize -> Exp ISize -> Exp t
+getNeighbor2D (E v) (E r) (E c) =
+    E $ Op GetNeighbor [v,p,r,c]
+  where (E p) = (0 :: Exp ISize) 
+
 eltCoord1D :: () -> Exp USize 
 eltCoord1D () = (\(x,y,z) -> z) (getEltCoord ())
 
 eltCoord2D :: () -> (Exp USize, Exp USize) 
-eltCoord2D () = (\(x,y,z) -> (y,z)) r 
+eltCoord2D () = (\(p,r,c) -> (r,c)) coord 
     where  
-      r = (getEltCoord ())
+      coord = (getEltCoord ())
 
 
 eltCoord3D = getEltCoord
@@ -621,3 +629,42 @@ instance (Num (Exp a), Bits a) => Bits (Exp a) where
 
 (<*) :: Ord a => Exp a -> Exp a -> Exp Bool
 (<*) (E a) (E b) = E $ Op Less [a,b]
+
+
+
+----------------------------------------------------------------------------
+-- Floating stuff
+
+instance Fractional (Exp Float) where 
+  fromRational = undefined 
+
+instance Floating (Exp Float) where
+  pi = E $ Lit (LitFloat pi)
+  exp (E a) = E $ Op Exp [a]
+  sqrt (E a) = E $ Op  Sqrt [a]
+   
+  log (E a) = E $ Op Log10 [a] 
+  (**) (E a) (E b) = E $ Op Pow [a,b]
+
+  -- log_b(x) = log_e(x) / log_e(b)
+  --logBase (Literal 2) b = UnOp Log2 b
+  --logBase (Literal 10) b = UnOp Log10 b
+  --logBase a b = (UnOp Log b) / (UnOp Log a)
+  
+  sin (E a) = E $ Op Sin [a]
+  tan (E a) = E $ Op Tan [a]
+  cos (E a) = E $ Op Cos [a]
+   
+  asin (E a) = E $ Op Asin [a]
+  atan (E a) = E $ Op Atan [a]
+  acos (E a) = E $ Op Acos [a]
+  
+  sinh (E a) = E $ Op Sinh [a]
+  tanh (E a) = E $ Op Tanh [a]
+  cosh (E a) = E $ Op Cosh [a]
+  
+  asinh (E a) = undefined -- E $ Op Asinh [a]
+  atanh (E a) = undefined -- E $ Op Atanh [a]
+  acosh (E a) = undefined -- E $ Op Acosh [a]
+
+

@@ -15,9 +15,7 @@ mapper f v = map f v
 
 getCoord :: Exp Word32 -> Exp Word32
 getCoord x = x + getNeighbor x 0 0 (-1)
--- a + b + c 
---    where (a,b,c) = eltCoord3D () 
- -- 
+
 
 mapper2 :: Function (EIn (Exp Word32) (Exp Word32)) (EOut (Exp Word32)) -> Exp (Vector Word32) -> Exp (Vector Word32) 
 mapper2 f v = map f v 

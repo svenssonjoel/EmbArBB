@@ -10,6 +10,7 @@ import Data.Word
 
 import Intel.ArBB.Data.Int 
 
+import Intel.ArBB.Types
 
 import System.IO.Unsafe
 import Data.IORef
@@ -134,7 +135,8 @@ data Op = Add | Sub  | Mul | Div
         | ShiftConst | ShiftClamp | ShiftConstRev | ShiftClampRev
         | Rotate | RotateRev | Reverse 
         | Length | ApplyNesting | GetNesting  
-        | Cat | Cast | Extract | Split | Unsplit
+ -- TODO: The Cast needs to know what to cast to.
+        | Cat | Cast Type | Extract | Split | Unsplit
         | Index | Mask | CopyNesting | Flatten 
         | ConstVector | Sort | SortRank | Replace 
         | SetRegularNesting | ReplaceRow | ReplaceCol | ReplacePage 

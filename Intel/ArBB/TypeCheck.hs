@@ -2,7 +2,6 @@
 
 module Intel.ArBB.TypeCheck where 
 
-
 {- Typecheck a DAG. and create a nodeID_to_type map -} 
 
 import Intel.ArBB.Types 
@@ -194,7 +193,7 @@ typecheckNID d n =
     typeOfOp Cat [t1,t2] = same t1 t2 
 
     -- TODO: Big Cheat ! 
-    typeOfOp Cast xs = Just $ Dense I ArBB.ArbbUsize 
+    typeOfOp (Cast t) xs = Just $ t -- Dense I ArBB.ArbbUsize 
     -- TODO: Replace with  
     -- typeOfOf CastTo t xs = t 
 
