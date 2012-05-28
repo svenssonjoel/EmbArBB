@@ -4,6 +4,9 @@ import qualified Data.Vector.Storable as V
 import Prelude hiding (length,map)
 import Data.Word
 
+
+import System.IO
+import Foreign
 {- 
       | -1  0  1 |
 Gx =  | -2  0  2 | 
@@ -40,7 +43,8 @@ convertToWord8 :: Exp Float -> Exp Word8
 convertToWord8 x = toWord8 $ (clamp x)  * 255
 
 clamp :: Exp Float -> Exp Float
-clamp x = min x 1 -- ifThenElse (1 <* x) 1 x
+-- Should be clamp, right ? 
+clamp x = max 0 (min x 1)  
           
 
 -- 8 bit per pixel greyscale image will be processed. 
@@ -56,7 +60,7 @@ kernel x = convertToWord8 $ body x
         
        
 sobel :: Function (EIn (Exp Word8) (Exp Word8)) (EOut (Exp Word8)) -> Exp (DVector Dim2 Word8) -> Exp (DVector Dim2 Word8) 
-sobel = error "hello" 
+sobel kern image = map kern image  
 
 getCoord :: Exp Word32 -> Exp Word32
 getCoord x = x + getNeighbor x 0 0 (-1)
@@ -97,3 +101,36 @@ testMap =
 
 
 main = testMap
+
+
+-- Very much a hack.. 
+testSobel =
+  do  
+    ptr <- mallocBytes (256 * 256) 
+    withBinaryFile "Samples/window.raw" ReadMode $ \ handle -> 
+      hGetBuf handle ptr (256 * 256) 
+    ls <- peekArray (256 * 256) ptr
+
+    -- TODO: Stop going through lists.
+    withArBB $ 
+      do 
+        kern <- capture2 (kernel)
+        f <- capture2 (sobel kern)
+        
+        let v1 = Vector (V.fromList ls) (Two 256 256) 
+     
+        r1 <- liftIO$ new2D 256 256  
+
+        execute2 f v1 r1
+              
+        (Vector r _) <- liftIO$ freeze r1
+        
+        let r' = V.toList r
+
+        pt2 <- liftIO$ mallocBytes (256 * 256) 
+        liftIO $ pokeArray pt2 r'
+       
+       
+        liftIO $ withBinaryFile "sobout.raw" WriteMode $ \ handle -> 
+            hPutBuf handle pt2 (256 * 256)   
+        liftIO $ putStrLn "Result is stored in: sobout.raw" 
