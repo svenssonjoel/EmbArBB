@@ -44,6 +44,7 @@ addExp e =
       case M.lookup hnom s of 
         Nothing -> 
             do
+              --liftIO$ putStrLn "not in map" 
               -- TODO: Can you use the hash directly without using a map at all. 
               --        In this hack probably, yes. 
               let s' = M.insert hnom (l,nom) s
@@ -51,6 +52,7 @@ addExp e =
               return l 
         (Just (l,sn)) -> 
             do
+              --liftIO$ putStrLn "FOUND!"
               when (sn /= nom) (error "same hash but stablenames mismatch")
               return l 
 

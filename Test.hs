@@ -551,3 +551,28 @@ testWhileM =
       in (x,z)
 
  
+    
+testShare = 
+  withArBB $  
+  do
+    c <- capture2 fun
+    
+    str <- serialize c
+    liftIO$ putStrLn str
+  
+
+    let inp = Vector (V.fromList [0..19::Int32]) (Three 5 2 2)
+    outp <- liftIO$ new3D 5 2 2 
+    
+    execute2 c inp outp 
+    
+    Vector dat _ <- liftIO$ freeze outp
+    
+    liftIO$ putStrLn $ show dat
+    return c
+    
+  where 
+    fun :: Exp (DVector Dim3 Int32) -> Exp (DVector Dim3 Int32)
+    fun v = a + a 
+      where a = v+v
+    

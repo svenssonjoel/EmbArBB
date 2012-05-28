@@ -173,7 +173,12 @@ genBody' dag nid funm is =
           return v 
       Nothing   -> 
           case Map.lookup nid dag of 
-            (Just node) -> genNode nid node 
+            (Just node) -> 
+              do 
+                -- Update the "already generated" map
+                v <- genNode nid node 
+                (lift . put) (Map.insert nid v m)  
+                return v
             Nothing -> error "genBody: DAG is broken" 
             
   where 
@@ -211,10 +216,13 @@ genBody' dag nid funm is =
         
         return imm
         
+    ---------------------------------------------------    
+    -- TODO: Is potentially duplicating work ?    
+    --       See the sobel.hs example.
     genNode thisNid (NIf n1 n2 n3) =  
       do       
         -- conditional is a single var
-        [v1] <- genBody' dag n1  funm is 
+        [v1] <- genBody' dag n1 funm is 
         -- TODO: condition variables need to be local. 
         bt <- liftVM$ VM.getScalarType_ VM.ArbbBoolean
         cond <- liftVM$ VM.createLocal_ bt "cond" 
@@ -240,8 +248,7 @@ genBody' dag nid funm is =
           )
         addNode thisNid imm 
         return imm
-        
-    -- Experimental For loop! (really more of a while loop) 
+
     -- TODO: Extend typem with the types of the "lx" variables. 
     genNode thisNid a@(NWhile vars cond' body st) = 
       do 

@@ -33,7 +33,6 @@ gy x = (-p0) + (-2) * p1 + (-p2) +
   where 
     p0 = getNeighbor2D x  1   1
     p1 = getNeighbor2D x  1   0
-    
     p2 = getNeighbor2D x  1 (-1) 
     
     p3 = getNeighbor2D x (-1)   1 
@@ -41,13 +40,14 @@ gy x = (-p0) + (-2) * p1 + (-p2) +
     p5 = getNeighbor2D x (-1) (-1)
 
 convertToFloat :: Exp Word8 -> Exp Float 
-convertToFloat x = (toFloat x) / (E $ Lit (LitFloat 255))
+convertToFloat x = (toFloat x) / 255
 
 convertToWord8 :: Exp Float -> Exp Word8 
-convertToWord8 x = toWord8 $ (clamp x)  * (E $ Lit (LitFloat 255))
+convertToWord8 x = toWord8 $ (clamp x)  * 255
 
 clamp :: Exp Float -> Exp Float
-clamp x = ifThenElse ((E $ Lit (LitFloat 1)) <* x) (E $ Lit (LitFloat 1)) x
+clamp x = ifThenElse (1 <* x) 1 x
+          
 
 -- 8 bit per pixel greyscale image will be processed. 
 kernel :: Exp Word8 -> Exp Word8 
@@ -55,8 +55,10 @@ kernel x = convertToWord8
          $ body 
          $ convertToFloat x
   where 
-    body x = sqrt (x' * x' + y' * y') 
+    body x = sqrt (x'' + y'') 
      where 
+       y'' = y' * y'
+       x'' = x' * x' 
        x' = gx x 
        y' = gy x
        
