@@ -44,9 +44,8 @@ gy x = (-p0) + (-2) * p1 + (-p2) +
 
 
 -- 8 bit per pixel greyscale image will be processed. 
-kernel :: Exp Float -> Exp Float 
-kernel = undefined 
-
+kernel :: Exp Word8 -> Exp Word8 
+kernel = undefined
 
 sobel :: Function (EIn (Exp Word8) (Exp Word8)) (EOut (Exp Word8)) -> Exp (DVector Dim2 Word8) -> Exp (DVector Dim2 Word8) 
 sobel = undefined 

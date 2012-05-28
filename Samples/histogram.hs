@@ -19,7 +19,7 @@ import Foreign
 
 
 histogram :: Exp (Vector Word8)  -> Exp (Vector Word32)
-histogram input = addMerge cv (toUSize input) 256
+histogram input = addMerge cv (vecToUSize input) 256
     where
       cv = constVector 1 s
       s  = length input 

@@ -35,9 +35,30 @@ constVector (E a) (E s) =
 ----------------------------------------------------------------------------
 -- Specific casts (BIG CHEATS GOING ON HERE) 
 
-toUSize :: Exp (Vector a) -> Exp (Vector USize) 
-toUSize (E a) = 
+vecToUSize :: Exp (Vector a) -> Exp (Vector USize) 
+vecToUSize (E a) = 
   E $ Op (Cast (Dense I VM.ArbbUsize)) [a]
+
+toUsize :: Exp a -> Exp USize 
+toUsize (E a) = 
+  E $ Op (Cast (Scalar VM.ArbbUsize)) [a] 
+
+vecToFloat :: Exp (Vector a) -> Exp (Vector Float) 
+vecToFloat (E a) = 
+  E $ Op (Cast (Dense I VM.ArbbF32)) [a]
+
+toFloat :: Exp a -> Exp Float 
+toFloat (E a) = 
+  E $ Op (Cast (Scalar VM.ArbbF32)) [a] 
+
+vecToWord8 :: Exp (Vector a) -> Exp (Vector Word8) 
+vecToWord8 (E a) = 
+  E $ Op (Cast (Dense I VM.ArbbU8)) [a]
+
+toWord8 :: Exp a -> Exp Word8 
+toWord8 (E a) = 
+  E $ Op (Cast (Scalar VM.ArbbU8)) [a] 
+
 
 
 ---------------------------------------------------------------------------- 
