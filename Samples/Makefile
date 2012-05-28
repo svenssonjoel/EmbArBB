@@ -8,6 +8,7 @@ all:
 	ghc --make sgemm.hs -i../
 	ghc --make addconst.hs -i../
 	ghc --make simplemap.hs -i../
+        ghc --make sobel.hs -i../ 
 
 
 clean: 
