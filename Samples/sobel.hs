@@ -20,6 +20,7 @@ Gy =  |  0  0  0 |
 -} 
 
 -- Haskell lists and list comprehensions used as a tool
+s1, s2 :: [(Exp ISize,Exp ISize)]
 s1 = [(1,1),(0,1),(-1,1),(1,-1),(0,-1),(-1,-1)]
 s2 = [(1,1),(1,0),(1,-1),(-1,1),(-1,0),(-1,-1)]
 
@@ -31,6 +32,7 @@ gx :: Exp Word8 -> Exp Float
 gx x = foldl (+) 0 
      $ zipWith (*) [toFloat (getNeighbor2D x a b) / 255 
                     | (a,b) <- s1] coeffs 
+
 
 gy :: Exp Word8 -> Exp Float 
 gy x = foldl (+) 0 
@@ -52,8 +54,8 @@ kernel x = convertToWord8 $ body x
   where 
     body x = sqrt (x' * x' + y' * y') 
      where 
-       --y'' = y' * y'
-       --x'' = x' * x' 
+       -- y'' = y' * y'
+       -- x'' = x' * x' 
        x' = gx x 
        y' = gy x
         
@@ -77,6 +79,10 @@ testSobel =
       do 
         kern <- capture2 (kernel)
         f    <- capture2 (sobel kern)
+        
+        str1 <- serialize kern
+        str2 <- serialize f 
+        liftIO$ putStrLn $ str1 ++ "\n" ++ str2
         
         let v1 = Vector (V.fromList ls) (Two 256 256) 
      
