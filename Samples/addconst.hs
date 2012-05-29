@@ -31,7 +31,7 @@ main =
   do 
      f <- capture2 addconst
     
-     let x = Vector vData (One 10)   
+     let x = fromList [0..10 :: Float] -- Vector vData (One 10)   
      
      r1 <- liftIO$ new1D 10   
 
@@ -40,5 +40,5 @@ main =
      r <- liftIO$ freeze r1
               
      liftIO$ putStrLn$ show r
-  where 
-   vData = V.fromList [0..10 :: Float]            
+--  where 
+--   vData = V.fromList [0..10 :: Float]            

@@ -14,11 +14,11 @@ testSaxpy =
   withArBB $ 
   do 
      f <- capture2 axpy
-     let x = Vector (V.fromList [1,2,3,4,5,6,7,8,9,10 :: Float]) (One 10) 
-         y = Vector (V.fromList [1,2,3,4,5,6,7,8,9,10 :: Float]) (One 10 ) 
+     let x = fromList [1,3..10 :: Float] 
+         y = fromList [2,4..10 :: Float] 
         
      
-     r1 <- liftIO$ new1D 10   
+     r1 <- liftIO$ new1D 5   
 
      execute2 f (1 :- x :- y)  r1
               
