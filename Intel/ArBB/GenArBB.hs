@@ -168,7 +168,7 @@ genBody' dag nid funm is =
     case Map.lookup nid m of 
       (Just v) -> 
         do 
-          liftIO$ putStrLn$ "already generated : " ++ show nid 
+          -- liftIO$ putStrLn$ "already generated : " ++ show nid 
             
           return v 
       Nothing   -> 
