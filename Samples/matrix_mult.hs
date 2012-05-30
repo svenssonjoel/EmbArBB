@@ -2,6 +2,7 @@ import Intel.ArBB
 
 import qualified Data.Vector.Storable as V 
 
+import System.Time
 
 
 matmul :: Exp (DVector Dim2 Float) 
@@ -24,17 +25,50 @@ testMatMul =
      str <- serialize f
      liftIO$ putStrLn str
 
+                                                   --  W   H
+     let m1 = Vector (V.fromList [1..(320*640)]) (Two 640 320) 
+         m2 = Vector (V.fromList [1..(640*320)]) (Two 320 640)  
+     r1 <- liftIO$ new2D 320 320
+    -- r2 <- liftIO$ new2D 1000 1000   
+  
+     execute2 f (m1 :- m2)  r1      
+     
+     t1 <- liftIO getClockTime 
+     execute2 f (m1 :- m2)  r1      
+     finish 
+     
+     t2 <- liftIO getClockTime 
 
-     let m1 = Vector (V.fromList [1,2,3,1,2,3,1,2,3]) (Two 3 3) 
-         m2 = Vector (V.fromList [2,0,0,0,2,0,0,0,2]) (Two 3 3)  
-     r1 <- liftIO$ new2D 3 3   
 
-     execute2 f (m1 :- m2)  r1
+     --liftIO $ putStrLn $ show b
               
      r <- liftIO$ freeze r1
               
-     liftIO$ putStrLn$ show r
+     -- liftIO$ putStrLn$ show r
 
+     -- r <- liftIO$ freeze r2
+              
+     -- liftIO$ putStrLn$ show r
+
+           
+     --liftIO $ putStrLn $ show  (diffUTCTime t2 t1)
+     liftIO $ putStrLn $ "diff: " ++ (show (diffms (diffClockTimes t2 t1))) ++ " ms" 
+    
+
+
+picoToMs p = (fromIntegral p) * 1E-9
+
+diffms diff | tdYear diff == 0 && 
+              tdMonth diff == 0 && 
+              tdDay diff == 0 && 
+              tdHour diff == 0  =  (fromIntegral ps) * 1E-9  + 
+                                   (fromIntegral sec) * 1000 + 
+                                   (fromIntegral min) * 60 * 1000
+                                                    
+             where 
+               ps  = tdPicosec diff 
+               sec = tdSec diff
+               min = tdMin diff
 
 main = testMatMul
 

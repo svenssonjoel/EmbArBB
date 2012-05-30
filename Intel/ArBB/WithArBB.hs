@@ -141,6 +141,11 @@ freeBindings (b:bs) =
   do 
     liftVM $ VM.freeBinding_ b
     freeBindings bs
+
+----------------------------------------------------------------------------
+finish ::  ArBB ()
+finish = liftVM $ VM.finish_   
+
 ----------------------------------------------------------------------------    
 -- ArBBIn, ArBBOut : used by execute2            
 class ArBBIn a where                  
