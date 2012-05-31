@@ -14,9 +14,10 @@ matmul a b = fst $ while cond body (a,0)
     m = getNRows a
     n = getNCols b 
     cond (c,i) = i <* n
-    body (c,i) = let mult = a * repeatRow (extractCol b i) m 
-                     col  = addReduce0 mult 
-                 in (replaceCol c i col, i+1) 
+    body (c,i) = 
+      let mult = a * repeatRow (extractCol b i) m 
+                 col  = addReduce0 mult 
+      in (replaceCol c i col, i+1) 
 
 testMatMul = 
   withArBB $ 
