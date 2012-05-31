@@ -3,6 +3,7 @@ import Intel.ArBB
 import qualified Data.Vector.Storable as V 
 
 import System.Time
+import Text.Printf
 
 
 matmul :: Exp (DVector Dim2 Float) 
@@ -22,8 +23,8 @@ testMatMul =
   do 
      f <- capture2 matmul
      
-     str <- serialize f
-     liftIO$ putStrLn str
+     --str <- serialize f
+     --liftIO$ putStrLn str
 
                                                    --  W   H
      let m1 = Vector (V.fromList [1..(320*640)]) (Two 640 320) 
@@ -35,7 +36,7 @@ testMatMul =
      
      t1 <- liftIO getClockTime 
      execute2 f (m1 :- m2)  r1      
-     finish 
+     --finish 
      
      t2 <- liftIO getClockTime 
 
@@ -52,18 +53,19 @@ testMatMul =
 
            
      --liftIO $ putStrLn $ show  (diffUTCTime t2 t1)
-     liftIO $ putStrLn $ "diff: " ++ (show (diffms (diffClockTimes t2 t1))) ++ " ms" 
+     liftIO $ printf "%f\n"  (diffs (diffClockTimes t2 t1))
     
 
 
 picoToMs p = (fromIntegral p) * 1E-9
 
-diffms diff | tdYear diff == 0 && 
+diffs :: TimeDiff -> Float
+diffs diff | tdYear diff == 0 && 
               tdMonth diff == 0 && 
               tdDay diff == 0 && 
-              tdHour diff == 0  =  (fromIntegral ps) * 1E-9  + 
-                                   (fromIntegral sec) * 1000 + 
-                                   (fromIntegral min) * 60 * 1000
+              tdHour diff == 0  =  (fromIntegral ps) * 1E-12  + 
+                                   (fromIntegral sec) + 
+                                   (fromIntegral min) * 60
                                                     
              where 
                ps  = tdPicosec diff 
