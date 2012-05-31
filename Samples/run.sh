@@ -3,13 +3,15 @@
 s=0
 
 echo ----------------------
-for i in  {1..100} 
+for j in {1..10}
 do
-  i=`./matrix_mult`
-#  i=`awk '{print $1}' tmp.txt`
-  s=$s+$i
+ for i in  {1..10} 
+ do
+   i=`./matrix_mult`
+   s=$s+$i
+ done 
  printf "."
-done 
+done
 printf "done: \n"
 s=($s)/100
 
