@@ -1,10 +1,13 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 import Intel.ArBB 
 
 import qualified Data.Vector.Storable as V 
-
+-- import qualified Data.Vector.Random.Mersenne as G
+import System.Random.Mersenne
 import System.Time
 import Text.Printf
 
+import Prelude as P
 
 matmul :: Exp (DVector Dim2 Float) 
         -> Exp (DVector Dim2 Float) 
@@ -16,22 +19,26 @@ matmul a b = fst $ while cond body (a,0)
     cond (c,i) = i <* n
     body (c,i) = 
       let mult = a * repeatRow (extractCol b i) m 
-                 col  = addReduce0 mult 
+          col  = addReduce0 mult 
       in (replaceCol c i col, i+1) 
 
-testMatMul = 
+
+
+
+testMatMul g size  = 
   withArBB $ 
   do 
      f <- capture2 matmul
      
      --str <- serialize f
      --liftIO$ putStrLn str
-
-                                                   --  W   H
-     let m1 = Vector (V.fromList [1..(320*640)]) (Two 640 320) 
-         m2 = Vector (V.fromList [1..(640*320)]) (Two 320 640)  
+     (rs1 :: [Int]) <- liftIO$ randoms g
+     (rs2 :: [Int])  <- liftIO$ randoms g
+                                                             --  W   H
+     let m1 = Vector  (V.fromList (take (size*size) (P.map fromIntegral rs1))) (Two size size) -- (V.fromList [1..(320*640)]) (Two 640 320) 
+         m2 = Vector  (V.fromList (take (size*size) (P.map fromIntegral rs2))) (Two size size) -- (V.fromList [1..(640*320)]) (Two 320 640)  
      r1 <- liftIO$ new2D 320 320
-    -- r2 <- liftIO$ new2D 1000 1000   
+     -- r2 <- liftIO$ new2D 1000 1000   
   
      execute2 f (m1 :- m2)  r1      
      
@@ -73,5 +80,18 @@ diffs diff | tdYear diff == 0 &&
                sec = tdSec diff
                min = tdMin diff
 
-main = testMatMul
-
+main =
+ do 
+   g <- newMTGen Nothing
+   testMatMul g 4
+   testMatMul g 8
+   testMatMul g 16
+   testMatMul g 32
+   testMatMul g 64
+   testMatMul g 128
+   testMatMul g 256
+   testMatMul g 384
+   testMatMul g 512
+   testMatMul g 640            
+   testMatMul g 768
+ 
