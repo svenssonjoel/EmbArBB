@@ -1,10 +1,10 @@
 #!/bin/bash
 
-s=0
 
 echo ----------------------
 for j in {1..10}
 do
+ s=0
  for i in  {1..10} 
  do
    i=`./matrix_mult`
