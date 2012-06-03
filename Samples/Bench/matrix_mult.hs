@@ -29,7 +29,9 @@ matmul a b = fst $ while cond body (a,0)
 testMatMul g size  = 
   withArBB $ 
   do 
+     tc1 <- liftIO getClockTime 
      f <- capture2 matmul
+     tc2 <- liftIO getClockTime 
      
      --str <- serialize f
      --liftIO$ putStrLn str
@@ -62,7 +64,9 @@ testMatMul g size  =
 
            
      --liftIO $ putStrLn $ show  (diffUTCTime t2 t1)
-     liftIO $ printf "%f\n"  (diffs (diffClockTimes t2 t1))
+     liftIO $ printf "%f\t%f\n"  (diffs (diffClockTimes t2 t1))
+                                 (diffs (diffClockTimes tc2 tc1))
+
     
 
 

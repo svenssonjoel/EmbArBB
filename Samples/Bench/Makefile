@@ -1,7 +1,7 @@
 
 
-all: 
-	ghc --make matrix_mult.hs -i../
+all:
+	ghc --make matrix_mult.hs -i../../
 
 
 clean: 

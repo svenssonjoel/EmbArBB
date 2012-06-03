@@ -16,7 +16,7 @@ do
     s=0
     for i in  {1..10} 
     do
-      i=`./matrix_mult $x`
+      i=`./matrix_mult $x | awk '{print $1}'`
       s=$s+$i
     done 
     s=($s)/10
