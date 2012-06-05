@@ -9,6 +9,7 @@ all:
 	ghc --make addconst.hs -i../
 	ghc --make simplemap.hs -i../
 	ghc --make sobel.hs -i../ 
+	ghc --make dotprod.hs -i../
 
 
 clean: 
@@ -17,5 +18,7 @@ clean:
 	rm matrix_mult
 	rm matrix_vector
 	rm sgemm
+	rm sobel
+	rm dotprod 
 	rm *.o
 	rm *.h

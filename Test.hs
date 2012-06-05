@@ -277,7 +277,9 @@ testReduce =
     f <- capture red
  
     -- create input
-    let v1 = Vector (V.fromList [0..9::Int32]) (Two 5 2)
+    let v1 = Vector (V.fromList [0,1,2
+                                ,3,4,5
+                                ,6,7,8]) (Two 3 3)
         
     str <- serialize f 
     liftIO$ putStrLn str
