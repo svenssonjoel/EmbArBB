@@ -77,8 +77,8 @@ testSobel =
     -- TODO: Stop going through lists.
     withArBB $ 
       do 
-        kern <- capture2 (kernel)
-        f    <- capture2 (sobel kern)
+        kern <- capture (kernel)
+        f    <- capture (sobel kern)
         
         str1 <- serialize kern
         str2 <- serialize f 
@@ -88,7 +88,7 @@ testSobel =
      
         r1 <- liftIO$ new2D 256 256  
 
-        execute2 f v1 r1
+        execute f v1 r1
               
         (Vector r _) <- liftIO$ freeze r1
         

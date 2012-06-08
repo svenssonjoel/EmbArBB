@@ -23,7 +23,7 @@ matmul a b = fst $ while cond body (a,0)
 testMatMul = 
   withArBB $ 
   do 
-     f <- capture2 matmul
+     f <- capture matmul
      
      
                                             --  W H
@@ -35,7 +35,7 @@ testMatMul =
                                    7,8,9]) (Two 3 6)  
      r1 <- liftIO$ new2D 3 3
   
-     execute2 f (m1 :- m2)  r1      
+     execute f (m1 :- m2)  r1      
                   
      r <- liftIO$ freeze r1
               

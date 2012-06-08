@@ -13,12 +13,12 @@ addconst s v = v + ss
 testAddconst = 
   withArBB $ 
   do 
-     f <- capture2 addconst
+     f <- capture addconst
      let x = Vector (V.fromList [1,2,3,4,5,6,7,8,9,10 :: Float]) (One 10)   
      
      r1 <- liftIO$ new1D 10   
 
-     execute2 f (1 :- x)  r1
+     execute f (1 :- x)  r1
               
      r <- liftIO$ freeze r1
               
@@ -29,13 +29,13 @@ testAddconst =
 main = 
   withArBB $ 
   do 
-     f <- capture2 addconst
+     f <- capture addconst
     
      let x = fromList [0..10 :: Float] -- Vector vData (One 10)   
      
      r1 <- liftIO$ new1D 10   
 
-     execute2 f (1 :- x)  r1
+     execute f (1 :- x)  r1
               
      r <- liftIO$ freeze r1
               

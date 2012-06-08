@@ -28,12 +28,12 @@ histogram input = addMerge cv (vecToUSize input) 256
 testHist = 
   withArBB $ 
   do 
-     f <- capture2 histogram 
+     f <- capture histogram 
      let v1 = fromList ([0,0,0,4,4,5] ++ replicate 10000 1)
      
      r1 <- liftIO$ new1D 256   
 
-     execute2 f v1 r1
+     execute f v1 r1
               
      r <- liftIO$ freeze r1
               
@@ -52,12 +52,12 @@ testHist2 =
     -- TODO: Stop going through lists.
     withArBB $ 
       do 
-        f <- capture2 histogram 
+        f <- capture histogram 
         let v1 = fromList ls 
      
         r1 <- liftIO$ new1D 256   
 
-        execute2 f v1 r1
+        execute f v1 r1
               
         (Vector r _) <- liftIO$ freeze r1
         

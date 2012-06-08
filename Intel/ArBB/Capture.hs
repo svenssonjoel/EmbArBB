@@ -37,39 +37,6 @@ import Data.IORef
 import Data.Int
 import Data.Word
 
-----------------------------------------------------------------------------
--- 
-capture :: EmbFun a b => (a -> b) -> ArBB (Function (InType a b) (OutType b))
-capture f = 
-  do  
-    fn <- getFunName 
-    let ((e,tins',touts),(_,vt))    = runState (emb f) (0,Map.empty) 
-    labeled_e <- liftIO$ labelExps e
-    let (nids,dag) = accmDAGMaker labeled_e -- (map expToLExp e) -- runDAGMaker (constructDAG e) 
-        
-        -- DONE: Interleave typechecking with codeGen ! so 
-        -- that local variables can be added as it moves along. 
-        -- tc         = typecheckDAG dag vt
-        --  Now I should have all parts needed to generate the function.
-    
-    let (names,tins) = unzip tins'
-    -- liftIO$ putStrLn $ "a1" 
-    arbbIns  <- liftVM$ mapM toArBBType tins 
-    arbbOuts <- liftVM$ mapM toArBBType touts
-    -- liftIO$ putStrLn $ "a2" 
-    (funMap,_) <- get
-    fd <- liftVM$ VM.funDef_ fn (concat arbbOuts) (concat arbbIns) $ \ os is -> 
-      do 
-        -- lift$ putStrLn $ "a3" 
-        vs <- accmBody dag nids vt funMap (zip names is) 
-         -- lift$ putStrLn $ "os :" ++ show os 
-         -- lift$ putStrLn $ "vs :" ++ show vs
-        -- lift$ putStrLn $ "a4" 
-        copyAll os vs 
-        -- lift$ putStrLn $ "a5" 
-    -- liftIO$ putStrLn $ "a6" 
-    addFunction fn fd tins touts                                                         
-    return $ embFun fn f            
 
 embFun :: EmbFun a b => String -> (a -> b) -> Function (InType a b) (OutType b) 
 embFun name f = Function name 
@@ -78,10 +45,10 @@ embFun name f = Function name
 ----------------------------------------------------------------------------
 -- 
 
-capture2 :: (EmbIn a b, EmbOut (a -> b), EmbF a b ) 
+capture :: (EmbIn a b, EmbOut (a -> b), EmbF a b ) 
             => (a -> b) 
             -> ArBB (Function (EIn a b) (EOut b))
-capture2 f = 
+capture f = 
   do
     --liftIO$ putStrLn "cap1"
     fn <- getFunName 

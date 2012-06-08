@@ -30,7 +30,7 @@ testMatMul g size  =
   withArBB $ 
   do 
      tc1 <- liftIO getClockTime 
-     f <- capture2 matmul
+     f <- capture matmul
      tc2 <- liftIO getClockTime 
      
      --str <- serialize f
@@ -43,10 +43,10 @@ testMatMul g size  =
      r1 <- liftIO$ new2D 320 320
      -- r2 <- liftIO$ new2D 1000 1000   
   
-     execute2 f (m1 :- m2)  r1      
+     execute f (m1 :- m2)  r1      
      
      t1 <- liftIO getClockTime 
-     execute2 f (m1 :- m2)  r1      
+     execute f (m1 :- m2)  r1      
      --finish 
      
      t2 <- liftIO getClockTime 

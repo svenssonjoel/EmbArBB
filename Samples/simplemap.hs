@@ -24,23 +24,23 @@ mapper2 f v = map f v
 testMap = 
   withArBB $ 
   do 
-     f <- capture2 addOne      
+     f <- capture addOne      
 
      strf <- serialize f
      liftIO$ putStrLn strf
 
-     m <- capture2 (mapper f) 
+     m <- capture (mapper f) 
 
      strm <- serialize m 
      liftIO$ putStrLn strm
 
 --------------------------------
-     f2 <- capture2 getCoord     
+     f2 <- capture getCoord     
 
      strf <- serialize f2
      liftIO$ putStrLn strf
 
-     m2 <- capture2 (mapper2 f2) 
+     m2 <- capture (mapper2 f2) 
 
      strm <- serialize m2 
      liftIO$ putStrLn strm
@@ -53,8 +53,8 @@ testMap =
      r1 <- liftIO$ new1D 10   
      r2 <- liftIO$ new1D 10   
 
-     execute2 m  (x)  r1
-     execute2 m2 (x)  r2
+     execute m  (x)  r1
+     execute m2 (x)  r2
               
      r <- liftIO$ freeze r1
      r' <- liftIO$ freeze r2

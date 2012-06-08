@@ -90,35 +90,9 @@ serialize (Function fn)  =
           
 ----------------------------------------------------------------------------
 -- | Execute an ArBB function
-execute :: (ArBBIn a, ArBBIO b) =>  Function a b -> a -> ArBB b             
-execute (Function fn) inputs  = 
-    do 
-      (m,_) <- get 
-      case Map.lookup fn m of 
-        Nothing -> error "execute: Invalid function" 
-        (Just (f,tins,touts  )) -> 
-          do 
-            -- upload the input (creates ArBB variables) 
-            ins <- arbbUp inputs 
-      
-            -- ys holds the output 
-            ys <- liftM concat $ liftVM $ mapM typeToArBBGlobalVar touts
-          
-            liftVM$ VM.execute_ f ys ins
-         
-            result <- arbbDLoad  ys
-            
-            return result
-            
--- Execute is "incorrect" and actually should not work. 
--- If the outputs are vectors these must have been allocated in the ArBB space.             
--- The execute function ignores allocating any such memory and for some reason 
--- it still works in many cases ! :/ 
--- execute2 tries to solve this, the programmer supplies mutable vectors 
--- that get filled with data from the computation. The sizes of the             
--- mutable vectors are(will be) used to allocate same sized storage on the ArBB side      
-execute2 :: (ArBBIn a, ArBBOut b) => Function a b -> a -> b -> ArBB ()       
-execute2 (Function fn) a b = 
+
+execute :: (ArBBIn a, ArBBOut b) => Function a b -> a -> b -> ArBB ()       
+execute (Function fn) a b = 
   do 
     (m,_) <- get 
     case Map.lookup fn m of 
@@ -354,6 +328,7 @@ instance (ArBBOut a, ArBBOut b) => ArBBOut (a :- b) where
   
 ----------------------------------------------------------------------------                 
 -- ArBBIO : used by execute
+{- 
 class ArBBIO a where 
   arbbULoad :: a -> ArBB [VM.Variable]
   -- TODO: look at again when supporting multiple outputs 
@@ -535,4 +510,4 @@ instance (ArBBIO a, ArBBIO b, ArBBIO c) => ArBBIO (a,b,c) where
       v3 <- arbbDLoad [c]       
 
       return (v1,v2,v3)
-   
+-}    

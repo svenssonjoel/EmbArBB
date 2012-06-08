@@ -21,7 +21,7 @@ dotprod v1 v2 = index0$ addReduce0 (v1 * v2)
 testDot g size = 
   withArBB $ 
   do 
-     f <- capture2 dotprod
+     f <- capture dotprod
 
      (rs1 :: [Double]) <- liftIO$ randoms g
      (rs2 :: [Double]) <- liftIO$ randoms g
@@ -34,10 +34,10 @@ testDot g size =
      r1 <- liftIO$ newIORef 0   
      r2 <- liftIO$ newIORef 0   
 
-     execute2 f (a :- b)  r2
+     execute f (a :- b)  r2
 
      t1 <- liftIO getClockTime 
-     execute2 f (x :- y)  r1
+     execute f (x :- y)  r1
      t2 <- liftIO getClockTime          
 
      r <- liftIO$ readIORef r1
