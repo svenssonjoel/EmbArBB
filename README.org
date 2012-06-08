@@ -1,39 +1,4 @@
-* EmbArBB 
-  + Embedded language for data-parallel programming targetting Intel ArBB.
-  + Uses the Haskell/ArBB bindings (svenssonjoel/arbb-vm.git on github) 
- 
-* Status 
-  + Generates ArBB functions from functions in the embedded language. 
-  + Currently things work better when using the dev library (-larbb_dev)
-    and the O2 optimization setting. I dont know if this is up to bugs in 
-    ArBB or in EmbArBB. 
-
-* TODOs 
-  + Add functionality (cover as many as possible of the ops supported by ArBB) 
-  + Figure out how to support functions with many outputs in a more robust way.
-  + Add the Nested data parallelism operations (needs a new Nested container type) 
-  + Support (DVector dim (a1,..,an)) by some kind of Dense_of_tuple to Tuple_of_dense
-    transformation. 
-  + Clean up the sharing detection. Right now the code is a big mess due to the 
-    switch from one method to another while trying to keep large chunk of code. 
-    
-* Help Wanted. 
-  + If you are interested in helping to improve this library just contact me.
-   
-
-* Notes
-  + If an ArBB function outputs a dense, a container of its size must have been 
-    allocated explicitly before running the function. Big inconvenience for EmbArBB. 
-    Might need to track size and dimensionality through the function. 
-   
-  + ArBB Supplies the operations Rotate and RotateRev to the programmer. It seems 
-    to me that RotateRev is compiled into a Rotate operation with a negated distance. 
-  + Scan direction seems broken. Setting direction to 0 and 1 gives same resulting 
-    output array (or did i missunderstand what the direction is supposed to mean).
-  + OpDynamic_ is for those ops that work with different number of inputs (right?) 
-  + The labeled AST and the {-# NOINLINE counter #-} approach to discovering 
-    sharing seems to break down when I compile the library separately from the 
-    examples. I have no idea why this happens. Solving this by switching to using  
-    the StableName module.
-
+* FHPC branch
+  This branch contains EmbArBB in a state that runs the examples 
+  in the paper "Parallel programming in Haskell almost for free" 
 
