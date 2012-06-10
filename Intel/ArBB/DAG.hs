@@ -148,7 +148,7 @@ constructDAG (LMap l f es)  =
           return [l] 
 
           
-constructDAG x = error $ show x 
+constructDAG x = error $ "constructDag: " ++ show x 
           
 -- TODO: Look at again 
 constrAll [] = return []

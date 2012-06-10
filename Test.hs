@@ -34,33 +34,28 @@ addconst s v = v + ss
     where 
       ss = constVector s (ArBB.length v) 
 
+addOne :: Exp (DVector Dim1 Word32) -> Exp (DVector Dim1 Word32) 
+addOne v = v + ss 
+    where 
+      ss = constVector 1 (ArBB.length v) 
 
 test1 = 
   withArBB $
     do 
       
       f <- capture (addconst (100 :: Exp Word32)) 
-  
+          
       str <- serialize f 
       liftIO $ putStrLn str
-      
+   
       x  <- copyIn (V.fromList [1..10::Word32]) ((10::Int) :. Z )
       (r1 :: DVector (Int :. Z) Word32) <- new ((10::Int) :. Z) 0 
       
       execute f x r1 
-       
-      r <- copyOut r1 
+  
+      r <- copyOut r1
 
       liftIO$ putStrLn$ show r
       return f
-      {-
-      r1 <- new1D 10 
-       
-      execute f (1 :- x)  r1 
-              
-      r <- copyOut r1 
-      
-      liftIO$ putStrLn$ show r 
-      -} 
-
+  
 main = putStrLn "tests"

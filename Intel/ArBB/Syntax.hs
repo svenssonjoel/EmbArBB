@@ -1,5 +1,7 @@
 {-# LANGUAGE TypeOperators, 
-             FlexibleInstances #-}
+             FlexibleInstances,
+             ExistentialQuantification, 
+             DeriveDataTypeable #-}
 
 {- 2012 Joel Svensson -} 
 
@@ -9,11 +11,11 @@ import Data.Int
 import Data.Word 
 
 import Intel.ArBB.Data.Int 
-
 import Intel.ArBB.Types
 
 import System.IO.Unsafe
 import Data.IORef
+import Data.Typeable
 ---------------------------------------------------------------------------- 
 -- Label creator 
 
@@ -70,19 +72,22 @@ data Expr = Lit Literal
             -- Function with correct name and type must exist in some kind of environment
           | Call FunctionName [Expr]  
           | Map  FunctionName [Expr]   
-            
 
           -- This one might need some rework! 
           --  I Will not be able to generate unique variables until 
           --  a later stage. 
           | While ([Expr] -> Expr)  ([Expr] -> [Expr])  [Expr] 
-            
-                 
-          | If Expr Expr Expr 
+                             
+          | If Expr Expr Expr -- could have been an op 
 
           | Op Op [Expr]   
-            
---          deriving (Show)
+
+
+          -- Experimental (I dont really know where I am going now..) 
+          | Lam Variable Expr  -- Should only appear in Exprs after Reification 
+          | Delayed Expr       -- Should only appear in Exprs before reification.. 
+--            deriving (Typeable)
+--           deriving (show)
 
                
 ---------------------------------------------------------------------------- 
@@ -105,7 +110,7 @@ data LExp = LLit Label Literal
 
           | LOp Label Op [LExp]   
             
-          deriving (Show)
+           deriving (Show)
 
 instance Eq LExp where 
   a == b = getLabel a == getLabel b
@@ -171,7 +176,7 @@ getLabel (LMap l _ _) = l
 ---------------------------------------------------------------------------- 
 -- add a layer of types 
 
-data Exp a = E Expr
+data Exp a = E {unE :: Expr}
 
 ----------------------------------------------------------------------------
 -- And functions 
