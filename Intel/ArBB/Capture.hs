@@ -39,6 +39,7 @@ import Data.Word
 
 ----------------------------------------------------------------------------
 -- 
+{- 
 capture :: EmbFun a b => (a -> b) -> ArBB (Function (InType a b) (OutType b))
 capture f = 
   do  
@@ -73,15 +74,15 @@ capture f =
 
 embFun :: EmbFun a b => String -> (a -> b) -> Function (InType a b) (OutType b) 
 embFun name f = Function name 
-
+-} 
 
 ----------------------------------------------------------------------------
 -- 
 
-capture2 :: (EmbIn a b, EmbOut (a -> b), EmbF a b ) 
+capture :: (EmbIn a b, EmbOut (a -> b), EmbF a b ) 
             => (a -> b) 
             -> ArBB (Function (EIn a b) (EOut b))
-capture2 f = 
+capture f = 
   do
     --liftIO$ putStrLn "cap1"
     fn <- getFunName 
@@ -100,7 +101,7 @@ capture2 f =
     arbbOuts <- liftVM$ mapM toArBBType touts 
     
     --liftIO$ putStrLn "cap4"
-    (funMap,_) <- get 
+    (funMap,_,_) <- get 
     --liftIO$ putStrLn "cap5"
     fd <- liftVM$ VM.funDef_ fn (concat arbbOuts) (concat arbbIns) $ \ os is -> 
       do 
@@ -140,7 +141,7 @@ addType v t =
 type Outs = [Type]
 type Ins = [(Variable,Type)]    
 
-           
+{-            
 class EmbFun a b where 
   type InType a b
   type OutType b 
@@ -217,7 +218,7 @@ instance (Data a, EmbFun c d) => EmbFun (Exp a) (c -> d) where
     (exp,ins,outs) <- emb (f (myVar)) 
     return (exp, (v,t_in):ins, outs)
   
-  
+ -}  
 ---------------------------------------------------------------------------- 
 -- 
 
@@ -238,7 +239,7 @@ class EmbF a b where
 ----------------------------------------------------------------------------
 #define OScalar(a)                          \
   instance Data a => EmbOut (Exp a) where { \
-    type EOut (Exp a) = IORef a;            \
+    type EOut (Exp a) = a;                  \
     outTypes _ = [typeOf (undefined :: a)]}
 
 OScalar(Int) 
@@ -258,7 +259,7 @@ OScalar(ISize)
 
 
 instance Data (Exp (DVector t a))  => EmbOut (Exp (DVector t a)) where 
-  type EOut (Exp (DVector t a)) = MDVector t a 
+  type EOut (Exp (DVector t a)) = DVector t a 
   outTypes a = [typeOf a]
 
 instance (EmbOut a, EmbOut b) => EmbOut (a,b) where 

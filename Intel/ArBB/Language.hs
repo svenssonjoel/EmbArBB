@@ -65,49 +65,49 @@ toWord8 (E a) =
 -- Reductions 
 
 -- | Reduce along level 0 
-addReduce0 :: Num a => Exp (DVector (():.t) a) -> Exp (DVector t a) 
+addReduce0 :: Num a => Exp (DVector (Int:.t) a) -> Exp (DVector t a) 
 addReduce0 (E vec) = 
   E $ Op AddReduce [vec,zero] 
   where (E zero) = 0 :: Exp USize
 
 -- | Reduce along level 0 
-mulReduce0 :: Num a => Exp (DVector (():.t) a) -> Exp (DVector t a) 
+mulReduce0 :: Num a => Exp (DVector (Int:.t) a) -> Exp (DVector t a) 
 mulReduce0 (E vec) = 
   E $ Op MulReduce [vec,zero]
   where (E zero) = 0 :: Exp USize
                                                                              
 -- | reduce along a specified level 
-addReduce :: Num a => Exp (DVector (():.t) a) -> Exp USize -> Exp (DVector t a) 
+addReduce :: Num a => Exp (DVector (Int:.t) a) -> Exp USize -> Exp (DVector t a) 
 addReduce (E vec) (E lev) = 
   E $ Op AddReduce [vec,lev]
 
 -- | reduce along a specified level 
-mulReduce :: Num a => Exp (DVector (():.t) a) -> Exp USize -> Exp (DVector t a) 
+mulReduce :: Num a => Exp (DVector (Int:.t) a) -> Exp USize -> Exp (DVector t a) 
 mulReduce (E vec) (E lev) = 
   E $ Op MulReduce [vec,lev]
 
 -- | reduce along a specified level 
-maxReduce :: Num a => Exp (DVector (():.t) a) -> Exp USize -> Exp (DVector t a) 
+maxReduce :: Num a => Exp (DVector (Int:.t) a) -> Exp USize -> Exp (DVector t a) 
 maxReduce (E vec) (E lev) = 
   E $ Op MaxReduce [vec,lev]
 
 -- | reduce along a specified level 
-minReduce :: Num a => Exp (DVector (():.t) a) -> Exp USize -> Exp (DVector t a) 
+minReduce :: Num a => Exp (DVector (Int:.t) a) -> Exp USize -> Exp (DVector t a) 
 minReduce (E vec) (E lev) = 
   E $ Op MinReduce [vec,lev]
 
 -- | reduce along a specified level 
-andReduce :: Exp (DVector (():.t) Bool) -> Exp USize -> Exp (DVector t Bool) 
+andReduce :: Exp (DVector (Int:.t) Bool) -> Exp USize -> Exp (DVector t Bool) 
 andReduce (E vec) (E lev) = 
   E $ Op AndReduce [vec,lev]
 
 -- | reduce along a specified level 
-iorReduce :: Exp (DVector (():.t) Bool) -> Exp USize -> Exp (DVector t Bool) 
+iorReduce :: Exp (DVector (Int:.t) Bool) -> Exp USize -> Exp (DVector t Bool) 
 iorReduce (E vec) (E lev) = 
   E $ Op IorReduce [vec,lev]
 
 -- | reduce along a specified level 
-xorReduce :: Exp (DVector (():.t) Bool) -> Exp USize -> Exp (DVector t Bool) 
+xorReduce :: Exp (DVector (Int:.t) Bool) -> Exp USize -> Exp (DVector t Bool) 
 xorReduce (E vec) (E lev) = 
   E $ Op XorReduce [vec,lev]
 
@@ -115,14 +115,14 @@ xorReduce (E vec) (E lev) =
 -- Add Merge
 -- TODO: what is the type really supposed to be here ?
 -- | Add merge..  
-addMerge :: Exp (DVector (():.t) a) -> Exp (DVector (():.t) USize) -> Exp USize -> Exp (DVector (():.t) a) 
+addMerge :: Exp (DVector (Int:.t) a) -> Exp (DVector (Int:.t) USize) -> Exp USize -> Exp (DVector (Int:.t) a) 
 addMerge (E b) (E v) (E u) = 
   E $ Op AddMerge [b,v,u]
 
 ----------------------------------------------------------------------------
 
 -- | zero dimensional vector to scalar
-index0 :: Exp (DVector () a) -> Exp a 
+index0 :: Exp (DVector Z a) -> Exp a 
 index0 (E vec) = E $ Index0  vec 
 
 -- | Index into a 1D vector
@@ -241,13 +241,13 @@ xorScan (E vec) (E dir) (E lev) =
 ----------------------------------------------------------------------------
 -- | Rotate the contents of a dense container.
 -- Example: {1,2,3} -> {2,3,1}
-rotate :: Exp (DVector (():.t) a) -> Exp ISize -> Exp (DVector (():.t) a) 
+rotate :: Exp (DVector (Int:.t) a) -> Exp ISize -> Exp (DVector (Int:.t) a) 
 rotate (E vec) (E steps) = 
   E $ Op Rotate [vec,steps]  
 
 -- | Rotate the contents of a dense container in the reversedirection
 -- Example: {1,2,3} -> {3,1,2} 
-rotateRev :: Exp (DVector (():.t) a) -> Exp ISize -> Exp (DVector (():.t) a) 
+rotateRev :: Exp (DVector (Int:.t) a) -> Exp ISize -> Exp (DVector (Int:.t) a) 
 rotateRev (E vec) (E steps) = 
   E $ Op RotateRev [vec,steps]  
 
@@ -256,7 +256,7 @@ reverse :: Exp (Vector a) -> Exp (Vector a)
 reverse (E vec) = E $ Op Reverse [vec]
 
 -- | Transpose a the first two dimensionalities of a 2D or 3D container
-transpose :: Exp (DVector (():.():.t) a) -> Exp (DVector (():.():. t) a) 
+transpose :: Exp (DVector (Int:.Int:.t) a) -> Exp (DVector (Int:.Int:. t) a) 
 transpose (E vec) = E $ Op Transpose [vec]
 
 -- | Sort the contents of a dense 1D container. Also returns 
@@ -278,13 +278,13 @@ sort (E vec) (E us) =
 -- get sizes of vectors 
 
 -- | get the length (total size) of a 1,2,3D vector 
-length :: Exp (DVector (():.t) a) -> Exp USize 
+length :: Exp (DVector (Int:.t) a) -> Exp USize 
 length (E vec) = E $ Op Length [vec]
 
-getNRows :: Exp (DVector (():.():.t) a) -> Exp USize 
+getNRows :: Exp (DVector (Int:.Int:.t) a) -> Exp USize 
 getNRows (E vec) = E $ Op GetNRows [vec]
   
-getNCols :: Exp (DVector (():.():.t) a) -> Exp USize 
+getNCols :: Exp (DVector (Int:.Int:.t) a) -> Exp USize 
 getNCols (E vec) = E $ Op GetNCols [vec]
 
 getNPages :: Exp (DVector Dim3 a) -> Exp USize 

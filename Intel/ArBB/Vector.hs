@@ -14,10 +14,55 @@ import Intel.ArBB.Types
 import Intel.ArBB.Syntax 
 import Intel.ArBB.IsScalar
 
-----------------------------------------------------------------------------
--- | Zero, One, Two or Three dimensional vectors. 
--- The data payload is stored in a flat Data.Vector
 
+----------------------------------------------------------------------------
+-- Dense Vectors
+data DVector d a = DVector {dVectorID :: Integer, 
+                            dVectorShape :: Dim}
+
+data Dim = Dim [Int]
+
+class Dimensions a where 
+    toDim :: a -> Dim 
+instance Dimensions Z where 
+    toDim Z = Dim []
+
+instance Dimensions t => Dimensions (Int :. t) where  
+    toDim (i :. is) = Dim (i:is')
+        where (Dim is') = toDim is
+
+-- | Encode Dimensionality in the type of vectors                    
+data a :. b = a :. b  
+infixr :. 
+
+data Z = Z
+
+
+type Dim0 = Z             
+type Dim1 = Int :. Dim0 
+type Dim2 = Int :. Dim1 
+type Dim3 = Int :. Dim2 
+
+
+-- | Easy to use names. 
+type Scalar   = DVector Dim0  -- This or the next one? 
+type Vector0D = DVector Dim0  -- hmm nice ?
+type Vector   = DVector Dim1
+type Vector2D = DVector Dim2               
+type Vector3D = DVector Dim3
+  
+
+
+
+----------------------------------------------------------------------------
+-- Nested Vectors 
+data NVector = NVector {nVectorID :: Integer}
+                        
+
+----------------------------------------------------------------------------
+
+
+{- 
 data DVector d a = Vector {vectorData  :: V.Vector a, 
                            vectorShape :: Dim} 
                  deriving Show
@@ -28,30 +73,15 @@ data Dim = Zero
          | Three Int Int Int 
          deriving Show                    
 
--- | Encode Dimensionality in the type of vectors                    
-data a :. b = a :. b  
-infixr :. 
-
-type Dim0 = ()                
-type Dim1 = () :. Dim0 
-type Dim2 = () :. Dim1 
-type Dim3 = () :. Dim2 
-
-
--- | Easy to use names. 
-type Scalar   = DVector Dim0  -- This or the next one? 
-type Vector0D = DVector Dim0  -- hmm nice ?
-type Vector   = DVector Dim1
-type Vector2D = DVector Dim2               
-type Vector3D = DVector Dim3
-  
-fromList :: M.Storable a => [a] -> Vector a 
-fromList xs = Vector (V.fromList xs) (One (length xs))                
 
 ----------------------------------------------------------------------------
 -- 
+-} 
 unS (Scalar a) = a
-#define DenseOfScal(t,mod) instance IsScalar a => Data (t) where {  typeOf _ = mod (unS (scalarType (undefined :: a))); sizeOf _ = undefined}                             
+#define DenseOfScal(t,mod) instance IsScalar a => Data (t) where { \
+  typeOf _ = mod (unS (scalarType (undefined :: a)));              \
+  sizeOf _ = undefined}                             
+
 DenseOfScal(DVector Dim0 a,Scalar)
 DenseOfScal(DVector Dim1 a,Dense I)
 DenseOfScal(DVector Dim2 a ,Dense II)
@@ -60,7 +90,7 @@ DenseOfScal(Exp (DVector Dim0 a),Scalar)
 DenseOfScal(Exp (DVector Dim1 a),Dense I)
 DenseOfScal(Exp (DVector Dim2 a),Dense II)
 DenseOfScal(Exp (DVector Dim3 a),Dense III)
-
+{-
 ----------------------------------------------------------------------------
 -- Mutable Vectors 
 
@@ -96,5 +126,5 @@ new3D n1 n2 n3 =
   do 
     vec <- M.new (n1*n2*n3) 
     return $ MVector vec (Three n1 n2 n3)    
-    
+-}     
     

@@ -178,7 +178,10 @@ data Exp a = E Expr
 type FunctionName = String
 
 data Function i o = Function FunctionName 
-   deriving Show                     
+   deriving Show    
+
+
+                 
 ----------------------------------------------------------------------------
 data a :- b = a :- b 
 infixr :- 
