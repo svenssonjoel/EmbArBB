@@ -19,7 +19,7 @@ import Data.Typeable
 ---------------------------------------------------------------------------- 
 -- Label creator 
 
-type Label = Word32
+type Label = Integer -- Word32
 
 {-
 {-# NOINLINE counter #-}
@@ -86,7 +86,7 @@ data Expr = Lit Literal
           -- Experimental (I dont really know where I am going now..) 
           | Lam Variable Expr  -- Should only appear in Exprs after Reification 
           | Delayed Expr       -- Should only appear in Exprs before reification.. 
---            deriving (Typeable)
+            deriving (Typeable)
 --           deriving (show)
 
                

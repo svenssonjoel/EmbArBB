@@ -51,6 +51,10 @@ type ArBBState = ( Map.Map FunctionName (VM.ConvFunction, [Type], [Type])
                  , Map.Map Integer VM.Variable -- dVectorID to ArBB vector map
                  , Integer)
                             
+--instance BackendMonad ArBB (VM.ConvFunction, [Type], [Type]) 
+--                           VM.Variable
+    
+
 
 -- Add a function to the environment and remember its in-out types for later use. 
 addFunction :: FunctionName -> VM.ConvFunction -> [Type] -> [Type] -> ArBB () 

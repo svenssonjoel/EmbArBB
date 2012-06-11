@@ -15,7 +15,7 @@ import Control.Monad.State
 
 ---------------------------------------------------------------------------- 
 -- DAG
-type NodeID = Word32
+type NodeID = Integer -- Word32
 
 data Node = NLit Literal
           | NVar Variable 
