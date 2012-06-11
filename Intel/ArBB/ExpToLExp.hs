@@ -15,13 +15,13 @@ import Data.Word
 
 import Control.Monad.State hiding (liftIO) 
 
-type LabelMap = M.Map Int (Word32,StableName Expr) 
+type LabelMap = M.Map Int (Integer,StableName Expr) 
 
-type Labeler a = StateT (Word32, LabelMap)  IO a 
+type Labeler a = StateT (Integer, LabelMap)  IO a 
 
  
 ----------------------------------------------------------------------------
-newLabel :: Labeler Word32
+newLabel :: Labeler Integer -- Word32
 newLabel = do 
   (l,s) <- get 
   put (l+1,s) 
@@ -35,7 +35,7 @@ liftIO = lift
 
 ----------------------------------------------------------------------------
 
-addExp :: Expr -> Labeler Word32
+addExp :: Expr -> Labeler Integer -- Word32
 addExp e = 
     do
       (l,s) <- get 

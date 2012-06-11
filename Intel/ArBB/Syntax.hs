@@ -83,9 +83,6 @@ data Expr = Lit Literal
           | Op Op [Expr]   
 
 
-          -- Experimental (I dont really know where I am going now..) 
-          | Lam Variable Expr  -- Should only appear in Exprs after Reification 
-          | Delayed Expr       -- Should only appear in Exprs before reification.. 
             deriving (Typeable)
 --           deriving (show)
 
