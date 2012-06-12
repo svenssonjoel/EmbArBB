@@ -12,7 +12,7 @@ import Intel.ArBB.Syntax
 import Intel.ArBB.Data.Int 
 import Intel.ArBB.Data
 -- TODO: remove this dependency
-import Intel.ArBB.Capture
+-- import Intel.ArBB.Capture
 
 import qualified Intel.ArbbVM as VM
 
@@ -113,7 +113,6 @@ xorReduce (E vec) (E lev) =
 
 ---------------------------------------------------------------------------- 
 -- Add Merge
--- TODO: what is the type really supposed to be here ?
 -- | Add merge..  
 addMerge :: Exp (DVector (Int:.t) a) -> Exp (DVector (Int:.t) USize) -> Exp USize -> Exp (DVector (Int:.t) a) 
 addMerge (E b) (E v) (E u) = 
@@ -292,13 +291,13 @@ getNPages (E vec) = E $ Op GetNPages [vec]
 
 ----------------------------------------------------------------------------
 -- | Call an ArBB Function 
-call :: ArgList t => Function t (Exp r) -> t -> (Exp r) 
-call (Function nom) ins = E $ Call nom (argList ins) 
+--call :: ArgList t => Function t (Exp r) -> t -> (Exp r) 
+--call (Function nom) ins = E $ Call nom (argList ins) 
 
 -- TODO: very limited types here. try to generalize
 -- TODO: Extremely messy type.. see what can be done 
-map :: ArgList (Exp t) => Function (EIn (Exp t) (Exp r)) (EOut (Exp r)) -> Exp (DVector d t) -> Exp (DVector d r) 
-map (Function nom) ins = E $ Map nom (argList ins) 
+--map :: ArgList (Exp t) => Function (EIn (Exp t) (Exp r)) (EOut (Exp r)) -> Exp (DVector d t) -> Exp (DVector d r) 
+--map (Function nom) ins = E $ Map nom (argList ins) 
 
 ----------------------------------------------------------------------------
 -- unpairing. 
