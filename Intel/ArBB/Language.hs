@@ -307,11 +307,18 @@ getNPages (E vec) = E $ Op GetNPages [vec]
 --map :: ArgList (Exp t) => Function (EIn (Exp t) (Exp r)) (EOut (Exp r)) -> Exp (DVector d t) -> Exp (DVector d r) 
 --map (Function nom) ins = E $ Map nom (argList ins) 
 
-newMap :: (ReifyableFunType (Exp a) (Exp b), ReifyableFun (Exp a) (Exp b)) 
-        => (Exp a -> Exp b) -> Exp (DVector Dim1 a) -> Exp (DVector Dim1 b)
-newMap f (E v) = E $ NewMap (capture f) [v] 
-  
+--map :: (ReifyableFunType (Exp a) (Exp b), ReifyableFun (Exp a) (Exp b)) 
+--        => (Exp a -> Exp b) -> Exp (DVector Dim1 a) -> Exp (DVector Dim1 b)
+--map f (E v) = E $ Map (capture f) [v] 
 
+--hmmm Data a, Data (Exp a) why?? 
+map :: (Data a, Data b) => (Exp a -> Exp b) -> Exp (DVector Dim1 a) -> Exp (DVector Dim1 b)
+map f (E v) = E $ Map (capture f) [v] 
+
+  
+--map :: (Reify (Exp a -> Exp b), ReifyableType (Exp a -> Exp b)) => 
+--       (Exp a -> Exp b) -> Exp (DVector d a) -> Exp (DVector d b) 
+--map f (E v) = E $ Map (capture f) [v] 
 
 ----------------------------------------------------------------------------
 -- unpairing. 

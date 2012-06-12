@@ -21,8 +21,8 @@ data Node = NLit Literal
           | NIndex0 NodeID
           
           | NResIndex NodeID Int 
-          | NCall String [NodeID] 
-          | NMap  String [NodeID]
+          | NCall Integer [NodeID] 
+          | NMap  Integer [NodeID]
             
           | NIf NodeID NodeID NodeID
           

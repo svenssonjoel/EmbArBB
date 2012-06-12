@@ -28,10 +28,8 @@ data Expr = Lit Literal
           | ResIndex Expr Int 
             
             -- Function with correct name and type must exist in some kind of environment
-          | Call FunctionName [Expr]  
-          | Map  FunctionName [Expr]   
-
-          | NewMap (Capture Integer) [Expr]
+          | Call (Capture Integer) [Expr]  
+          | Map  (Capture Integer) [Expr]   
           
           -- Hoas for the while loop.. 
           | While ([Expr] -> Expr)  ([Expr] -> [Expr])  [Expr] 

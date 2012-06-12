@@ -96,15 +96,15 @@ getFunID =
       modify $ \(a,b,c) -> (a,b,c+1)
       return funId 
 
-getFunMap :: ArBBBackend (Map.Map String (VM.ConvFunction, [Type], [Type]))
+getFunMap :: ArBBBackend (Map.Map Integer (VM.ConvFunction, [Type], [Type]))
 getFunMap = gets (\(m,_,_) -> m) 
 
 addFunction :: FuncID -> VM.ConvFunction -> [Type] -> [Type] -> ArBBBackend ()
 addFunction fid fd ins outs = 
     do
       m <- getFunMap 
-      let fid' = "f" ++ show fid 
-      modify $ \(m,b,c) -> (Map.insert fid' (fd,ins,outs) m,b,c)
+      -- let fid' = "f" ++ show fid 
+      modify $ \(m,b,c) -> (Map.insert fid (fd,ins,outs) m,b,c)
 
 
 
@@ -133,6 +133,8 @@ captureGenRecord gr =
       fid <- getFunID 
 
       addFunction fid fd tins touts
+      
+      liftIO$ putStrLn $ "captured: " ++ show fid 
  
       return fid 
                                                  
@@ -194,8 +196,8 @@ serialize :: FuncID -> ArBB String
 serialize fid = 
     do 
       m <- lift getFunMap 
-      let fid' = "f" ++ show fid 
-      case Map.lookup fid' m of 
+      -- let fid' = "f" ++ show fid 
+      case Map.lookup fid m of 
         Nothing -> error "serialize: invalid function"
         (Just (f,tins,touts)) ->
             do 
@@ -207,7 +209,7 @@ execute :: (VariableList a, VariableList b) => FuncID {-Function a b-} -> a -> b
 execute fid {-(Function fn)-} a b = 
   do 
     (mf,mv,_) <- lift get 
-    case Map.lookup ("f" ++ show fid) {-fn-} mf of 
+    case Map.lookup fid {-fn-} mf of 
       Nothing -> error "execute: Invalid function" 
       (Just (f,tins,touts)) -> 
         do 

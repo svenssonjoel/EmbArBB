@@ -112,22 +112,19 @@ instance Reify Expr where
           insertNode e (NResIndex exp' i) 
 
     -- TODO: CALL and MAP needs to change a lot (future work) 
-    reify e@(Call fn exprs) = 
+    reify e@(Call cap exprs) = 
         do 
+          fid <- lift (runR cap) 
           exprs' <- mapM reify exprs 
-          insertNode e (NCall fn (concat exprs'))  --Concat... make sure this is as it shall
-    reify e@(Map fn exprs) = 
-        do 
-          exprs' <- mapM reify exprs 
-          insertNode e (NMap fn (concat exprs'))  --Concat... make sure this is as it shall
-    reify e@(NewMap cap exprs) = 
+          insertNode e (NCall fid (concat exprs'))  --Concat... make sure this is as it shall
+    reify e@(Map cap exprs) = 
         do
           -- Here I need to get something from the backend .. (a function identifier) 
           fid  <- lift ( runR cap )
+          liftIO$ putStrLn $ "generated map fun has id: " ++ show fid
           exprs' <- mapM reify exprs 
-          insertNode e (NMap ("f" ++ show fid) (concat exprs'))
-          
-          
+          insertNode e (NMap fid (concat exprs'))
+                    
     reify e@(If e1 e2 e3) = 
         do
           [e1'] <- reify e1

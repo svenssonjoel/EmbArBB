@@ -100,7 +100,7 @@ getAllState =
 genBody :: DAG 
            -> NodeID -- -> NodeIDType 
            -> VarType 
-           -> (Map.Map FunctionName (VM.ConvFunction,[Type],[Type]))
+           -> (Map.Map Integer (VM.ConvFunction,[Type],[Type]))
            -> [(Variable, VM.Variable)] 
            -> VM.EmitArbb [VM.Variable] 
 -- genBody dag nid typem funm is = evalStateT (genBody' dag nid typem funm is) (Map.empty) 
@@ -110,7 +110,7 @@ accmBody :: DAG
             -> [NodeID] 
         --    -> NodeIDType 
             -> VarType
-            -> (Map.Map FunctionName (VM.ConvFunction,[Type],[Type]))
+            -> (Map.Map Integer (VM.ConvFunction,[Type],[Type]))
             -> [(Variable, VM.Variable)] 
             -> VM.EmitArbb [VM.Variable]
 accmBody dag nids vt funm is = liftM fst $ doBody nids ((vt,Map.empty),Map.empty) 
@@ -138,7 +138,7 @@ accmBodyLocal :: DAG
             -> [NodeID] 
         --    -> NodeIDType 
             -> AllState
-            -> (Map.Map FunctionName (VM.ConvFunction,[Type],[Type]))
+            -> (Map.Map Integer (VM.ConvFunction,[Type],[Type]))
             -> [(Variable, VM.Variable)] 
             -> VM.EmitArbb [VM.Variable]
 accmBodyLocal dag nids allstate funm is = liftM fst $ doBody nids allstate -- ((vt,Map.empty),Map.empty) 
@@ -160,7 +160,7 @@ accmBodyLocal dag nids allstate funm is = liftM fst $ doBody nids allstate -- ((
 
 genBody' :: DAG 
            -> NodeID 
-           -> (Map.Map FunctionName (VM.ConvFunction,[Type],[Type])) 
+           -> (Map.Map Integer (VM.ConvFunction,[Type],[Type])) 
            -> [(Variable,VM.Variable)] 
            -> Gen [VM.Variable] 
 genBody' dag nid funm is = 

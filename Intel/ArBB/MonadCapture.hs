@@ -28,11 +28,6 @@ newtype ArBBBackend a = ArBBBackend {unArBBBackend :: (StateT ArBBState VM.EmitA
     deriving (Monad, MonadState ArBBState, MonadIO, Functor) 
 
 -- String FunctionName or FunctionID
-type ArBBState = ( Map.Map String (VM.ConvFunction, [Type], [Type])
+type ArBBState = ( Map.Map Integer (VM.ConvFunction, [Type], [Type])
                  , Map.Map Integer VM.Variable -- dVectorID to ArBB vector map
                  , Integer)
-
-
---type FuncID = Integer 
---type VarID  = Integer 
-
