@@ -18,6 +18,8 @@ import Intel.ArBB.Language as Lang
 import Intel.ArBB.Syntax
 import Intel.ArBB.DAG
 
+import Intel.ArBB.Backend.ArBB
+
 import qualified Data.Vector.Storable as V 
 
 import Foreign.Marshal.Array
