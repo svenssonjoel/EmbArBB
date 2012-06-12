@@ -13,10 +13,7 @@ import Intel.ArBB.Variable
 import Intel.ArBB.Op
 
 import Intel.ArBB.MonadCapture
-import Intel.ArBB.MonadBackend
 
-import System.IO.Unsafe
-import Data.IORef
 import Data.Typeable
 
 ----------------------------------------------------------------------------
