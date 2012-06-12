@@ -20,7 +20,9 @@ import Intel.ArBB.IsScalar
 data DVector d a = DVector {dVectorID :: Integer, 
                             dVectorShape :: Dim}
 
-data Dim = Dim [Int]
+data Dim = Dim {dimList :: [Int]}
+
+dimensions = length . dimList
 
 class Dimensions a where 
     toDim :: a -> Dim 

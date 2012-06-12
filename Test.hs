@@ -5,13 +5,18 @@
 
 module Test where 
 
-import Intel.ArBB as ArBB
+--import Intel.ArBB as ArBB
 import qualified Intel.ArbbVM as VM
 import qualified Intel.ArbbVM.Convenience as VM
 
-import Intel.ArBB.WithArBB
+--import Intel.ArBB.WithArBB
 import Intel.ArBB.Vector
 import Intel.ArBB.Data.Int
+
+import Intel.ArBB.BackendExperiment 
+import Intel.ArBB.Language as Lang
+import Intel.ArBB.Syntax
+import Intel.ArBB.DAG
 
 import qualified Data.Vector.Storable as V 
 
@@ -24,21 +29,48 @@ import Data.Word
 import Data.IORef
 
 import qualified Data.Map as Map
-import Control.Monad.State hiding (liftIO)
+import Control.Monad.State -- hiding (liftIO)
 
 import Prelude as P
 
 
-addconst :: Num a => Exp a -> Exp (DVector Dim1 a) -> Exp (DVector Dim1 a) 
+addconst :: Exp Word32 -> Exp (DVector Dim1 Word32) -> Exp (DVector Dim1 Word32) 
 addconst s v = v + ss 
     where 
-      ss = constVector s (ArBB.length v) 
+      ss = constVector s (Lang.length v) 
 
-addOne :: Exp (DVector Dim1 Word32) -> Exp (DVector Dim1 Word32) 
-addOne v = v + ss 
-    where 
-      ss = constVector 1 (ArBB.length v) 
+-- test1 :: MonadBackend backend => backend [NodeID]
+test1 = rR (reify addconst)
 
+test2 =  runArBBBackendAll test1 
+
+test3 = 
+    withArBB $ do
+      f <- capture (addconst (100 :: Exp Word32))
+
+      -- Show a string representation of a function     
+      str <- serialize f 
+      liftIO$ putStrLn str
+
+      -- Turn a normal Data.Vector into a DVector (an EmbArBB dense vector) 
+      x <- copyIn (V.fromList [1..10::Word32]) ((10::Int) :. Z)
+      
+      -- Create a new DVector for the result. (DVectors in here 
+      -- are mutable!)
+      (r1 :: DVector (Int :. Z) Word32) <- new ((10::Int) :. Z) 1
+      
+      execute f x r1
+
+      -- you can if you like execute f again using r1 as both input and output. 
+      execute f r1 r1
+          
+      -- This freezes a mutable DVector into a normal Data.Vector.                                  
+      r <- copyOut r1
+          
+      liftIO$ putStrLn $ show r 
+
+
+{- 
 test1 = 
   withArBB $
     do 
@@ -59,3 +91,4 @@ test1 =
       return f
   
 main = putStrLn "tests"
+-} 
