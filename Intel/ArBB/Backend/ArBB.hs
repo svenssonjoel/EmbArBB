@@ -4,8 +4,8 @@
 
 module Intel.ArBB.Backend.ArBB where 
 
-import Intel.ArBB.MonadBackend
-import Intel.ArBB.MonadCapture
+--import Intel.ArBB.MonadBackend
+--import Intel.ArBB.MonadCapture
 import Intel.ArBB.BackendExperiment
 
 import qualified Intel.ArbbVM as VM
@@ -23,6 +23,8 @@ import           Intel.ArBB.Backend.ArBB.CodeGen
 import           Intel.ArBB.Vector
 import           Intel.ArBB.IsScalar
 import           Intel.ArBB.ReifyableType
+import           Intel.ArBB.GenRecord
+import           Intel.ArBB.MonadCapture
 
 import qualified Data.Vector.Storable as V 
 import qualified Data.Vector.Storable.Mutable as M
@@ -35,21 +37,23 @@ import System.Mem.StableName
 import Control.Monad.State.Strict
 import qualified Data.Map as Map
 
+type FuncID = Integer
+
 -- BackendExperiment, towards removing the step via LExp in the codegeneration
 -- TODO: implement for a fixed  ArBB Backend. 
 -- TODO: generalise to taking the backend as a parameter somehow. 
 
 ----------------------------------------------------------------------------
 -- the backend.. 
-newtype ArBBBackend a = ArBBBackend {unArBBBackend :: (StateT ArBBState VM.EmitArbb a)}
-    deriving (Monad, MonadState ArBBState, MonadIO, Functor) 
+--newtype ArBBBackend a = ArBBBackend {unArBBBackend :: (StateT ArBBState VM.EmitArbb a)}
+--    deriving (Monad, MonadState ArBBState, MonadIO, Functor) 
 
 -- String FunctionName or FunctionID
-type ArBBState = ( Map.Map String (VM.ConvFunction, [Type], [Type])
-                 , Map.Map Integer VM.Variable -- dVectorID to ArBB vector map
-                 , Integer)
+--type ArBBState = ( Map.Map String (VM.ConvFunction, [Type], [Type])
+--                 , Map.Map Integer VM.Variable -- dVectorID to ArBB vector map
+--                 , Integer)
 
-instance MonadBackend ArBBBackend 
+--instance MonadBackend ArBBBackend 
    -- currently empty ! 
 
 
@@ -72,39 +76,88 @@ runArBBBackendAll a = VM.arbbSession$ runStateT (unArBBBackend a) arbbState
                   ,0)
 
 
+
+
 ---------------------------------------------------------------------------- 
 -- ArBB MONAD STUFF
 ----------------------------------------------------------------------------
 
-type ArBB a = Capture ArBBBackend a 
+type ArBB a = Capture a 
 
 withArBB a = runArBBBackend (runR a)
 
 
-
-getFunID :: ArBB FuncID  
+----------------------------------------------------------------------------
+-- Backend functions
+getFunID :: ArBBBackend  FuncID  
 getFunID = 
     do 
-      funId <- (lift . gets) (\(_,_,x) -> x)
-      lift . modify $ \(a,b,c) -> (a,b,c+1)
+      funId <- gets (\(_,_,x) -> x)
+      modify $ \(a,b,c) -> (a,b,c+1)
       return funId 
 
-getFunMap :: ArBB (Map.Map String (VM.ConvFunction, [Type], [Type]))
-getFunMap = (lift . gets) (\(m,_,_) -> m) 
+getFunMap :: ArBBBackend (Map.Map String (VM.ConvFunction, [Type], [Type]))
+getFunMap = gets (\(m,_,_) -> m) 
 
-addFunction :: FuncID -> VM.ConvFunction -> [Type] -> [Type] -> ArBB ()
+addFunction :: FuncID -> VM.ConvFunction -> [Type] -> [Type] -> ArBBBackend ()
 addFunction fid fd ins outs = 
     do
       m <- getFunMap 
       let fid' = "f" ++ show fid 
-      lift . modify $ \(m,b,c) -> (Map.insert fid' (fd,ins,outs) m,b,c)
+      modify $ \(m,b,c) -> (Map.insert fid' (fd,ins,outs) m,b,c)
+
+
+
+captureGenRecord :: GenRecord -> ArBBBackend FuncID 
+captureGenRecord gr = 
+    do 
+      let tins = getInputTypes (genRecordFunType gr)
+          touts = case getOutputType (genRecordFunType gr) of 
+                    (Tuple xs) -> xs 
+                    a          -> [a]
+      arbbIns  <- liftVM $ mapM toArBBType tins 
+      arbbOuts <- liftVM $ mapM toArBBType touts
+      let names = [Variable ("v" ++ show i) | i <- [0..]] 
+
+      funMap <- getFunMap
+      
+      let d = genRecordDag gr
+          vt = genRecordVarType gr 
+          nids = genRecordNids gr
+
+      fd <- liftVM $ VM.funDef_ "generated" (concat arbbOuts) (concat arbbIns) $ \ os is -> 
+            do 
+              vs <- accmBody d nids vt funMap (zip names is) 
+              copyAll os vs
+
+      fid <- getFunID 
+
+      addFunction fid fd tins touts
+ 
+      return fid 
+                                                 
 ----------------------------------------------------------------------------
 -- functions that are not backend oblivious 
 -- TODO: Something else then FuncID should be returned. Something typed. 
 capture :: (ReifyableFunType a b, ReifyableFun a b) => (a -> b) -> ArBB FuncID 
 capture f = 
     do 
-      fid <- getFunID 
+      nids <- reify f 
+      
+      let funType = reifyFunType f 
+      
+      d <- gets dag 
+      vt <- gets types
+      
+      let gr = GenRecord d funType nids vt
+      
+      lift $ captureGenRecord gr
+      
+{- 
+capture :: (ReifyableFunType a b, ReifyableFun a b) => (a -> b) -> ArBB FuncID 
+capture f = 
+    do 
+      fid <- lift getFunID 
       nids <- reify f 
       
       let funType = reifyFunType f 
@@ -122,7 +175,7 @@ capture f =
       arbbOuts <-  lift . liftVM $ mapM toArBBType touts 
       let names = [Variable ("v"++show i) | i <- [0..]]
                    
-      funMap <- getFunMap
+      funMap <- lift getFunMap
       
       d <- gets dag 
       vt <- gets types
@@ -132,15 +185,15 @@ capture f =
               vs <- accmBody d nids vt funMap (zip names is) 
               copyAll os vs
 
-      addFunction fid fd tins touts
+      lift $ addFunction fid fd tins touts
  
       return fid 
          
-
+-} 
 serialize :: FuncID -> ArBB String 
 serialize fid = 
     do 
-      m <- getFunMap 
+      m <- lift getFunMap 
       let fid' = "f" ++ show fid 
       case Map.lookup fid' m of 
         Nothing -> error "serialize: invalid function"

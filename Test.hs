@@ -41,8 +41,16 @@ addconst s v = v + ss
     where 
       ss = constVector s (Lang.length v) 
 
+
+plus75 :: Exp Word32 -> Exp Word32 
+plus75 x = x + 75
+
+mapTest :: Exp (DVector Dim1 Word32) -> Exp (DVector Dim1 Word32) 
+mapTest v = newMap plus75 v 
+
+
 -- test1 :: MonadBackend backend => backend [NodeID]
-test1 = rR (reify addconst)
+test1 = runR (reify addconst)
 
 test2 =  runArBBBackendAll test1 
 
@@ -72,25 +80,27 @@ test3 =
       liftIO$ putStrLn $ show r 
 
 
-{- 
-test1 = 
-  withArBB $
-    do 
-      
-      f <- capture (addconst (100 :: Exp Word32)) 
-          
-      str <- serialize f 
-      liftIO $ putStrLn str
-   
-      x  <- copyIn (V.fromList [1..10::Word32]) ((10::Int) :. Z )
-      (r1 :: DVector (Int :. Z) Word32) <- new ((10::Int) :. Z) 0 
-      
-      execute f x r1 
-  
-      r <- copyOut r1
 
-      liftIO$ putStrLn$ show r
-      return f
-  
-main = putStrLn "tests"
--} 
+test4 = 
+    withArBB $ do
+      f <- capture mapTest
+
+      -- Show a string representation of a function     
+      str <- serialize f 
+      liftIO$ putStrLn str
+
+      -- Turn a normal Data.Vector into a DVector (an EmbArBB dense vector) 
+      x <- copyIn (V.fromList [1..10::Word32]) ((10::Int) :. Z)
+      
+      -- Create a new DVector for the result. (DVectors in here 
+      -- are mutable!)
+      (r1 :: DVector (Int :. Z) Word32) <- new ((10::Int) :. Z) 1
+      
+      execute f x r1
+      -- This freezes a mutable DVector into a normal Data.Vector.                                  
+      r <- copyOut r1
+          
+      liftIO$ putStrLn $ show r 
+
+
+

@@ -14,6 +14,11 @@ import Intel.ArBB.Variable
 import Intel.ArBB.Op
 import Intel.ArBB.Data.Int 
 import Intel.ArBB.Data
+
+import Intel.ArBB.Backend.ArBB
+import Intel.ArBB.BackendExperiment
+import Intel.ArBB.ReifyableType
+
 -- TODO: remove this dependency
 -- import Intel.ArBB.Capture
 
@@ -301,6 +306,12 @@ getNPages (E vec) = E $ Op GetNPages [vec]
 -- TODO: Extremely messy type.. see what can be done 
 --map :: ArgList (Exp t) => Function (EIn (Exp t) (Exp r)) (EOut (Exp r)) -> Exp (DVector d t) -> Exp (DVector d r) 
 --map (Function nom) ins = E $ Map nom (argList ins) 
+
+newMap :: (ReifyableFunType (Exp a) (Exp b), ReifyableFun (Exp a) (Exp b)) 
+        => (Exp a -> Exp b) -> Exp (DVector Dim1 a) -> Exp (DVector Dim1 b)
+newMap f (E v) = E $ NewMap (capture f) [v] 
+  
+
 
 ----------------------------------------------------------------------------
 -- unpairing. 

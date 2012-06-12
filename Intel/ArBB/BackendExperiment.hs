@@ -21,7 +21,6 @@ import Intel.ArBB.Variable
 import Intel.ArBB.Data
 import Intel.ArBB.Vector
 import Intel.ArBB.ReifyableType
-import Intel.ArBB.MonadBackend
 import Intel.ArBB.MonadCapture
  
 import Data.Int
@@ -32,38 +31,24 @@ import Intel.ArBB.Data.Int
 -- The Capture Monad Stuff 
 ----------------------------------------------------------------------------
 
-type FuncID = Integer 
-type VarID  = Integer 
 
--- data BEFunction i o = BEFunction FuncID  --similar to old function in Syntax.hs.
-
-----------------------------------------------------------------------------
-{- 
-data CaptState = CaptState { sharing :: IntMap.IntMap [(Dynamic,Integer)]
-                           , types   :: Map.Map Variable Type -- VarType
-                           , unique  :: Integer 
-                           , dag     :: DAG }  
-               deriving Show
-
-type Capture backend a = StateT CaptState backend a 
--} 
-
-newVar :: MonadBackend backend => Capture backend Variable 
+---------------------------------------------------------------------------- 
+-- Implement operations on the Capture monad. 
+-- These should all be backend oblivious. 
+newVar :: Capture Variable 
 newVar = do 
   id <- gets unique 
   modify $ \s -> s { unique = id + 1 } 
   return $ Variable ("v" ++ show id)
 
-addVarType :: MonadBackend backend => Variable -> Type -> Capture backend () 
+addVarType :: Variable -> Type -> Capture () 
 addVarType v t = do 
   m <- gets types 
   modify $ \s -> s { types = Map.insert v t m } 
 
-
-
 -- TODO: Break up into tiny functions. 
 -- TODO: I dont really need the Dynamic right ?
-getNodeID :: MonadBackend backend => Expr -> Capture backend NodeID
+getNodeID :: Expr -> Capture NodeID
 getNodeID e = 
     do
       sh <- gets sharing  
@@ -87,7 +72,7 @@ getNodeID e =
               return uniq
 
 
-insertNode :: MonadBackend backend => Expr -> Node -> Capture backend [NodeID]
+insertNode :: Expr -> Node -> Capture [NodeID]
 insertNode e node = 
     do 
       d <- gets dag
@@ -95,15 +80,13 @@ insertNode e node =
       let d' = Map.insert nid node d 
       modify $ \s -> s {dag = d'} 
       return [nid]
-               
 
--- will this be a working approach ?
--- backend wont matter while creating the DAG.. 
--- I am probably approaching this backwards though. 
--- The thing is that I need the backend to obtain a function identifier
--- in the case of call or map. 
+----------------------------------------------------------------------------
+-- 
+---------------------------------------------------------------------------- 
+
 class Reify a where 
-    reify :: MonadBackend backend => a -> Capture backend [NodeID]
+    reify :: a -> Capture [NodeID]
 
 runR r = evalStateT r capState 
     where 
@@ -113,16 +96,9 @@ runR r = evalStateT r capState
                    0
                    Map.empty
 
-rR r = runStateT r capState 
-    where 
-      capState = 
-         CaptState IntMap.empty 
-                   Map.empty
-                   0
-                   Map.empty
 
-
-
+---------------------------------------------------------------------------- 
+-- 
 instance Reify Expr where 
     reify e@(Var v) = insertNode e (NVar v) 
     reify e@(Lit l) = insertNode e (NLit l)
@@ -144,6 +120,14 @@ instance Reify Expr where
         do 
           exprs' <- mapM reify exprs 
           insertNode e (NMap fn (concat exprs'))  --Concat... make sure this is as it shall
+    reify e@(NewMap cap exprs) = 
+        do
+          -- Here I need to get something from the backend .. (a function identifier) 
+          fid  <- lift ( runR cap )
+          exprs' <- mapM reify exprs 
+          insertNode e (NMap ("f" ++ show fid) (concat exprs'))
+          
+          
     reify e@(If e1 e2 e3) = 
         do
           [e1'] <- reify e1
@@ -168,7 +152,7 @@ instance ReifyableFun a b => Reify (a -> b) where
 ----------------------------------------------------------------------------
 -- 
 class ReifyableFun a b where 
-    reifyFun :: MonadBackend backend =>  (a -> b) -> Capture backend [Expr]
+    reifyFun :: (a -> b) -> Capture [Expr]
 
 
 instance Data a => ReifyableFun (Exp a) (Exp b) where 
@@ -209,12 +193,3 @@ instance (Data a, ReifyableFun b c ) => ReifyableFun (Exp a)  (b -> c) where
           let t = typeOf (undefined :: a)
           addVarType v t 
           reifyFun $ f (E (Var v))
-        
-       
-
-
-----------------------------------------------------------------------------
--- Typed interface for captured functions. 
-
-
-
