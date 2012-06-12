@@ -16,23 +16,6 @@ import Intel.ArBB.Types
 import System.IO.Unsafe
 import Data.IORef
 import Data.Typeable
----------------------------------------------------------------------------- 
--- Label creator 
-
-type Label = Integer -- Word32
-
-{-
-{-# NOINLINE counter #-}
-counter :: IORef Label
-counter = unsafePerformIO (newIORef 0)
-
-
-newLabel :: () -> Word32
-newLabel () = unsafePerformIO $ do 
-  p <- readIORef counter
-  writeIORef counter (p+1)
-  return p 
--}
 
 ---------------------------------------------------------------------------- 
 -- Literals and Variables
@@ -60,7 +43,7 @@ data Variable = Variable String
 
 ----------------------------------------------------------------------------
 --  Expression type. 
---   Now without labels. Will try to discover the sharing using the 
+--   Will try to discover the sharing using the 
 --   StableName method. (System.Mem.StableName)
 data Expr = Lit Literal
           | Var Variable 
@@ -85,33 +68,7 @@ data Expr = Lit Literal
 
             deriving (Typeable)
 --           deriving (show)
-
-               
----------------------------------------------------------------------------- 
--- Labeled Expression
-data LExp = LLit Label Literal  
-          | LVar Label Variable 
-            
-          | LIndex0 Label LExp 
-            -- ArBB Functions may compute several results 
-          | LResIndex Label LExp Int 
-            
-            -- Function with correct name and type must exist in some kind of environment
-          | LCall Label FunctionName [LExp]  
-          | LMap  Label FunctionName [LExp]   
-            
-          | LWhile Label [Variable] LExp [LExp] [LExp]
-            
-                 
-          | LIf  Label LExp LExp LExp 
-
-          | LOp Label Op [LExp]   
-            
-           deriving (Show)
-
-instance Eq LExp where 
-  a == b = getLabel a == getLabel b
-                   
+  
 ----------------------------------------------------------------------------                   
 -- Operations (binary, unary, reductions-ops all mixed up) 
 data Op = Add | Sub  | Mul | Div 
@@ -137,7 +94,7 @@ data Op = Add | Sub  | Mul | Div
         | ShiftConst | ShiftClamp | ShiftConstRev | ShiftClampRev
         | Rotate | RotateRev | Reverse 
         | Length | ApplyNesting | GetNesting  
- -- TODO: The Cast needs to know what to cast to.
+ -- The Cast needs to know what to cast to.
         | Cat | Cast Type | Extract | Split | Unsplit
         | Index | Mask | CopyNesting | Flatten 
         | ConstVector | Sort | SortRank | Replace 
@@ -155,20 +112,6 @@ data Op = Add | Sub  | Mul | Div
         | IorScan | XorScan 
         | AddMerge | AddMergeScalar
           deriving (Eq, Show) 
-
-----------------------------------------------------------------------------                   
--- 
-
-getLabel :: LExp -> Label                    
-getLabel (LVar l _) = l 
-getLabel (LLit l _) = l 
-getLabel (LOp l _ _) = l 
-getLabel (LIf l _ _ _) = l 
-getLabel (LWhile l _ _ _ _) = l
-getLabel (LIndex0 l _) = l 
-getLabel (LResIndex l _ _) = l 
-getLabel (LCall l _ _) = l
-getLabel (LMap l _ _) = l
 
 ---------------------------------------------------------------------------- 
 -- add a layer of types 
