@@ -2,7 +2,10 @@
 
 module Intel.ArBB.DAG where 
 
-import Intel.ArBB.Syntax
+--import Intel.ArBB.Syntax
+import Intel.ArBB.Literal
+import Intel.ArBB.Variable
+import Intel.ArBB.Op
 
 import Data.Word
 import Data.Int
@@ -18,8 +21,8 @@ data Node = NLit Literal
           | NIndex0 NodeID
           
           | NResIndex NodeID Int 
-          | NCall FunctionName [NodeID] 
-          | NMap  FunctionName [NodeID]
+          | NCall String [NodeID] 
+          | NMap  String [NodeID]
             
           | NIf NodeID NodeID NodeID
           

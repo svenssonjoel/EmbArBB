@@ -5,11 +5,11 @@
 
 module Test where 
 
---import Intel.ArBB as ArBB
+
 import qualified Intel.ArbbVM as VM
 import qualified Intel.ArbbVM.Convenience as VM
 
---import Intel.ArBB.WithArBB
+
 import Intel.ArBB.Vector
 import Intel.ArBB.Data.Int
 

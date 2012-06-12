@@ -5,6 +5,7 @@
 module Intel.ArBB.Backend.ArBB where 
 
 import Intel.ArBB.MonadBackend
+import Intel.ArBB.MonadCapture
 import Intel.ArBB.BackendExperiment
 
 import qualified Intel.ArbbVM as VM
@@ -13,6 +14,10 @@ import           Intel.ArBB.DAG
 import           Intel.ArBB.TypeCheck
 import           Intel.ArBB.Types 
 import           Intel.ArBB.Syntax
+import           Intel.ArBB.Variable
+import           Intel.ArBB.Literal
+import           Intel.ArBB.Op
+
 import           Intel.ArBB.Data
 import           Intel.ArBB.Backend.ArBB.CodeGen
 import           Intel.ArBB.Vector
@@ -39,7 +44,8 @@ import qualified Data.Map as Map
 newtype ArBBBackend a = ArBBBackend {unArBBBackend :: (StateT ArBBState VM.EmitArbb a)}
     deriving (Monad, MonadState ArBBState, MonadIO, Functor) 
 
-type ArBBState = ( Map.Map FunctionName (VM.ConvFunction, [Type], [Type])
+-- String FunctionName or FunctionID
+type ArBBState = ( Map.Map String (VM.ConvFunction, [Type], [Type])
                  , Map.Map Integer VM.Variable -- dVectorID to ArBB vector map
                  , Integer)
 
@@ -83,7 +89,7 @@ getFunID =
       lift . modify $ \(a,b,c) -> (a,b,c+1)
       return funId 
 
-getFunMap :: ArBB (Map.Map FunctionName (VM.ConvFunction, [Type], [Type]))
+getFunMap :: ArBB (Map.Map String (VM.ConvFunction, [Type], [Type]))
 getFunMap = (lift . gets) (\(m,_,_) -> m) 
 
 addFunction :: FuncID -> VM.ConvFunction -> [Type] -> [Type] -> ArBB ()

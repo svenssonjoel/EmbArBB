@@ -7,11 +7,19 @@
 
 module Intel.ArBB.Syntax where 
 
-import Data.Int
-import Data.Word 
+--import Data.Int
+--import Data.Word 
 
-import Intel.ArBB.Data.Int 
+--import Intel.ArBB.Data.Int 
+
 import Intel.ArBB.Types
+import Intel.ArBB.Literal 
+import Intel.ArBB.Variable
+import Intel.ArBB.Op
+
+import Intel.ArBB.MonadCapture
+import Intel.ArBB.MonadBackend
+
 
 import System.IO.Unsafe
 import Data.IORef
@@ -19,6 +27,7 @@ import Data.Typeable
 
 ---------------------------------------------------------------------------- 
 -- Literals and Variables
+{- 
 data Literal = LitInt    Int
              | LitInt8   Int8  
              | LitInt16  Int16
@@ -40,7 +49,7 @@ data Literal = LitInt    Int
 
 data Variable = Variable String 
               deriving (Eq, Ord, Show)
-
+-} 
 ----------------------------------------------------------------------------
 --  Expression type. 
 --   Will try to discover the sharing using the 
@@ -56,9 +65,10 @@ data Expr = Lit Literal
           | Call FunctionName [Expr]  
           | Map  FunctionName [Expr]   
 
-          -- This one might need some rework! 
-          --  I Will not be able to generate unique variables until 
-          --  a later stage. 
+          | forall backend. MonadBackend backend => 
+                NewMap (Capture backend String) [Expr]
+          
+          -- Hoas for the while loop.. 
           | While ([Expr] -> Expr)  ([Expr] -> [Expr])  [Expr] 
                              
           | If Expr Expr Expr -- could have been an op 
@@ -71,6 +81,7 @@ data Expr = Lit Literal
   
 ----------------------------------------------------------------------------                   
 -- Operations (binary, unary, reductions-ops all mixed up) 
+{-
 data Op = Add | Sub  | Mul | Div 
         | Max | Min
         | And | Ior | Xor         
@@ -112,7 +123,7 @@ data Op = Add | Sub  | Mul | Div
         | IorScan | XorScan 
         | AddMerge | AddMergeScalar
           deriving (Eq, Show) 
-
+-} 
 ---------------------------------------------------------------------------- 
 -- add a layer of types 
 

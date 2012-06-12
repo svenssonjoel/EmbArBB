@@ -8,6 +8,10 @@ import Intel.ArBB.Types
 
 import Intel.ArBB.DAG
 import Intel.ArBB.Syntax
+import Intel.ArBB.Literal
+import Intel.ArBB.Variable
+import Intel.ArBB.Op 
+
 
 import qualified Intel.ArbbVM as ArBB
 
