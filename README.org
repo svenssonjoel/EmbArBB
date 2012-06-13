@@ -1,10 +1,18 @@
-* EmbArBB Experimental
+* EmbArBB
+  + Embedded language for data parallel programming targetting Intel ArBB. 
+  + Uses the Haskell/ArBB bindings (svenssonjoel/arbb-vm.git on github)
 
-  + huge cleanup is needed. Things that are connected to the "backend" 
-    are spread all over the place.
+* Status
+  + Big changes all over the code is taking place right now. 
+
+
+* TODOs:  
+  + huge cleanup is needed.
 
   + The Data a vs Data (Exp a) issue. 
     
   + separate Reification and code generation somehow.
-  
+    - DONE: the interface between front and back is now encapsulated 
+      in something called a GenRecord. 
+
 

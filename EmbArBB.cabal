@@ -1,5 +1,5 @@
 Name:           EmbArBB
-Version:        0.1.1.0
+Version:        0.2.0.0
 
 License:                BSD3
 License-file:           LICENSE
@@ -37,19 +37,24 @@ Library
 
 
   exposed-modules: Intel.ArBB.Syntax
-                 , Intel.ArBB.Capture
+                 , Intel.ArBB.Variable
+                 , Intel.ArBB.Literal
+                 , Intel.ArBB.MonadCapture
+                 , Intel.ArBB.BackendExperiment
+                 , Intel.ArBB.GenRecord
+                 , Intel.ArBB.ReifyableType
+                 , Intel.ArBB.Function 		
                  , Intel.ArBB.DAG
                  , Intel.ArBB.TypeCheck
                  , Intel.ArBB.Vector
                  , Intel.ArBB.Language
-                 , Intel.ArBB.GenArBB
                  , Intel.ArBB.Types
                  , Intel.ArBB.Data
-                 , Intel.ArBB.WithArBB
                  , Intel.ArBB.Data.Int
                  , Intel.ArBB.IsScalar
-                 , Intel.ArBB.ExpToLExp
                  , Intel.ArBB
+                 , Intel.ArBB.Backend.GenArBB
+                 , Intel.ArBB.Backend.ArBB		 
 
 
   GHC-Options: 
