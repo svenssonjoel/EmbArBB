@@ -192,12 +192,27 @@ class VariableList a where
   instance VariableList (t) where {              \
      vlist a = S.liftM (:[]) $ liftVM $ VM.load a}
                             
-ScalarVList(Int,int64_) -- incorrect on 32bit archs
+instance VariableList Int where 
+    vlist a = 
+        case sizeOf a of 
+          4 -> S.liftM (:[]) $ liftVM $ VM.int32_ a
+          8 -> S.liftM (:[]) $ liftVM $ VM.int64_ a
+          _ -> error "Platform not supported"
+
+instance VariableList Word where 
+    vlist a = 
+        case sizeOf a of 
+          4 -> S.liftM (:[]) $ liftVM $ VM.uint32_ a
+          8 -> S.liftM (:[]) $ liftVM $ VM.uint64_ a
+          _ -> error "Platform not supported" 
+               
+
+-- ScalarVList(Int,int64_) -- incorrect on 32bit archs
 ScalarVList(Int8,int8_)
 ScalarVList(Int16,int16_)
 ScalarVList(Int32,int32_)
 ScalarVList(Int64,int64_)
-ScalarVList(Word,uint64_)
+-- ScalarVList(Word,uint64_)
 ScalarVList(Word8,uint8_)
 ScalarVList(Word16,uint16_)
 ScalarVList(Word32,uint32_)
@@ -311,12 +326,12 @@ copyOut dv =
 
 
    (_,mv,_) <- S.get                    
-   -- TODO: STOP CHEATING! 
+  
    let (Just v) = Map.lookup (dVectorID dv) mv
    arbbdat <- liftVM$ VM.mapToHost_ v (map fromIntegral dims') VM.ArbbReadOnlyRange
    liftIO$  copyBytes ptr
                       (castPtr arbbdat) 
-                      ((foldl (*) 1 dims') * 4) -- CHEAT  
+                      ((foldl (*) 1 dims') * (sizeOf (undefined :: a)) ) 
                       
    liftIO$ V.freeze vec
 
