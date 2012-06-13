@@ -38,7 +38,7 @@ import Foreign.Marshal.Array
 import Foreign.Marshal.Utils
 import System.Mem.StableName
 
-import Control.Monad.State.Strict
+import qualified Control.Monad.State.Strict as S
 import qualified Data.Map as Map
 import qualified Data.Traversable as Trav
 
@@ -47,8 +47,8 @@ import Data.Int
 
 ----------------------------------------------------------------------------
 -- the backend.. 
-newtype ArBBBackend a = ArBBBackend {unArBBBackend :: (StateT ArBBState VM.EmitArbb a)}
-    deriving (Monad, MonadState ArBBState, MonadIO, Functor) 
+newtype ArBBBackend a = ArBBBackend {unArBBBackend :: (S.StateT ArBBState VM.EmitArbb a)}
+    deriving (Monad, S.MonadState ArBBState, S.MonadIO, Functor) 
 
 -- String FunctionName or FunctionID
 type ArBBState = ( Map.Map Integer (VM.ConvFunction, [Type], [Type])
@@ -59,18 +59,21 @@ type ArBBState = ( Map.Map Integer (VM.ConvFunction, [Type], [Type])
 ---------------------------------------------------------------------------- 
 -- 
 liftVM :: VM.EmitArbb a -> ArBBBackend a 
-liftVM a = ArBBBackend (lift a) 
+liftVM a = ArBBBackend (S.lift a) 
+
+liftIO :: IO a -> ArBBBackend a 
+liftIO a = ArBBBackend (S.liftIO a)
 
 -- corresponds to the withArBB monad
 runArBBBackend :: ArBBBackend a -> IO a 
-runArBBBackend a = VM.arbbSession$ evalStateT (unArBBBackend a) arbbState
+runArBBBackend a = VM.arbbSession$ S.evalStateT (unArBBBackend a) arbbState
     where 
       arbbState = (Map.empty
                   ,Map.empty
                   ,0)
 
 
-runArBBBackendAll a = VM.arbbSession$ runStateT (unArBBBackend a) arbbState
+runArBBBackendAll a = VM.arbbSession$ S.runStateT (unArBBBackend a) arbbState
     where 
       arbbState = (Map.empty
                   ,Map.empty
@@ -91,19 +94,19 @@ withArBB a = runArBBBackend a
 getFunID :: ArBBBackend  FuncID  
 getFunID = 
     do 
-      funId <- gets (\(_,_,x) -> x)
-      modify $ \(a,b,c) -> (a,b,c+1)
+      funId <- S.gets (\(_,_,x) -> x)
+      S.modify $ \(a,b,c) -> (a,b,c+1)
       return funId 
 
 getFunMap :: ArBBBackend (Map.Map Integer (VM.ConvFunction, [Type], [Type]))
-getFunMap = gets (\(m,_,_) -> m) 
+getFunMap = S.gets (\(m,_,_) -> m) 
 
 addFunction :: FuncID -> VM.ConvFunction -> [Type] -> [Type] -> ArBBBackend ()
 addFunction fid fd ins outs = 
     do
       m <- getFunMap 
       -- let fid' = "f" ++ show fid 
-      modify $ \(m,b,c) -> (Map.insert fid (fd,ins,outs) m,b,c)
+      S.modify $ \(m,b,c) -> (Map.insert fid (fd,ins,outs) m,b,c)
 
 
 
@@ -168,7 +171,7 @@ serialize (Function fid) =
 execute :: (VariableList a, VariableList b) => Function a b -> a -> b -> ArBB ()       
 execute (Function fid) a b = 
   do 
-    (mf,mv,_) <- get 
+    (mf,mv,_) <- S.get 
     case Map.lookup fid  mf of 
       Nothing -> error "execute: Invalid function" 
       (Just (f,tins,touts)) -> 
@@ -187,7 +190,7 @@ class VariableList a where
 -- TODO: Add the scalar cases 
 #define ScalarVList(t,load)                      \
   instance VariableList (t) where {              \
-     vlist a = liftM (:[]) $ liftVM $ VM.load a}
+     vlist a = S.liftM (:[]) $ liftVM $ VM.load a}
                             
 ScalarVList(Int,int64_) -- incorrect on 32bit archs
 ScalarVList(Int8,int8_)
@@ -205,7 +208,7 @@ ScalarVList(Double,float64_)
 instance VariableList (DVector t a) where 
     vlist v = 
         do 
-          (_,mv,_) <- get 
+          (_,mv,_) <- S.get 
           case Map.lookup (dVectorID v) mv of 
             (Just v) -> return [v] 
             Nothing  -> error "ArBB version of vector not found!"
@@ -245,11 +248,11 @@ copyIn dat t =
                       ptr
                       ((foldl (*) 1 dims') * sizeOf elem) 
 
-   (mf,mv,i) <- get
+   (mf,mv,i) <- S.get
    
    let mv' = Map.insert i v mv 
                 
-   put (mf,mv',i+1)
+   S.put (mf,mv',i+1)
 
    return (DVector i dims)
    -- TODO: Figure out if this is one of these cases where makeRefCountable is needed..
@@ -279,11 +282,11 @@ new t a =
    -- TODO : Fill the vector!
     
 
-   (mf,mv,i) <- get 
+   (mf,mv,i) <- S.get 
    
    let mv' = Map.insert i v mv 
                 
-   put (mf,mv',i+1)
+   S.put (mf,mv',i+1)
 
    return (DVector i dims)
   where 
@@ -307,7 +310,7 @@ copyOut dv =
        ptr       = unsafeForeignPtrToPtr fptr
 
 
-   (_,mv,_) <- get                    
+   (_,mv,_) <- S.get                    
    -- TODO: STOP CHEATING! 
    let (Just v) = Map.lookup (dVectorID dv) mv
    arbbdat <- liftVM$ VM.mapToHost_ v (map fromIntegral dims') VM.ArbbReadOnlyRange
@@ -326,3 +329,4 @@ copyOut dv =
      dims = dVectorShape dv
      (Dim dims') = dims -- TODO: FIX FIX 
 
+--TODO: Someway to copy a scalar out.. (readScalar) 

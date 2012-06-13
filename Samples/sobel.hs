@@ -6,7 +6,7 @@ import Data.Word
 
 
 import System.IO
-import Foreign
+import Foreign hiding (new)
 
 {- 
       | -1  0  1 |
@@ -60,10 +60,9 @@ kernel x = convertToWord8 $ body x
        y' = gy x
         
        
-sobel :: Function (EIn (Exp Word8) (Exp Word8)) (EOut (Exp Word8)) 
+sobel :: Exp (DVector Dim2 Word8) 
          -> Exp (DVector Dim2 Word8) 
-         -> Exp (DVector Dim2 Word8) 
-sobel kern image = map kern image  
+sobel image = map kernel image  
 
 
 -- Very much a hack.. 
@@ -77,21 +76,15 @@ testSobel =
     -- TODO: Stop going through lists.
     withArBB $ 
       do 
-        kern <- capture2 (kernel)
-        f    <- capture2 (sobel kern)
+        f    <- capture sobel 
         
-        str1 <- serialize kern
-        str2 <- serialize f 
-        liftIO$ putStrLn $ str1 ++ "\n" ++ str2
-        
-        let v1 = Vector (V.fromList ls) (Two 256 256) 
-     
-        r1 <- liftIO$ new2D 256 256  
+        v1 <- copyIn (V.fromList ls) ((256 :: Int) :. (256 :: Int) :. Z)                 
+        r1 <- new ((256 :: Int) :. (256 :: Int) :. Z) 0
 
-        execute2 f v1 r1
+        execute f v1 r1
               
-        (Vector r _) <- liftIO$ freeze r1
-        
+        r <- copyOut r1
+
         let r' = V.toList r
 
         pt2 <- liftIO$ mallocBytes (256 * 256) 

@@ -3,7 +3,6 @@ import Intel.ArBB
 import qualified Data.Vector.Storable as V 
 import Prelude hiding (length)
 
-import Control.Monad.IO.Class
 
 addconst :: Num a => Exp a -> Exp (DVector Dim1 a) -> Exp (DVector Dim1 a) 
 addconst s v = v + ss 

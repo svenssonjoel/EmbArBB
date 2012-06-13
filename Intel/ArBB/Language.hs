@@ -312,7 +312,7 @@ getNPages (E vec) = E $ Op GetNPages [vec]
 --map f (E v) = E $ Map (capture f) [v] 
 
 --hmmm Data a, Data (Exp a) why?? 
-map :: (Data a, Data b) => (Exp a -> Exp b) -> Exp (DVector Dim1 a) -> Exp (DVector Dim1 b)
+map :: (Data a, Data b) => (Exp a -> Exp b) -> Exp (DVector t a) -> Exp (DVector t b)
 map f (E v) = E $ Map (reify f) [v] 
 
   
