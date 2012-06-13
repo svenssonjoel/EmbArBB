@@ -39,6 +39,7 @@ Library
   exposed-modules: Intel.ArBB.Syntax
                  , Intel.ArBB.Variable
                  , Intel.ArBB.Literal
+                 , Intel.ArBB.Op
                  , Intel.ArBB.MonadCapture
                  , Intel.ArBB.BackendExperiment
                  , Intel.ArBB.GenRecord
