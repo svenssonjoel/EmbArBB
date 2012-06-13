@@ -4,6 +4,7 @@
     are spread all over the place.
 
   + The Data a vs Data (Exp a) issue. 
-
+    
+  + separate Reification and code generation somehow.
   
 
