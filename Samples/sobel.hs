@@ -78,8 +78,8 @@ testSobel =
       do 
         f    <- capture sobel 
         
-        v1 <- copyIn (V.fromList ls) ((256 :: Int) :. (256 :: Int) :. Z)                 
-        r1 <- new ((256 :: Int) :. (256 :: Int) :. Z) 0
+        v1 <- copyIn (V.fromList ls) (256 :. 256 :. Z)                 
+        r1 <- new (256 :. 256 :. Z) 0
 
         execute f v1 r1
               

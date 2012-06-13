@@ -14,7 +14,7 @@ main =
   do 
      f <- capture addconst
              
-     x <- copyIn (V.fromList [1..10 :: Float]) ((10:: Int) :. Z)
+     x <- copyIn (V.fromList [1..10 :: Float]) (10 :. Z)
 
      r1 <- new ((10 :: Int) :. Z) 0 
 
