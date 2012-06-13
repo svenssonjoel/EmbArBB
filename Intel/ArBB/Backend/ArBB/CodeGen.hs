@@ -101,19 +101,21 @@ genBody :: DAG
            -> NodeID -- -> NodeIDType 
            -> VarType 
            -> (Map.Map Integer (VM.ConvFunction,[Type],[Type]))
+           -> (Map.Map Integer Integer) 
            -> [(Variable, VM.Variable)] 
            -> VM.EmitArbb [VM.Variable] 
 -- genBody dag nid typem funm is = evalStateT (genBody' dag nid typem funm is) (Map.empty) 
-genBody dag nid  vt funm is = runGen (genBody' dag nid  funm is) vt 
+genBody dag nid  vt funm depm is = runGen (genBody' dag nid funm depm is) vt 
  
 accmBody :: DAG
             -> [NodeID] 
         --    -> NodeIDType 
             -> VarType
             -> (Map.Map Integer (VM.ConvFunction,[Type],[Type]))
+            -> (Map.Map Integer Integer) -- dependency id to function id 
             -> [(Variable, VM.Variable)] 
             -> VM.EmitArbb [VM.Variable]
-accmBody dag nids vt funm is = liftM fst $ doBody nids ((vt,Map.empty),Map.empty) 
+accmBody dag nids vt funm depm is = liftM fst $ doBody nids ((vt,Map.empty),Map.empty) 
 
   where 
     doBody ::[NodeID] -> AllState -> VM.EmitArbb ([VM.Variable],AllState)
@@ -121,7 +123,7 @@ accmBody dag nids vt funm is = liftM fst $ doBody nids ((vt,Map.empty),Map.empty
     doBody (x:xs) m =
       do 
           -- liftIO$ putStrLn "doBody"
-          (vs,s) <- runGenAllState (genBody' dag x  funm is) m
+          (vs,s) <- runGenAllState (genBody' dag x  funm depm is) m
           (vss,s') <- doBody xs s
           return (vs++vss,s')
 {-
@@ -139,16 +141,17 @@ accmBodyLocal :: DAG
         --    -> NodeIDType 
             -> AllState
             -> (Map.Map Integer (VM.ConvFunction,[Type],[Type]))
+            -> (Map.Map Integer Integer)
             -> [(Variable, VM.Variable)] 
             -> VM.EmitArbb [VM.Variable]
-accmBodyLocal dag nids allstate funm is = liftM fst $ doBody nids allstate -- ((vt,Map.empty),Map.empty) 
+accmBodyLocal dag nids allstate funm depm is = liftM fst $ doBody nids allstate -- ((vt,Map.empty),Map.empty) 
 
   where 
     doBody ::[NodeID] -> AllState -> VM.EmitArbb ([VM.Variable],AllState)
     doBody [] m = return ([],m) 
     doBody (x:xs) m =
       do 
-          (vs,s) <- runGenAllState (genBody' dag x  funm is) m
+          (vs,s) <- runGenAllState (genBody' dag x funm depm is) m
           (vss,s') <- doBody xs s
           return (vs++vss,s')
 
@@ -161,9 +164,10 @@ accmBodyLocal dag nids allstate funm is = liftM fst $ doBody nids allstate -- ((
 genBody' :: DAG 
            -> NodeID 
            -> (Map.Map Integer (VM.ConvFunction,[Type],[Type])) 
+           -> (Map.Map Integer Integer) -- dependency id to function id 
            -> [(Variable,VM.Variable)] 
            -> Gen [VM.Variable] 
-genBody' dag nid funm is = 
+genBody' dag nid funm depm is = 
   do 
     m <- lift get 
     -- liftIO$ putStrLn $ "genBody' " ++ show nid
@@ -199,16 +203,16 @@ genBody' dag nid funm is =
 
     genNode thisNid (NResIndex n i) = 
       do 
-        vs <- genBody' dag n  funm is 
+        vs <- genBody' dag n  funm depm is 
         return [vs !! i]
     genNode thisNid (NIndex0 n) = 
       do 
-        vs <- genBody' dag n  funm is 
+        vs <- genBody' dag n  funm depm is 
         return vs
  
     genNode thisNid (NOp op ns) = 
       do 
-        vs <- mapM (\n -> genBody' dag n  funm is) ns 
+        vs <- mapM (\n -> genBody' dag n funm depm is) ns 
        
         t <- typecheckNID dag thisNid
         imm <- liftVM$ typeToArBBLocalVar t 
@@ -225,7 +229,7 @@ genBody' dag nid funm is =
     genNode thisNid (NIf n1 n2 n3) =  
       do       
         -- conditional is a single var
-        [v1] <- genBody' dag n1 funm is 
+        [v1] <- genBody' dag n1 funm depm is 
         -- TODO: condition variables need to be local. 
         bt <- liftVM$ VM.getScalarType_ VM.ArbbBoolean
         cond <- liftVM$ VM.createLocal_ bt "cond" 
@@ -242,11 +246,11 @@ genBody' dag nid funm is =
         (vt,_) <- get 
         liftVM$ VM.if_ cond 
           (do
-              c1 <- fst `fmap` runGen' (genBody' dag n2  funm is) vt state
+              c1 <- fst `fmap` runGen' (genBody' dag n2 funm depm is) vt state
               copyAll imm c1              
           ) 
           (do
-              c2 <- fst `fmap` runGen' (genBody' dag n3  funm is) vt state
+              c2 <- fst `fmap` runGen' (genBody' dag n3 funm depm is) vt state
               copyAll imm c2
           )
         addNode thisNid imm 
@@ -274,7 +278,7 @@ genBody' dag nid funm is =
       
         
         -- process initial state
-        vs <- liftVM$ accmBody dag st vt funm vis 
+        vs <- liftVM$ accmBody dag st vt funm depm vis 
       
         liftVM$ copyAll state_vars vs
         
@@ -283,9 +287,9 @@ genBody' dag nid funm is =
         
         alls <- getAllState 
         -- the actual loop 
-        liftVM$ VM.while_ (do [c] <- accmBody dag [cond'] newVT funm vis; return c ) 
+        liftVM$ VM.while_ (do [c] <- accmBody dag [cond'] newVT funm depm vis; return c ) 
            ( do 
-                c1 <- accmBodyLocal dag body alls funm vis
+                c1 <- accmBodyLocal dag body alls funm depm vis
                 copyAll state_vars c1 -- update state
            )
         
@@ -298,13 +302,14 @@ genBody' dag nid funm is =
     -- TODO: Can map be used with nested vectors? 
     genNode thisNid (NMap f ns) = 
       do 
-        vs <- liftM concat $ mapM (\n -> genBody' dag n  funm is) ns 
+        vs <- liftM concat $ mapM (\n -> genBody' dag n funm depm is) ns 
        
         -- In order to obtain dimensionality of result. 
         ts <- mapM (typecheckNID dag) ns
         let    dim = (\(Dense d _) -> d) $ head ts 
         
-        let (Just (fun,ti,to)) = Map.lookup f funm
+        let (Just funId) = Map.lookup f depm
+        let (Just (fun,ti,to)) = Map.lookup funId funm
       
         -- TODO: All this starts feeling a bit "hacky".
         --       Put adding structure to the TODO list 

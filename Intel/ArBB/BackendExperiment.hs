@@ -22,6 +22,7 @@ import Intel.ArBB.Data
 import Intel.ArBB.Vector
 import Intel.ArBB.ReifyableType
 import Intel.ArBB.MonadCapture
+import Intel.ArBB.GenRecord
  
 import Data.Int
 import Data.Word
@@ -37,14 +38,21 @@ import Intel.ArBB.Data.Int
 -- These should all be backend oblivious. 
 newVar :: Capture Variable 
 newVar = do 
-  id <- gets unique 
-  modify $ \s -> s { unique = id + 1 } 
-  return $ Variable ("v" ++ show id)
+  --id <- gets unique 
+  --modify $ \s -> s { unique = id + 1 } 
+  uniq <- newUnique 
+  return $ Variable ("v" ++ show uniq)
+
+newUnique :: Capture Integer
+newUnique = do 
+  uniq <- gets unique 
+  modify $ \s -> s {unique = uniq+1}
+  return uniq
 
 addVarType :: Variable -> Type -> Capture () 
 addVarType v t = do 
-  m <- gets types 
-  modify $ \s -> s { types = Map.insert v t m } 
+  m <- gets (genRecordVarType . genRecord)
+  modify $ \(CaptState sh uniq gr)  -> CaptState sh uniq gr { genRecordVarType = Map.insert v t m } 
 
 -- TODO: Break up into tiny functions. 
 -- TODO: I dont really need the Dynamic right ?
@@ -72,31 +80,40 @@ getNodeID e =
               return uniq
 
 
-insertNode :: Expr -> Node -> Capture [NodeID]
+insertNode :: Expr -> Node -> Capture GenRecord -- [NodeID]
 insertNode e node = 
     do 
-      d <- gets dag
+      d <- gets (genRecordDag . genRecord)
       nid <- getNodeID e 
       let d' = Map.insert nid node d 
-      modify $ \s -> s {dag = d'} 
-      return [nid]
-
+      modify $ \(CaptState sh uniq gr) -> CaptState sh uniq (gr { genRecordDag = d'})
+      
+      
+      modify $ \(CaptState sh uniq gr) -> CaptState sh uniq (gr {genRecordNids = [nid]})
+      gets genRecord
 ----------------------------------------------------------------------------
 -- 
 ---------------------------------------------------------------------------- 
 
+
+                         
+                        
 class Reify a where 
-    reify :: a -> Capture [NodeID]
+    reify :: a -> Capture GenRecord -- [NodeID]
 
 runR r = evalStateT r capState 
     where 
       capState = 
          CaptState IntMap.empty 
-                   Map.empty
+--                    Map.empty
                    0
-                   Map.empty
+                   emptyGenRecord -- Map.empty
 
-
+reifySimple :: Expr -> Capture [NodeID] 
+reifySimple e = 
+    do 
+      gr <- reify e 
+      return (genRecordNids gr) -- gets (genRecordNids . genRecord)
 ---------------------------------------------------------------------------- 
 -- 
 instance Reify Expr where 
@@ -104,47 +121,87 @@ instance Reify Expr where
     reify e@(Lit l) = insertNode e (NLit l)
     reify e@(Index0 exp) = 
         do
-          [exp'] <- reify exp 
+          [exp'] <- reifySimple exp 
+          -- gr <- reify exp 
+          -- [exp'] <- gets (genRecordNids . genRecord)
           insertNode e (NIndex0 exp')
+
     reify e@(ResIndex exp i) = 
         do 
-          [exp'] <- reify exp 
+          [exp'] <- reifySimple exp 
+          --gr <- reify exp 
+          --[exp'] <- reify exp 
           insertNode e (NResIndex exp' i) 
 
     -- TODO: CALL and MAP needs to change a lot (future work) 
+
     reify e@(Call cap exprs) = 
-        do 
-          fid <- lift (runR cap) 
-          exprs' <- mapM reify exprs 
-          insertNode e (NCall fid (concat exprs'))  --Concat... make sure this is as it shall
+        do
+          -- This part is messed up!
+          imm <- mapM reify exprs
+          let exprs' = map genRecordNids imm
+          -- -----------------------
+          
+          depend <- lift $ runR cap
+          uniq <- newUnique 
+          
+          depends <- gets (genRecordDepends . genRecord) 
+          let depends' = Map.insert uniq depend depends
+          modify $ \(CaptState sh un gr) -> CaptState sh un (gr { genRecordDepends = depends' }) 
+          insertNode e (NMap uniq (concat exprs'))
+           
+          --fid <- lift (runR cap) 
+          --exprs' <- mapM reify exprs 
+          --insertNode e (NCall fid (concat exprs'))  --Concat... make sure this is as it shall
+
     reify e@(Map cap exprs) = 
         do
-          -- Here I need to get something from the backend .. (a function identifier) 
-          fid  <- lift ( runR cap )
-          liftIO$ putStrLn $ "generated map fun has id: " ++ show fid
-          exprs' <- mapM reify exprs 
-          insertNode e (NMap fid (concat exprs'))
+          
+          -- This part is messed up!
+          imm <- mapM reify exprs
+          let exprs' = map genRecordNids imm
+          -- -----------------------
+          
+          depend <- lift $ runR cap
+          uniq <- newUnique 
+          
+          depends <- gets (genRecordDepends . genRecord) 
+          let depends' = Map.insert uniq depend depends
+          modify $ \(CaptState sh un gr) -> CaptState sh un (gr { genRecordDepends = depends' }) 
+          insertNode e (NMap uniq (concat exprs'))
+                    
+          --fid  <- lift ( runR cap )
+          --liftIO$ putStrLn $ "generated map fun has id: " ++ show fid
+          --exprs' <- mapM reify exprs 
+          --insertNode e (NMap fid (concat exprs'))
                     
     reify e@(If e1 e2 e3) = 
         do
-          [e1'] <- reify e1
-          [e2'] <- reify e2
-          [e3'] <- reify e3
+          [e1'] <- reifySimple e1
+          [e2'] <- reifySimple e2
+          [e3'] <- reifySimple e3
           insertNode e (NIf e1' e2' e3')
+
     reify e@(Op op exprs) = 
         do
-          exprs' <- mapM reify exprs 
+          exprs' <- mapM reifySimple exprs 
           insertNode e (NOp op (concat exprs')) 
          
 instance Reify (Exp a) where 
     reify = reify . unE 
 
-instance ReifyableFun a b => Reify (a -> b) where 
+ 
+instance (ReifyableFunType a b, ReifyableFun a b) => Reify (a -> b) where 
     reify f = 
         do
           exprs <- reifyFun f
-          nids <- mapM reify exprs  
-          return $ concat nids 
+          nids <- mapM reifySimple exprs
+          modify $ \(CaptState sh un gr) -> CaptState sh un ( gr {genRecordNids = (concat nids)})
+          modify $ \(CaptState sh un gr) -> CaptState sh un ( gr {genRecordFunType = reifyFunType f})
+          gr <- gets genRecord
+          return gr
+          --nids <- mapM reify exprs  
+          --return $ concat nids 
 
 ----------------------------------------------------------------------------
 -- 

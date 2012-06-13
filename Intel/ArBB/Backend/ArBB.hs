@@ -1,6 +1,7 @@
 {-# Language TypeOperators, 
              ScopedTypeVariables, 
-             GeneralizedNewtypeDeriving #-} 
+             GeneralizedNewtypeDeriving,
+             FlexibleContexts #-} 
 
 module Intel.ArBB.Backend.ArBB where 
 
@@ -25,6 +26,7 @@ import           Intel.ArBB.IsScalar
 import           Intel.ArBB.ReifyableType
 import           Intel.ArBB.GenRecord
 import           Intel.ArBB.MonadCapture
+import           Intel.ArBB.Function
 
 import qualified Data.Vector.Storable as V 
 import qualified Data.Vector.Storable.Mutable as M
@@ -36,31 +38,25 @@ import System.Mem.StableName
 
 import Control.Monad.State.Strict
 import qualified Data.Map as Map
-
-type FuncID = Integer
-
--- BackendExperiment, towards removing the step via LExp in the codegeneration
--- TODO: implement for a fixed  ArBB Backend. 
--- TODO: generalise to taking the backend as a parameter somehow. 
+import qualified Data.Traversable as Trav
 
 ----------------------------------------------------------------------------
 -- the backend.. 
---newtype ArBBBackend a = ArBBBackend {unArBBBackend :: (StateT ArBBState VM.EmitArbb a)}
---    deriving (Monad, MonadState ArBBState, MonadIO, Functor) 
+newtype ArBBBackend a = ArBBBackend {unArBBBackend :: (StateT ArBBState VM.EmitArbb a)}
+    deriving (Monad, MonadState ArBBState, MonadIO, Functor) 
 
 -- String FunctionName or FunctionID
---type ArBBState = ( Map.Map String (VM.ConvFunction, [Type], [Type])
---                 , Map.Map Integer VM.Variable -- dVectorID to ArBB vector map
---                 , Integer)
-
---instance MonadBackend ArBBBackend 
-   -- currently empty ! 
+type ArBBState = ( Map.Map Integer (VM.ConvFunction, [Type], [Type])
+                 , Map.Map Integer VM.Variable -- dVectorID to ArBB vector map
+                 , Integer)
 
 
+---------------------------------------------------------------------------- 
+-- 
 liftVM :: VM.EmitArbb a -> ArBBBackend a 
 liftVM a = ArBBBackend (lift a) 
 
--- Sketch of new withArBB
+-- corresponds to the withArBB monad
 runArBBBackend :: ArBBBackend a -> IO a 
 runArBBBackend a = VM.arbbSession$ evalStateT (unArBBBackend a) arbbState
     where 
@@ -76,15 +72,13 @@ runArBBBackendAll a = VM.arbbSession$ runStateT (unArBBBackend a) arbbState
                   ,0)
 
 
-
-
 ---------------------------------------------------------------------------- 
 -- ArBB MONAD STUFF
 ----------------------------------------------------------------------------
 
-type ArBB a = Capture a 
+type ArBB a = ArBBBackend a  
 
-withArBB a = runArBBBackend (runR a)
+withArBB a = runArBBBackend a
 
 
 ----------------------------------------------------------------------------
@@ -111,6 +105,13 @@ addFunction fid fd ins outs =
 captureGenRecord :: GenRecord -> ArBBBackend FuncID 
 captureGenRecord gr = 
     do 
+
+      --------------------------------------------------
+      -- Begin with capturing any functions that this one 
+      -- calls or maps      
+      depsMap <- Trav.mapM captureGenRecord (genRecordDepends gr)
+      --------------------------------------------------
+      
       let tins = getInputTypes (genRecordFunType gr)
           touts = case getOutputType (genRecordFunType gr) of 
                     (Tuple xs) -> xs 
@@ -127,7 +128,7 @@ captureGenRecord gr =
 
       fd <- liftVM $ VM.funDef_ "generated" (concat arbbOuts) (concat arbbIns) $ \ os is -> 
             do 
-              vs <- accmBody d nids vt funMap (zip names is) 
+              vs <- accmBody d nids vt funMap depsMap (zip names is) 
               copyAll os vs
 
       fid <- getFunID 
@@ -137,89 +138,44 @@ captureGenRecord gr =
       liftIO$ putStrLn $ "captured: " ++ show fid 
  
       return fid 
-                                                 
-----------------------------------------------------------------------------
--- functions that are not backend oblivious 
--- TODO: Something else then FuncID should be returned. Something typed. 
-capture :: (ReifyableFunType a b, ReifyableFun a b) => (a -> b) -> ArBB FuncID 
-capture f = 
+  
+--            (FlexibleContext)
+capture :: Reify (a -> b) => (a -> b) -> ArBB (Function (FunIn a b) (FunOut b))
+capture d = 
     do 
-      nids <- reify f 
-      
-      let funType = reifyFunType f 
-      
-      d <- gets dag 
-      vt <- gets types
-      
-      let gr = GenRecord d funType nids vt
-      
-      lift $ captureGenRecord gr
-      
-{- 
-capture :: (ReifyableFunType a b, ReifyableFun a b) => (a -> b) -> ArBB FuncID 
-capture f = 
-    do 
-      fid <- lift getFunID 
-      nids <- reify f 
-      
-      let funType = reifyFunType f 
-          tins  = getInputTypes funType
-          touts = case getOutputType funType of 
-                    (Tuple xs) -> xs 
-                    a          -> [a]
-      -- TODO: reifyFunType may potentially return a much more 
-      --       complicated type than the ArBB backend supports.
-      --       Right now I dont think that kind of functions have 
-      --       been tried. Once they are, some kind of compilation 
-      --       into simpler typed objects is needed... 
-              
-      arbbIns  <-  lift . liftVM $ mapM toArBBType tins 
-      arbbOuts <-  lift . liftVM $ mapM toArBBType touts 
-      let names = [Variable ("v"++show i) | i <- [0..]]
-                   
-      funMap <- lift getFunMap
-      
-      d <- gets dag 
-      vt <- gets types
-    
-      fd <- lift . liftVM $ VM.funDef_ "generated" (concat arbbOuts) (concat arbbIns) $ \ os is -> 
-            do 
-              vs <- accmBody d nids vt funMap (zip names is) 
-              copyAll os vs
+      d' <- liftIO (runR (reify d))
+      fid <- captureGenRecord d'
+      return $ Function fid 
 
-      lift $ addFunction fid fd tins touts
- 
-      return fid 
-         
--} 
-serialize :: FuncID -> ArBB String 
-serialize fid = 
+serialize :: Function i o  -> ArBBBackend String 
+serialize (Function fid) = 
     do 
-      m <- lift getFunMap 
+      m <- getFunMap 
       -- let fid' = "f" ++ show fid 
       case Map.lookup fid m of 
         Nothing -> error "serialize: invalid function"
         (Just (f,tins,touts)) ->
             do 
-              str <- lift . liftVM $ VM.serializeFunction_ f
+              str <- liftVM $ VM.serializeFunction_ f
               return (VM.getCString str) 
+  
 
--- A VERY Cheaty version of Execute 
-execute :: (VariableList a, VariableList b) => FuncID {-Function a b-} -> a -> b -> ArBB ()       
-execute fid {-(Function fn)-} a b = 
+execute :: (VariableList a, VariableList b) => Function a b -> a -> b -> ArBB ()       
+execute (Function fid) a b = 
   do 
-    (mf,mv,_) <- lift get 
-    case Map.lookup fid {-fn-} mf of 
+    (mf,mv,_) <- get 
+    case Map.lookup fid  mf of 
       Nothing -> error "execute: Invalid function" 
       (Just (f,tins,touts)) -> 
         do 
           ins <- vlist a 
           outs <- vlist b
           
-          lift . liftVM$ VM.execute_ f outs ins 
+          liftVM$ VM.execute_ f outs ins 
          
           return ()
 
+-- TODO: Needs More Work 
 class VariableList a where 
     vlist :: a -> ArBB [VM.Variable]
 
@@ -228,7 +184,7 @@ class VariableList a where
 instance VariableList (DVector t a) where 
     vlist v = 
         do 
-          (_,mv,_) <- lift get 
+          (_,mv,_) <- get 
           case Map.lookup (dVectorID v) mv of 
             (Just v) -> return [v] 
             Nothing  -> error "ArBB version of vector not found!"
@@ -248,30 +204,30 @@ copyIn dat t =
   do 
    -- TODO: Bad. Looking at elements of Dat 
    let elem = dat V.! 0 
-   [st] <- lift . liftVM$ toArBBType (scalarType elem)             
-   dt <- lift . liftVM$ VM.getDenseType_ st ndims 
+   [st] <- liftVM$ toArBBType (scalarType elem)             
+   dt <- liftVM$ VM.getDenseType_ st ndims 
    
    let (fptr,n') = V.unsafeToForeignPtr0 dat
        ptr       = unsafeForeignPtrToPtr fptr
 
-   g <- lift . liftVM$ VM.createGlobal_nobind_ dt "output"
-   v <- lift . liftVM$ VM.variableFromGlobal_ g  
+   g <- liftVM$ VM.createGlobal_nobind_ dt "output"
+   v <- liftVM$ VM.variableFromGlobal_ g  
  
-   ss <- lift . liftVM$ mapM VM.usize_ dims'
-   lift . liftVM$ VM.opDynamicImm_ VM.ArbbOpAlloc [v] ss
+   ss <- liftVM$ mapM VM.usize_ dims'
+   liftVM$ VM.opDynamicImm_ VM.ArbbOpAlloc [v] ss
 
-   -- TODO: copy the data! 
 
-   arbbdat <- lift . liftVM$ VM.mapToHost_ v (map fromIntegral dims') VM.ArbbWriteOnlyRange
+   -- get a ptr to the data in the VM and copy Haskell vector into it. 
+   arbbdat <- liftVM$ VM.mapToHost_ v (map fromIntegral dims') VM.ArbbWriteOnlyRange
    liftIO$  copyBytes (castPtr arbbdat) 
                       ptr
                       ((foldl (*) 1 dims') * sizeOf elem) 
 
-   (mf,mv,i) <- lift get
+   (mf,mv,i) <- get
    
    let mv' = Map.insert i v mv 
                 
-   (lift . put) (mf,mv',i+1)
+   put (mf,mv',i+1)
 
    return (DVector i dims)
    -- TODO: Figure out if this is one of these cases where makeRefCountable is needed..
@@ -289,23 +245,23 @@ copyIn dat t =
 new :: (IsScalar a, V.Storable a, Dimensions t) => t -> a -> ArBB (DVector t a)
 new t a = 
   do
-   [st] <- lift . liftVM$ toArBBType (scalarType a)             
-   dt <- lift . liftVM$ VM.getDenseType_ st ndims   
+   [st] <- liftVM$ toArBBType (scalarType a)             
+   dt <- liftVM$ VM.getDenseType_ st ndims   
    
-   g <- lift . liftVM$ VM.createGlobal_nobind_ dt "output"
-   v <- lift .liftVM$ VM.variableFromGlobal_ g  
+   g <- liftVM$ VM.createGlobal_nobind_ dt "output"
+   v <- liftVM$ VM.variableFromGlobal_ g  
  
-   ss <- lift . liftVM$ mapM VM.usize_ (dimList dims)
-   lift . liftVM$ VM.opDynamicImm_ VM.ArbbOpAlloc [v] ss
+   ss <- liftVM$ mapM VM.usize_ (dimList dims)
+   liftVM$ VM.opDynamicImm_ VM.ArbbOpAlloc [v] ss
 
    -- TODO : Fill the vector!
     
 
-   (mf,mv,i) <- lift get 
+   (mf,mv,i) <- get 
    
    let mv' = Map.insert i v mv 
                 
-   (lift . put) (mf,mv',i+1)
+   put (mf,mv',i+1)
 
    return (DVector i dims)
   where 
@@ -329,10 +285,10 @@ copyOut dv =
        ptr       = unsafeForeignPtrToPtr fptr
 
 
-   (_,mv,_) <- lift get                    
+   (_,mv,_) <- get                    
    -- TODO: STOP CHEATING! 
    let (Just v) = Map.lookup (dVectorID dv) mv
-   arbbdat <- lift . liftVM$ VM.mapToHost_ v (map fromIntegral dims') VM.ArbbReadOnlyRange
+   arbbdat <- liftVM$ VM.mapToHost_ v (map fromIntegral dims') VM.ArbbReadOnlyRange
    liftIO$  copyBytes ptr
                       (castPtr arbbdat) 
                       ((foldl (*) 1 dims') * 4) -- CHEAT  
@@ -347,3 +303,4 @@ copyOut dv =
      ndims = length dims'
      dims = dVectorShape dv
      (Dim dims') = dims -- TODO: FIX FIX 
+

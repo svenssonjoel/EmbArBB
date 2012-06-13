@@ -46,13 +46,11 @@ plus75 :: Exp Word32 -> Exp Word32
 plus75 x = x + 75
 
 mapTest :: Exp (DVector Dim1 Word32) -> Exp (DVector Dim1 Word32) 
-mapTest v = map1 plus75 v 
+mapTest v = Lang.map plus75 v 
 
+--test1 = runR (reify addconst)
 
--- test1 :: MonadBackend backend => backend [NodeID]
-test1 = runR (reify addconst)
-
-test2 =  runArBBBackendAll test1 
+--test2 =  runArBBBackendAll test1 
 
 test3 = 
     withArBB $ do
@@ -93,10 +91,11 @@ test4 =
       x <- copyIn (V.fromList [1..10::Word32]) ((10::Int) :. Z)
       
       -- Create a new DVector for the result. (DVectors in here 
-      -- are mutable!)
-      (r1 :: DVector (Int :. Z) Word32) <- new ((10::Int) :. Z) 1
+      -- are mutable! Is that awkward?)
+      (r1 :: DVector (Int :. Z) Word32) <- new ((10::Int) :. Z) 0
       
       execute f x r1
+
       -- This freezes a mutable DVector into a normal Data.Vector.                                  
       r <- copyOut r1
           

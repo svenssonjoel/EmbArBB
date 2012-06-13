@@ -1,6 +1,6 @@
 {-# LANGUAGE TypeOperators, 
              FlexibleInstances,
-             ExistentialQuantification, 
+           --  ExistentialQuantification, 
              DeriveDataTypeable #-}
 
 {- 2012 Joel Svensson -} 
@@ -13,6 +13,7 @@ import Intel.ArBB.Variable
 import Intel.ArBB.Op
 
 import Intel.ArBB.MonadCapture
+import Intel.ArBB.GenRecord
 
 import Data.Typeable
 
@@ -28,8 +29,8 @@ data Expr = Lit Literal
           | ResIndex Expr Int 
             
             -- Function with correct name and type must exist in some kind of environment
-          | Call (Capture Integer) [Expr]  
-          | Map  (Capture Integer) [Expr]   
+          | Call (Capture GenRecord) [Expr]  
+          | Map  (Capture GenRecord) [Expr]   
           
           -- Hoas for the while loop.. 
           | While ([Expr] -> Expr)  ([Expr] -> [Expr])  [Expr] 
@@ -47,28 +48,3 @@ data Expr = Lit Literal
 -- add a layer of types 
 
 data Exp a = E {unE :: Expr}
-
-----------------------------------------------------------------------------
--- And functions 
-type FunctionName = String
-
-data Function i o = Function FunctionName 
-   deriving Show    
-             
-----------------------------------------------------------------------------
-data a :- b = a :- b 
-infixr :- 
-
-class ArgList a where 
-  argList :: a -> [Expr] 
-
-instance ArgList () where -- needed = 
-  argList () = [] 
-
-instance ArgList (Exp a) where 
-  argList (E a) = [a] 
-
-
-instance ArgList a => ArgList (Exp b :- a) where 
-  argList (E b :- a) = b : argList a 
-
