@@ -4,15 +4,15 @@
 
 * Status
   + Big changes all over the code is taking place right now. 
-
-
+  + None of the samples are updated for this new version. 
+    
 * TODOs:  
   + huge cleanup is needed.
 
   + The Data a vs Data (Exp a) issue. 
     
-  + separate Reification and code generation somehow.
-    - DONE: the interface between front and back is now encapsulated 
-      in something called a GenRecord. 
+  + DONE: separate Reification and code generation somehow.
+          the interface between front and back is now encapsulated 
+          in something called a GenRecord. 
 
 
