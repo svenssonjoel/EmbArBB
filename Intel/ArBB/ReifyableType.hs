@@ -27,6 +27,7 @@ class ReifyableType a where
   instance Data a => ReifyableType (Exp a)  where { \
     reifyType _ = typeOf (undefined :: a) } 
 
+{-
 ReifyScalarType(Int)
 ReifyScalarType(Int8)
 ReifyScalarType(Int16)
@@ -41,7 +42,7 @@ ReifyScalarType(Word8)
 ReifyScalarType(Word16)
 ReifyScalarType(Word32)
 ReifyScalarType(Word64)
-
+-}
 --TODO: Get a better grip on (Data a, Data (Exp a))
 
 

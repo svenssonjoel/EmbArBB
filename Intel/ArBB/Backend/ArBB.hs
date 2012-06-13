@@ -1,7 +1,8 @@
 {-# Language TypeOperators, 
              ScopedTypeVariables, 
              GeneralizedNewtypeDeriving,
-             FlexibleContexts #-} 
+             FlexibleContexts,
+             CPP #-} 
 
 module Intel.ArBB.Backend.ArBB where 
 
@@ -20,6 +21,7 @@ import           Intel.ArBB.Literal
 import           Intel.ArBB.Op
 
 import           Intel.ArBB.Data
+import           Intel.ArBB.Data.Int 
 import           Intel.ArBB.Backend.ArBB.CodeGen
 import           Intel.ArBB.Vector
 import           Intel.ArBB.IsScalar
@@ -39,6 +41,9 @@ import System.Mem.StableName
 import Control.Monad.State.Strict
 import qualified Data.Map as Map
 import qualified Data.Traversable as Trav
+
+import Data.Word
+import Data.Int
 
 ----------------------------------------------------------------------------
 -- the backend.. 
@@ -179,7 +184,23 @@ execute (Function fid) a b =
 class VariableList a where 
     vlist :: a -> ArBB [VM.Variable]
 
--- TODO: Add the scalar cases
+-- TODO: Add the scalar cases 
+#define ScalarVList(t,load)                      \
+  instance VariableList (t) where {              \
+     vlist a = liftM (:[]) $ liftVM $ VM.load a}
+                            
+ScalarVList(Int,int64_) -- incorrect on 32bit archs
+ScalarVList(Int8,int8_)
+ScalarVList(Int16,int16_)
+ScalarVList(Int32,int32_)
+ScalarVList(Int64,int64_)
+ScalarVList(Word,uint64_)
+ScalarVList(Word8,uint8_)
+ScalarVList(Word16,uint16_)
+ScalarVList(Word32,uint32_)
+ScalarVList(Word64,uint64_)
+ScalarVList(Float,float32_)
+ScalarVList(Double,float64_)
 
 instance VariableList (DVector t a) where 
     vlist v = 
@@ -188,6 +209,7 @@ instance VariableList (DVector t a) where
           case Map.lookup (dVectorID v) mv of 
             (Just v) -> return [v] 
             Nothing  -> error "ArBB version of vector not found!"
+
 instance (VariableList t, VariableList rest) => VariableList (t :- rest) where 
     vlist (v :- r) = 
         do
