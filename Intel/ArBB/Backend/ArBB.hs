@@ -143,7 +143,7 @@ captureGenRecord gr =
 
       addFunction fid fd tins touts
       
-      liftIO$ putStrLn $ "captured: " ++ show fid 
+      -- liftIO$ putStrLn $ "captured: " ++ show fid 
  
       return fid 
   

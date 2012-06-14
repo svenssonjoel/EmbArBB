@@ -30,23 +30,23 @@ testMatMul g size  =
   withArBB $ 
   do 
      tc1 <- liftIO getClockTime 
-     f <- capture2 matmul
+     f <- capture matmul
      tc2 <- liftIO getClockTime 
      
      --str <- serialize f
      --liftIO$ putStrLn str
      (rs1 :: [Int]) <- liftIO$ randoms g
      (rs2 :: [Int])  <- liftIO$ randoms g
-                                                             --  W   H
-     let m1 = Vector  (V.fromList (take (size*size) (P.map fromIntegral rs1))) (Two size size) -- (V.fromList [1..(320*640)]) (Two 640 320) 
-         m2 = Vector  (V.fromList (take (size*size) (P.map fromIntegral rs2))) (Two size size) -- (V.fromList [1..(640*320)]) (Two 320 640)  
-     r1 <- liftIO$ new2D 320 320
+                                                             
+     m1 <- copyIn (V.fromList (take (size*size) (P.map fromIntegral rs1))) (size:. size:.Z) 
+     m2 <- copyIn (V.fromList (take (size*size) (P.map fromIntegral rs2))) (size:. size:.Z) 
+     r1 <- new  (320:.320:.Z) 0
      -- r2 <- liftIO$ new2D 1000 1000   
   
-     execute2 f (m1 :- m2)  r1      
+     execute f (m1 :- m2)  r1      
      
      t1 <- liftIO getClockTime 
-     execute2 f (m1 :- m2)  r1      
+     execute f (m1 :- m2)  r1      
      --finish 
      
      t2 <- liftIO getClockTime 
@@ -54,7 +54,7 @@ testMatMul g size  =
 
      --liftIO $ putStrLn $ show b
               
-     r <- liftIO$ freeze r1
+     r <- copyOut r1
               
      -- liftIO$ putStrLn$ show r
 
