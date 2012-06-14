@@ -40,7 +40,7 @@ testMatMul g size  =
                                                              --  W   H
      let m1 = Vector  (V.fromList (take (size*size) (P.map fromIntegral rs1))) (Two size size) -- (V.fromList [1..(320*640)]) (Two 640 320) 
          m2 = Vector  (V.fromList (take (size*size) (P.map fromIntegral rs2))) (Two size size) -- (V.fromList [1..(640*320)]) (Two 320 640)  
-     r1 <- liftIO$ new2D 320 320
+     r1 <- liftIO$ new2D size size
      -- r2 <- liftIO$ new2D 1000 1000   
   
      execute f (m1 :- m2)  r1      
