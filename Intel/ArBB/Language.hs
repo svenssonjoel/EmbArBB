@@ -73,56 +73,56 @@ toWord8 (E a) =
 -- Reductions 
 
 -- | Reduce along level 0 
-addReduce0 :: Num a => Exp (DVector (Int:.t) a) -> Exp (DVector t a) 
+addReduce0 :: Num a => Exp (DVector (t:.Int) a) -> Exp (DVector t a) 
 addReduce0 (E vec) = 
   E $ Op AddReduce [vec,zero] 
   where (E zero) = 0 :: Exp USize
 
 -- | Reduce along level 0 
-mulReduce0 :: Num a => Exp (DVector (Int:.t) a) -> Exp (DVector t a) 
+mulReduce0 :: Num a => Exp (DVector (t:.Int) a) -> Exp (DVector t a) 
 mulReduce0 (E vec) = 
   E $ Op MulReduce [vec,zero]
   where (E zero) = 0 :: Exp USize
                                                                              
 -- | reduce along a specified level 
-addReduce :: Num a => Exp (DVector (Int:.t) a) -> Exp USize -> Exp (DVector t a) 
+addReduce :: Num a => Exp (DVector (t:.Int) a) -> Exp USize -> Exp (DVector t a) 
 addReduce (E vec) (E lev) = 
   E $ Op AddReduce [vec,lev]
 
 -- | reduce along a specified level 
-mulReduce :: Num a => Exp (DVector (Int:.t) a) -> Exp USize -> Exp (DVector t a) 
+mulReduce :: Num a => Exp (DVector (t:.Int) a) -> Exp USize -> Exp (DVector t a) 
 mulReduce (E vec) (E lev) = 
   E $ Op MulReduce [vec,lev]
 
 -- | reduce along a specified level 
-maxReduce :: Num a => Exp (DVector (Int:.t) a) -> Exp USize -> Exp (DVector t a) 
+maxReduce :: Num a => Exp (DVector (t:.Int) a) -> Exp USize -> Exp (DVector t a) 
 maxReduce (E vec) (E lev) = 
   E $ Op MaxReduce [vec,lev]
 
 -- | reduce along a specified level 
-minReduce :: Num a => Exp (DVector (Int:.t) a) -> Exp USize -> Exp (DVector t a) 
+minReduce :: Num a => Exp (DVector (t:.Int) a) -> Exp USize -> Exp (DVector t a) 
 minReduce (E vec) (E lev) = 
   E $ Op MinReduce [vec,lev]
 
 -- | reduce along a specified level 
-andReduce :: Exp (DVector (Int:.t) Bool) -> Exp USize -> Exp (DVector t Bool) 
+andReduce :: Exp (DVector (t:.Int) Bool) -> Exp USize -> Exp (DVector t Bool) 
 andReduce (E vec) (E lev) = 
   E $ Op AndReduce [vec,lev]
 
 -- | reduce along a specified level 
-iorReduce :: Exp (DVector (Int:.t) Bool) -> Exp USize -> Exp (DVector t Bool) 
+iorReduce :: Exp (DVector (t:.Int) Bool) -> Exp USize -> Exp (DVector t Bool) 
 iorReduce (E vec) (E lev) = 
   E $ Op IorReduce [vec,lev]
 
 -- | reduce along a specified level 
-xorReduce :: Exp (DVector (Int:.t) Bool) -> Exp USize -> Exp (DVector t Bool) 
+xorReduce :: Exp (DVector (t:.Int) Bool) -> Exp USize -> Exp (DVector t Bool) 
 xorReduce (E vec) (E lev) = 
   E $ Op XorReduce [vec,lev]
 
 ---------------------------------------------------------------------------- 
 -- Add Merge
 -- | Add merge..  
-addMerge :: Exp (DVector (Int:.t) a) -> Exp (DVector (Int:.t) USize) -> Exp USize -> Exp (DVector (Int:.t) a) 
+addMerge :: Exp (DVector (t:.Int) a) -> Exp (DVector (t:.Int) USize) -> Exp USize -> Exp (DVector (t:.Int) a) 
 addMerge (E b) (E v) (E u) = 
   E $ Op AddMerge [b,v,u]
 
@@ -254,7 +254,7 @@ rotate (E vec) (E steps) =
 
 -- | Rotate the contents of a dense container in the reversedirection
 -- Example: {1,2,3} -> {3,1,2} 
-rotateRev :: Exp (DVector (Int:.t) a) -> Exp ISize -> Exp (DVector (Int:.t) a) 
+rotateRev :: Exp (DVector (t:.Int) a) -> Exp ISize -> Exp (DVector (t:.Int) a) 
 rotateRev (E vec) (E steps) = 
   E $ Op RotateRev [vec,steps]  
 
@@ -263,7 +263,7 @@ reverse :: Exp (Vector a) -> Exp (Vector a)
 reverse (E vec) = E $ Op Reverse [vec]
 
 -- | Transpose a the first two dimensionalities of a 2D or 3D container
-transpose :: Exp (DVector (Int:.Int:.t) a) -> Exp (DVector (Int:.Int:. t) a) 
+transpose :: Exp (DVector (t:.Int:.Int) a) -> Exp (DVector (t:.Int:.Int) a) 
 transpose (E vec) = E $ Op Transpose [vec]
 
 -- | Sort the contents of a dense 1D container. Also returns 
@@ -285,13 +285,13 @@ sort (E vec) (E us) =
 -- get sizes of vectors 
 
 -- | get the length (total size) of a 1,2,3D vector 
-length :: Exp (DVector (Int:.t) a) -> Exp USize 
+length :: Exp (DVector (t:.Int) a) -> Exp USize 
 length (E vec) = E $ Op Length [vec]
 
-getNRows :: Exp (DVector (Int:.Int:.t) a) -> Exp USize 
+getNRows :: Exp (DVector (t:.Int:.Int) a) -> Exp USize 
 getNRows (E vec) = E $ Op GetNRows [vec]
   
-getNCols :: Exp (DVector (Int:.Int:.t) a) -> Exp USize 
+getNCols :: Exp (DVector (t:.Int:.Int) a) -> Exp USize 
 getNCols (E vec) = E $ Op GetNCols [vec]
 
 getNPages :: Exp (DVector Dim3 a) -> Exp USize 
@@ -299,26 +299,9 @@ getNPages (E vec) = E $ Op GetNPages [vec]
 
 ----------------------------------------------------------------------------
 -- | Call an ArBB Function 
---call :: ArgList t => Function t (Exp r) -> t -> (Exp r) 
---call (Function nom) ins = E $ Call nom (argList ins) 
-
--- TODO: very limited types here. try to generalize
--- TODO: Extremely messy type.. see what can be done 
---map :: ArgList (Exp t) => Function (EIn (Exp t) (Exp r)) (EOut (Exp r)) -> Exp (DVector d t) -> Exp (DVector d r) 
---map (Function nom) ins = E $ Map nom (argList ins) 
-
---map :: (ReifyableFunType (Exp a) (Exp b), ReifyableFun (Exp a) (Exp b)) 
---        => (Exp a -> Exp b) -> Exp (DVector Dim1 a) -> Exp (DVector Dim1 b)
---map f (E v) = E $ Map (capture f) [v] 
-
---hmmm Data a, Data (Exp a) why?? 
 map :: (Data a, Data b) => (Exp a -> Exp b) -> Exp (DVector t a) -> Exp (DVector t b)
 map f (E v) = E $ Map (reify f) [v] 
-
-  
---map :: (Reify (Exp a -> Exp b), ReifyableType (Exp a -> Exp b)) => 
---       (Exp a -> Exp b) -> Exp (DVector d a) -> Exp (DVector d b) 
---map f (E v) = E $ Map (capture f) [v] 
+-- TODO: hmmm Data a, Data (Exp a) why?? 
 
 ----------------------------------------------------------------------------
 -- unpairing. 
@@ -438,65 +421,7 @@ instance LoopState (Exp a,Exp b,Exp c) where
   loopFinalState (E e) = (E $ ResIndex e 0, 
                           E $ ResIndex e 1,
                           E $ ResIndex e 2) 
- 
-{- 
-while :: LoopState state 
-          => (state -> Exp Bool)    
-          -> (state -> state) 
-          -> state 
-          -> state 
-while cond f state = loopFinalState loop
-  where 
-    loop = E $ LWhile (newLabel ()) vars c body (loopState state)
-    (curr,vars) = loopVars state
-    (E c) = cond curr
-    body = loopState (f curr)
 
--- TODO: Supporting Tuples of Tuples in the loop state would be nice. 
---       Then [LExp] will not cut it anymore.
-class LoopState a where 
-  loopState :: a -> [LExp]           -- TODO: Again. will structure be needed?
-  loopVars :: a -> (a,[Variable])
-  loopFinalState :: Exp s -> a 
-
-  
-instance LoopState (Exp a) where   
-  loopState (E e1) = [e1]  
-  loopVars  (E e1) = ((e1'),[l1v])
-    where 
-      l1 = newLabel () 
-      l1v = Variable ("l" ++ show l1)
-      e1' = E $ LVar (newLabel ()) l1v 
-  loopFinalState (E e) = (E e) -- deconstr then reconstr (to get type right) 
-
-
-instance LoopState (Exp a,Exp b) where   
-  loopState (E e1,E e2) = [e1,e2]  
-  loopVars  (E e1,E e2) = ((e1',e2'),[l1v,l2v])
-    where 
-      l1 = newLabel () 
-      l2 = newLabel () 
-      l1v = Variable ("l" ++ show l1)
-      l2v = Variable ("l" ++ show l2) 
-      e1' = E $ LVar (newLabel ()) l1v 
-      e2' = E $ LVar (newLabel ()) l2v 
-  loopFinalState (E e) = (E $ LResIndex (newLabel ()) e 0, 
-                          E $ LResIndex (newLabel ()) e 1) 
- 
-
-instance LoopState (Exp a,Exp b,Exp c) where   
-  loopState (e1,e2,e3) = loopState e1 ++ loopState e2 ++ loopState e3  
-  loopVars  (e1,e2,e3) = ((e1',e2',e3'),ls1 ++ ls2 ++ ls3 )
-    where 
-      (e1',ls1) = loopVars e1
-      (e2',ls2) = loopVars e2
-      (e3',ls3) = loopVars e3
-  
-  loopFinalState (E e) = (E $ LResIndex (newLabel ()) e 0, 
-                          E $ LResIndex (newLabel ()) e 1,
-                          E $ LResIndex (newLabel ()) e 2) 
--} 
-  
       
 
 

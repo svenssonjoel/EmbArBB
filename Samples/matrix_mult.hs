@@ -28,13 +28,13 @@ testMatMul =
      m1 <- copyIn (V.fromList [2,0,0,
                                0,2,0,
                                0,0,2])
-                  (3:.3:.Z) 
+                  (Z:.3:.3) 
      m2 <- copyIn (V.fromList [1,2,3,
                                4,5,6,
                                7,8,9])
-                  (3:.3:.Z) 
+                  (Z:.3:.3) 
             
-     r1 <- new (3:.3:.Z) 0
+     r1 <- new (Z:.3:.3) 0
   
      execute f (m1 :- m2)  r1      
                   

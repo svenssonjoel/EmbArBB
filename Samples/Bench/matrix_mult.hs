@@ -38,10 +38,9 @@ testMatMul g size  =
      (rs1 :: [Int]) <- liftIO$ randoms g
      (rs2 :: [Int])  <- liftIO$ randoms g
                                                              
-     m1 <- copyIn (V.fromList (take (size*size) (P.map fromIntegral rs1))) (size:. size:.Z) 
-     m2 <- copyIn (V.fromList (take (size*size) (P.map fromIntegral rs2))) (size:. size:.Z) 
-     r1 <- new  (320:.320:.Z) 0
-     -- r2 <- liftIO$ new2D 1000 1000   
+     m1 <- copyIn (V.fromList (take (size*size) (P.map fromIntegral rs1))) (Z:.size:.size) 
+     m2 <- copyIn (V.fromList (take (size*size) (P.map fromIntegral rs2))) (Z:.size:.size) 
+     r1 <- new  (Z:.size:.size) 0
   
      execute f (m1 :- m2)  r1      
      

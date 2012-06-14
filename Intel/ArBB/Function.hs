@@ -31,6 +31,9 @@ instance ArgList a => ArgList (Exp b :- a) where
 ----------------------------------------------------------------------------
 -- Types for the i and o 
 
+
+-- create specific base cases.. need something special for scalars. 
+-- 
 type family FunOut b 
 type instance FunOut (Exp b) = b 
 type instance FunOut (Exp b, Exp c) = b :- c 

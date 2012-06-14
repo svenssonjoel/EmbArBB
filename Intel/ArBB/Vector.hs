@@ -29,21 +29,21 @@ class Dimensions a where
 instance Dimensions Z where 
     toDim Z = Dim []
 
-instance Dimensions t => Dimensions (Int :. t) where  
-    toDim (i :. is) = Dim (i:is')
+instance Dimensions t => Dimensions (t :. Int) where  
+    toDim (is :. i) = Dim (i:is')
         where (Dim is') = toDim is
 
 -- | Encode Dimensionality in the type of vectors                    
 data a :. b = a :. b  
-infixr :. 
+infixl :. 
 
 data Z = Z
 
 
 type Dim0 = Z             
-type Dim1 = Int :. Dim0 
-type Dim2 = Int :. Dim1 
-type Dim3 = Int :. Dim2 
+type Dim1 = Dim0 :. Int
+type Dim2 = Dim1 :. Int 
+type Dim3 = Dim2 :. Int 
 
 
 -- | Easy to use names. 

@@ -15,10 +15,10 @@ testSaxpy =
   do 
      f <- capture axpy
    
-     x <- copyIn (V.fromList [1,3..10::Float]) (5 :. Z) 
-     y <- copyIn (V.fromList [2,4..10::Float]) (5 :. Z) 
+     x <- copyIn (V.fromList [1,3..10::Float]) (Z:.5) 
+     y <- copyIn (V.fromList [2,4..10::Float]) (Z:.5) 
      
-     r1 <- new (5 :. Z) 0    
+     r1 <- new (Z:.5) 0    
 
      execute f (1 :- x :- y)  r1
               

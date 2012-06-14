@@ -29,11 +29,11 @@ testSgemm =
      liftIO$ putStrLn str
 
 
-     m1 <- copyIn (V.fromList [1,2,3,1,2,3,1,2,3]) (3:.3:.Z) 
-     m2 <- copyIn (V.fromList [2,0,0,0,2,0,0,0,2]) (3:.3:.Z) 
-     m3 <- copyIn (V.fromList [1,0,0,0,1,0,0,0,1]) (3:.3:.Z) 
+     m1 <- copyIn (V.fromList [1,2,3,1,2,3,1,2,3]) (Z:.3:.3) 
+     m2 <- copyIn (V.fromList [2,0,0,0,2,0,0,0,2]) (Z:.3:.3) 
+     m3 <- copyIn (V.fromList [1,0,0,0,1,0,0,0,1]) (Z:.3:.3) 
 
-     r1 <- new (3:.3:.Z) 0   
+     r1 <- new (Z:.3:.3) 0   
 
      execute f (m1 :- m2 :- m3 :- 1 :- 1)  r1
               

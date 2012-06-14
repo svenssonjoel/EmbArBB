@@ -31,7 +31,7 @@ import Data.Word
 import Data.IORef
 
 import qualified Data.Map as Map
-import Control.Monad.State -- hiding (liftIO)
+import Control.Monad.State hiding (liftIO)
 
 import Prelude as P
 
@@ -51,7 +51,7 @@ mapTest v = Lang.map plus75 v
 --test1 = runR (reify addconst)
 
 --test2 =  runArBBBackendAll test1 
-
+{-
 test3 = 
     withArBB $ do
       f <- capture (addconst (100 :: Exp Word32))
@@ -76,7 +76,7 @@ test3 =
       r <- copyOut r1
           
       liftIO$ putStrLn $ show r 
-
+-}
 
 
 test4 = 
@@ -88,11 +88,11 @@ test4 =
       liftIO$ putStrLn str
 
       -- Turn a normal Data.Vector into a DVector (an EmbArBB dense vector) 
-      x <- copyIn (V.fromList [1..10::Word32]) ((10::Int) :. Z)
+      x <- copyIn (V.fromList [1..10::Word32]) (Z :. 10)
       
       -- Create a new DVector for the result. (DVectors in here 
       -- are mutable! Is that awkward?)
-      (r1 :: DVector (Int :. Z) Word32) <- new ((10::Int) :. Z) 0
+      (r1 :: DVector (Z:.Int) Word32) <- new (Z :. 10) 0
       
       execute f x r1
 
@@ -101,5 +101,34 @@ test4 =
           
       liftIO$ putStrLn $ show r 
 
+
+test5 = 
+    withArBB $ do 
+      f <- capture numr
+      g <- capture numc
+      
+      str <- serialize f 
+      liftIO$ putStrLn str
+      
+      x <- copyIn (V.fromList [1..10::Word32]) (Z :. 2 :. 5)
+      r1 <- new (Z :. 1) 0 
+      r2 <- new (Z :. 1) 0 
+
+      execute f x r1 
+      execute g x r2 
+
+      r <- copyOut r1
+      c <- copyOut r2
+
+      liftIO$ putStrLn $ "Rows: "++ show r ++ " || Cols: " ++ show c
+            
+    where 
+      numr :: Exp (DVector Dim2 Word32) -> Exp (DVector Dim1 USize)
+      numr v = constVector n 1 
+          where n = getNRows v
+
+      numc :: Exp (DVector Dim2 Word32) -> Exp (DVector Dim1 USize)
+      numc v = constVector n 1 
+          where n = getNCols v
 
 

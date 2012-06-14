@@ -11,8 +11,9 @@ do
   printf "Num Cores: "
   echo $threads
   export ARBB_NUM_CORES=$threads
-  for x in  768 1024 2048
-#4 8 16 32 64 128 256 384 512 640 768
+  for x in  4 8 16 32 64 128 256 384 512 640 768
+#
+##768 1024 2048
   do 
     s=0
     for i in  {1..10} 

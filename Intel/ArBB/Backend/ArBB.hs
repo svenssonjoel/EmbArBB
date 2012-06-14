@@ -345,3 +345,6 @@ copyOut dv =
      (Dim dims') = dims -- TODO: FIX FIX 
 
 --TODO: Someway to copy a scalar out.. (readScalar) 
+
+--readScalar :: (Data a , IsScalar a) => 
+--              a -> ArBB a 

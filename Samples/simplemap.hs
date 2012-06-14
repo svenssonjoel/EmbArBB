@@ -44,10 +44,10 @@ testMap =
 
             
        
-     x <- copyIn (V.fromList [1..10::Word32]) (10 :. Z) 
+     x <- copyIn (V.fromList [1..10::Word32]) (Z:.10) 
         
-     r1 <- new (10 :. Z) 0
-     r2 <- new (10 :. Z) 0
+     r1 <- new (Z:.10) 0
+     r2 <- new (Z:.10) 0
 
      execute m  x  r1
      execute m2 x  r2
