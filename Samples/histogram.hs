@@ -12,9 +12,9 @@ import Data.Int
 import Data.Word
 
 import System.IO
-import Foreign
+import Foreign hiding (new)
 
--- TODO: The c++ version uses some kind of trick where a 1 is turned into an array of suitable size 
+-- NOTE: The c++ version uses some kind of trick where a 1 is turned into an array of suitable size 
 --       add_merge(1,input,256) ... 
 
 
@@ -23,23 +23,6 @@ histogram input = addMerge cv (vecToUSize input) 256
     where
       cv = constVector 1 s
       s  = length input 
- 
-
-testHist = 
-  withArBB $ 
-  do 
-     f <- capture2 histogram 
-     let v1 = fromList ([0,0,0,4,4,5] ++ replicate 10000 1)
-     
-     r1 <- liftIO$ new1D 256   
-
-     execute2 f v1 r1
-              
-     r <- liftIO$ freeze r1
-              
-     liftIO$ putStrLn$ show r
-
-
 
 -- Very much a hack.. 
 testHist2 =
@@ -52,14 +35,14 @@ testHist2 =
     -- TODO: Stop going through lists.
     withArBB $ 
       do 
-        f <- capture2 histogram 
-        let v1 = fromList ls 
-     
-        r1 <- liftIO$ new1D 256   
+        f <- capture histogram 
+      
+        v1 <- copyIn (V.fromList ls) ((256*256) :. Z) 
+        r1 <- new (256 :. Z) 0  
 
-        execute2 f v1 r1
+        execute f v1 r1
               
-        (Vector r _) <- liftIO$ freeze r1
+        r <- copyOut r1 -- (Vector r _) <- liftIO$ freeze r1
         
         let r' = V.toList r
 

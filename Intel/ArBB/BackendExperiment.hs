@@ -181,11 +181,37 @@ instance Reify Expr where
           [e2'] <- reifySimple e2
           [e3'] <- reifySimple e3
           insertNode e (NIf e1' e2' e3')
+-- TODO: FIX THE WHILE CASE. IT IS BUGY 
+    reify e@(While cond body state) = 
+        do 
+          variables <- createVariables state 
+          
+          let vexps = map Var variables 
+              cond' = cond vexps 
+              body' = body vexps 
+          i' <- mapM reifySimple state
+          -- Condition and body are special cases.
+          -- Needs to be dealt with locally. 
+          -- Nothing from cond or body should leak out
+          -- TODO: This is bad! repair it 
+          --       Maybe a switch sharing "on/off" is enough ? 
+          [c'] <- reifySimple cond'
+          b' <- mapM reifySimple body'
+          insertNode e (NWhile variables c' (concat b') (concat i')) 
 
     reify e@(Op op exprs) = 
         do
           exprs' <- mapM reifySimple exprs 
           insertNode e (NOp op (concat exprs')) 
+
+createVariables :: [Expr] -> Capture [Variable]
+createVariables [] = return []
+createVariables (x:xs) = 
+    do 
+      uniq <- newUnique 
+      let v = Variable ("l"++show uniq)
+      vs <- createVariables xs
+      return (v:vs)
          
 instance Reify (Exp a) where 
     reify = reify . unE 

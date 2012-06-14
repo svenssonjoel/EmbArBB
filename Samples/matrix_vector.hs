@@ -9,38 +9,24 @@ matVec m v = addReduce0
              $ m * (repeatRow v (getNRows m))
 
 
-testMatVec = 
-  withArBB $ 
-  do 
-     f <- capture2 matVec  
-     let m1 = Vector (V.fromList [2,0,0,0,
-                                  0,2,0,0,
-                                  0,0,2,0,
-                                  0,0,0,2]) (Two 4 4) 
-         v1 = fromList [1,2,3,4] 
-     
-     r1 <- liftIO$ new1D 4
-
-     execute2 f (m1 :- v1)  r1
-              
-     r <- liftIO$ freeze r1
-              
-     liftIO$ putStrLn$ show r
 
 main =  
   withArBB $ 
   do 
-     f <- capture2 matVec  
-     let m1 = Vector (V.fromList [2,0,0,0,
-                                  0,2,0,0,
-                                  0,0,2,0,
-                                  0,0,0,2]) (Two 4 4) 
-         v1 = fromList [1,2,3,4] 
+     f <- capture matVec  
+     let m1 = V.fromList [2,0,0,0,
+                          0,2,0,0,
+                          0,0,2,0,
+                          0,0,0,2]
+         v1 = V.fromList [1,2,3,4] 
      
-     r1 <- liftIO$ new1D 4
+     m <- copyIn m1 (4 :. 4 :. Z) 
+     v <- copyIn v1 (4 :. Z) 
 
-     execute2 f (m1 :- v1)  r1
+     r1 <- new (4 :. Z) 0 
+
+     execute f (m :- v)  r1
               
-     r <- liftIO$ freeze r1
+     r <- copyOut r1
               
      liftIO$ putStrLn$ show r

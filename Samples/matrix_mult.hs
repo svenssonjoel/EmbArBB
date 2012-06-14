@@ -23,23 +23,25 @@ matmul a b = fst $ while cond body (a,0)
 testMatMul = 
   withArBB $ 
   do 
-     f <- capture2 matmul
-     
-     
-                                            --  W H
-     let m1 = Vector  (V.fromList [2,0,0,
-                                   0,2,0,
-                                   0,0,2]) (Two 3 3) 
-         m2 = Vector  (V.fromList [1,2,3,
-                                   4,5,6,
-                                   7,8,9]) (Two 3 6)  
-     r1 <- liftIO$ new2D 3 3
+     f <- capture matmul
+    
+     m1 <- copyIn (V.fromList [2,0,0,
+                               0,2,0,
+                               0,0,2])
+                  (3:.3:.Z) 
+     m2 <- copyIn (V.fromList [1,2,3,
+                               4,5,6,
+                               7,8,9])
+                  (3:.3:.Z) 
+            
+     r1 <- new (3:.3:.Z) 0
   
-     execute2 f (m1 :- m2)  r1      
+     execute f (m1 :- m2)  r1      
                   
-     r <- liftIO$ freeze r1
+     r <- copyOut r1
               
      liftIO$ putStrLn$ show r
+
 
 main = testMatMul
  

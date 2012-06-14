@@ -13,35 +13,17 @@ axpy s x y = (ss*x) + y
 testSaxpy = 
   withArBB $ 
   do 
-     f <- capture2 axpy
-     let x = fromList [1,3..10 :: Float] 
-         y = fromList [2,4..10 :: Float] 
-        
+     f <- capture axpy
+   
+     x <- copyIn (V.fromList [1,3..10::Float]) (5 :. Z) 
+     y <- copyIn (V.fromList [2,4..10::Float]) (5 :. Z) 
      
-     r1 <- liftIO$ new1D 5   
+     r1 <- new (5 :. Z) 0    
 
-     execute2 f (1 :- x :- y)  r1
+     execute f (1 :- x :- y)  r1
               
-     r <- liftIO$ freeze r1
+     r <- copyOut r1
               
      liftIO$ putStrLn$ show r
-
-
-testDaxpy = 
-  withArBB $ 
-  do 
-     f <- capture2 axpy
-     let x = Vector (V.fromList [1,2,3,4,5,6,7,8,9,10 :: Double]) (One 10) 
-         y = Vector (V.fromList [1,2,3,4,5,6,7,8,9,10 :: Double]) (One 10 ) 
-        
-     
-     r1 <- liftIO$ new1D 10   
-
-     execute2 f (1 :- x :- y)  r1
-              
-     r <- liftIO$ freeze r1
-              
-     liftIO$ putStrLn$ show r
-
 
 main = testSaxpy
