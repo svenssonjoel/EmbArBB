@@ -2,6 +2,7 @@
              ScopedTypeVariables, 
              GeneralizedNewtypeDeriving,
              FlexibleContexts,
+             FlexibleInstances,
              CPP #-} 
 
 module Intel.ArBB.Backend.ArBB where 
@@ -54,7 +55,9 @@ newtype ArBBBackend a = ArBBBackend {unArBBBackend :: (S.StateT ArBBState VM.Emi
 type ArBBState = ( Map.Map Integer (VM.ConvFunction, [Type], [Type])
                  , Map.Map Integer VM.Variable -- dVectorID to ArBB vector map
                  , Integer)
-
+--TODO: needs to deal with Scalars in pretty much the same way as dvectors. 
+--      A type that refers to a scalar value on the ArBB side is needed. 
+--      It should hold just an identifier pointing out a Variable.
 
 ---------------------------------------------------------------------------- 
 -- 
@@ -190,7 +193,7 @@ class VariableList a where
 -- TODO: Add the scalar cases 
 #define ScalarVList(t,load)                      \
   instance VariableList (t) where {              \
-     vlist a = S.liftM (:[]) $ liftVM $ VM.load a}
+     vlist a = S.liftM (:[]) $ liftVM $ VM.load  a}
                             
 instance VariableList Int where 
     vlist a = 
@@ -199,11 +202,11 @@ instance VariableList Int where
           8 -> S.liftM (:[]) $ liftVM $ VM.int64_ a
           _ -> error "Platform not supported"
 
-instance VariableList Word where 
+instance VariableList  Word where 
     vlist a = 
-        case sizeOf a of 
-          4 -> S.liftM (:[]) $ liftVM $ VM.uint32_ a
-          8 -> S.liftM (:[]) $ liftVM $ VM.uint64_ a
+        case sizeOf  a of 
+          4 -> S.liftM (:[]) $ liftVM $ VM.uint32_  a
+          8 -> S.liftM (:[]) $ liftVM $ VM.uint64_  a
           _ -> error "Platform not supported" 
                
 
@@ -220,7 +223,7 @@ ScalarVList(Word64,uint64_)
 ScalarVList(Float,float32_)
 ScalarVList(Double,float64_)
 
-instance VariableList (DVector t a) where 
+instance VariableList (  (DVector t a)) where 
     vlist v = 
         do 
           (_,mv,_) <- S.get 
@@ -239,7 +242,7 @@ instance (VariableList t, VariableList rest) => VariableList (t :- rest) where
 
 ----------------------------------------------------------------------------
 -- Copy data into ArBB 
-copyIn :: (Data a, IsScalar a, V.Storable a, Dimensions t) => V.Vector a -> t -> ArBB (DVector t a) 
+copyIn :: (Data a, IsScalar a, V.Storable a, Dimensions t) => V.Vector a -> t -> ArBB (DVector t a)
 copyIn dat t = 
   do 
    -- TODO: Bad. Looking at elements of Dat 
@@ -269,7 +272,7 @@ copyIn dat t =
                 
    S.put (mf,mv',i+1)
 
-   return (DVector i dims)
+   return $ DVector i dims
    -- TODO: Figure out if this is one of these cases where makeRefCountable is needed..
    -- TODO: figure out if it is possible to let Haskell Garbage collector 
    --       "free" arbb-allocated memory. 
@@ -303,7 +306,7 @@ new t a =
                 
    S.put (mf,mv',i+1)
 
-   return (DVector i dims)
+   return $ DVector i dims
   where 
      -- TODO: There should be some insurance that ndims is 1,2 or 3.
      --       Or a way to handle the higher dimensionalities. 
@@ -316,7 +319,7 @@ new t a =
 ----------------------------------------------------------------------------
 -- Copy data out of ArBB 
 copyOut :: (Data a, IsScalar a, V.Storable a, Dimensions t) 
-         => DVector t a -> ArBB (V.Vector a) 
+         =>  DVector t a  -> ArBB (V.Vector a) 
 copyOut dv = 
   do 
    (vec :: M.IOVector a)  <- liftIO$ M.new $ (foldl (*) 1 dims')

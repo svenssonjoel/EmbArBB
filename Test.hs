@@ -92,7 +92,7 @@ test4 =
       
       -- Create a new DVector for the result. (DVectors in here 
       -- are mutable! Is that awkward?)
-      (r1 :: DVector (Z:.Int) Word32) <- new (Z :. 10) 0
+      r1 <- new (Z :. 10) 0
       
       execute f x r1
 
@@ -121,7 +121,7 @@ test5 =
       c <- copyOut r2
 
       liftIO$ putStrLn $ "Rows: "++ show r ++ " || Cols: " ++ show c
-            
+          
     where 
       numr :: Exp (DVector Dim2 Word32) -> Exp (DVector Dim1 USize)
       numr v = constVector n 1 
