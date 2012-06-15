@@ -3,7 +3,8 @@
              GeneralizedNewtypeDeriving,
              FlexibleContexts,
              FlexibleInstances,
-             CPP #-} 
+             CPP,
+             TypeFamilies #-} 
 
 module Intel.ArBB.Backend.ArBB where 
 
@@ -23,13 +24,15 @@ import           Intel.ArBB.Op
 
 import           Intel.ArBB.Data
 import           Intel.ArBB.Data.Int 
-import           Intel.ArBB.Backend.ArBB.CodeGen
 import           Intel.ArBB.Vector
 import           Intel.ArBB.IsScalar
 import           Intel.ArBB.ReifyableType
 import           Intel.ArBB.GenRecord
 import           Intel.ArBB.MonadCapture
 import           Intel.ArBB.Function
+
+import           Intel.ArBB.Backend.ArBB.CodeGen
+import           Intel.ArBB.Backend.ArBB.ArBBVector
 
 import qualified Data.Vector.Storable as V 
 import qualified Data.Vector.Storable.Mutable as M
@@ -223,11 +226,11 @@ ScalarVList(Word64,uint64_)
 ScalarVList(Float,float32_)
 ScalarVList(Double,float64_)
 
-instance VariableList (  (DVector t a)) where 
+instance VariableList (ArBBDVector t a) where 
     vlist v = 
         do 
           (_,mv,_) <- S.get 
-          case Map.lookup (dVectorID v) mv of 
+          case Map.lookup (arbbDVectorID v) mv of 
             (Just v) -> return [v] 
             Nothing  -> error "ArBB version of vector not found!"
 
@@ -242,7 +245,7 @@ instance (VariableList t, VariableList rest) => VariableList (t :- rest) where
 
 ----------------------------------------------------------------------------
 -- Copy data into ArBB 
-copyIn :: (Data a, IsScalar a, V.Storable a, Dimensions t) => V.Vector a -> t -> ArBB (DVector t a)
+copyIn :: (Data a, IsScalar a, V.Storable a, Dimensions t) => V.Vector a -> t -> ArBB (ArBBDVector t a)
 copyIn dat t = 
   do 
    -- TODO: Bad. Looking at elements of Dat 
@@ -272,7 +275,7 @@ copyIn dat t =
                 
    S.put (mf,mv',i+1)
 
-   return $ DVector i dims
+   return $ ArBBDVector i dims
    -- TODO: Figure out if this is one of these cases where makeRefCountable is needed..
    -- TODO: figure out if it is possible to let Haskell Garbage collector 
    --       "free" arbb-allocated memory. 
@@ -285,7 +288,7 @@ copyIn dat t =
 
 -- create a new DVector with same element at all indices. 
 -- TODO: Actually fill it with the elements (constVector)
-new :: (IsScalar a, V.Storable a, Dimensions t) => t -> a -> ArBB (DVector t a)
+new :: (IsScalar a, V.Storable a, Dimensions t) => t -> a -> ArBB (ArBBDVector t a)
 new t a = 
   do
    [st] <- liftVM$ toArBBType (scalarType a)             
@@ -306,7 +309,7 @@ new t a =
                 
    S.put (mf,mv',i+1)
 
-   return $ DVector i dims
+   return $ ArBBDVector i dims
   where 
      -- TODO: There should be some insurance that ndims is 1,2 or 3.
      --       Or a way to handle the higher dimensionalities. 
@@ -319,7 +322,7 @@ new t a =
 ----------------------------------------------------------------------------
 -- Copy data out of ArBB 
 copyOut :: (Data a, IsScalar a, V.Storable a, Dimensions t) 
-         =>  DVector t a  -> ArBB (V.Vector a) 
+         =>  ArBBDVector t a  -> ArBB (V.Vector a) 
 copyOut dv = 
   do 
    (vec :: M.IOVector a)  <- liftIO$ M.new $ (foldl (*) 1 dims')
@@ -330,7 +333,7 @@ copyOut dv =
 
    (_,mv,_) <- S.get                    
   
-   let (Just v) = Map.lookup (dVectorID dv) mv
+   let (Just v) = Map.lookup (arbbDVectorID dv) mv
    arbbdat <- liftVM$ VM.mapToHost_ v (map fromIntegral dims') VM.ArbbReadOnlyRange
    liftIO$  copyBytes ptr
                       (castPtr arbbdat) 
@@ -344,10 +347,78 @@ copyOut dv =
      -- TODO: There should be some insurance that ndims is 1,2 or 3.
      --       Or a way to handle the higher dimensionalities. 
      ndims = length dims'
-     dims = dVectorShape dv
+     dims = arbbDVectorShape dv
      (Dim dims') = dims -- TODO: FIX FIX 
 
 --TODO: Someway to copy a scalar out.. (readScalar) 
 
 --readScalar :: (Data a , IsScalar a) => 
 --              a -> ArBB a 
+
+
+
+
+----------------------------------------------------------------------------
+-- References to scalars that live on the ArBB side. 
+data ArBBRef a = ArBBRef {arbbRefID :: Integer}
+
+----------------------------------------------------------------------------
+-- Creating the input output baviour of the ArBB backend.
+-- TODO: Talk to some expert about this.. (Emil, Koen, ? ) 
+
+type instance FunOut (Exp (DVector t a)) = ArBBDVector t a 
+
+#define ScalarOut(scal)                            \
+  type instance FunOut (Exp (scal)) = ArBBRef (scal)
+  
+ScalarOut(Int)
+ScalarOut(Int8)
+ScalarOut(Int16)
+ScalarOut(Int32)
+ScalarOut(Int64)
+ScalarOut(Word)
+ScalarOut(Word8)
+ScalarOut(Word16)
+ScalarOut(Word32)
+ScalarOut(Word64)
+ScalarOut(Float)
+ScalarOut(Double)
+
+type instance FunOut (a,b) = FunOut a :- FunOut b 
+type instance FunOut (a,b,c) = FunOut a :- FunOut b :- FunOut c 
+
+
+type instance FunIn (Exp (DVector t1 a)) (Exp b) = ArBBDVector t1 a 
+type instance FunIn (Exp (DVector t1 a)) () = ArBBDVector t1 a 
+
+type instance FunIn (Exp a) (b -> c) = FunIn (Exp a) () :- FunIn b c 
+
+#define ScalarIn(scal,r)                                      \
+  type instance FunIn (Exp (scal)) (r) = ArBBRef (scal)
+  
+
+ScalarIn(Int,Exp b)
+ScalarIn(Int8,Exp b)
+ScalarIn(Int16,Exp b)
+ScalarIn(Int32,Exp b)
+ScalarIn(Int64,Exp b)
+ScalarIn(Word,Exp b)
+ScalarIn(Word8,Exp b)
+ScalarIn(Word16,Exp b)
+ScalarIn(Word32,Exp b)
+ScalarIn(Word64,Exp b)
+ScalarIn(Float,Exp b)
+ScalarIn(Double,Exp b)
+
+ScalarIn(Int,())
+ScalarIn(Int8,())
+ScalarIn(Int16,())
+ScalarIn(Int32,())
+ScalarIn(Int64,())
+ScalarIn(Word,())
+ScalarIn(Word8,())
+ScalarIn(Word16,())
+ScalarIn(Word32,())
+ScalarIn(Word64,())
+ScalarIn(Float,())
+ScalarIn(Double,())

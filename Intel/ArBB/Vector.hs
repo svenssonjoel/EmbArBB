@@ -17,8 +17,11 @@ import Intel.ArBB.IsScalar
 
 ----------------------------------------------------------------------------
 -- Dense Vectors
-data DVector d a = DVector {dVectorID :: Integer, 
-                            dVectorShape :: Dim}
+data DVector d a = DVector { dVectorData  :: V.Vector a  -- dVectorID :: Integer, 
+                           , dVectorShape :: Dim}
+
+mkDVector :: V.Vector a -> Dim -> DVector Dim a 
+mkDVector v d = DVector v d 
 
 data Dim = Dim {dimList :: [Int]}
 
@@ -53,9 +56,6 @@ type Vector   = DVector Dim1
 type Vector2D = DVector Dim2               
 type Vector3D = DVector Dim3
   
-
-
-
 ----------------------------------------------------------------------------
 -- Nested Vectors 
 data NVector = NVector {nVectorID :: Integer}
