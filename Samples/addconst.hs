@@ -17,8 +17,10 @@ main =
      x <- copyIn (V.fromList [1..10 :: Float]) (Z:.10)
 
      r1 <- new (Z:.10) 0 
-
-     execute f (1 :- x)  r1
+     
+     c <- mkRef 1 
+     
+     execute f (c :- x)  r1
               
      r <- copyOut r1
               

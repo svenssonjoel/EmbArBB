@@ -34,8 +34,10 @@ testSgemm =
      m3 <- copyIn (V.fromList [1,0,0,0,1,0,0,0,1]) (Z:.3:.3) 
 
      r1 <- new (Z:.3:.3) 0   
+     
+     c <- mkRef 1
 
-     execute f (m1 :- m2 :- m3 :- 1 :- 1)  r1
+     execute f (m1 :- m2 :- m3 :- c :- c)  r1
               
      r <- copyOut r1
               
