@@ -3,6 +3,8 @@
              GeneralizedNewtypeDeriving,
              FlexibleContexts,
              FlexibleInstances,
+             UndecidableInstances,
+             OverlappingInstances,
              CPP,
              TypeFamilies #-} 
 
@@ -188,7 +190,13 @@ execute (Function fid) a b =
           liftVM$ VM.execute_ f outs ins 
          
           return ()
-
+instance VariableList (ArBBDVector t a) where 
+    vlist v = 
+        do 
+          (_,mv,_) <- S.get 
+          case Map.lookup (arbbDVectorID v) mv of 
+            (Just v) -> return [v] 
+            Nothing  -> error "ArBB version of vector not found!"
 -- TODO: Needs More Work 
 class VariableList a where 
     vlist :: a -> ArBB [VM.Variable]
@@ -197,7 +205,16 @@ class VariableList a where
 #define ScalarVList(t,load)                      \
   instance VariableList (t) where {              \
      vlist a = S.liftM (:[]) $ liftVM $ VM.load  a}
-                            
+                   
+instance VariableList (ArBBRef a) where 
+    vlist (ArBBRef v) = return [v]
+
+instance (Ref a) => VariableList a where 
+    vlist a = 
+        do 
+          (ArBBRef v) <- mkRef a 
+          return [v]
+         
 instance VariableList Int where 
     vlist a = 
         case sizeOf a of 
@@ -226,13 +243,7 @@ ScalarVList(Word64,uint64_)
 ScalarVList(Float,float32_)
 ScalarVList(Double,float64_)
 
-instance VariableList (ArBBDVector t a) where 
-    vlist v = 
-        do 
-          (_,mv,_) <- S.get 
-          case Map.lookup (arbbDVectorID v) mv of 
-            (Just v) -> return [v] 
-            Nothing  -> error "ArBB version of vector not found!"
+
 
 instance (VariableList t, VariableList rest) => VariableList (t :- rest) where 
     vlist (v :- r) = 
@@ -357,11 +368,39 @@ copyOut dv =
 
 
 
+----------------------------------------------------------------------------
+-- TODO: require an ID system of the backen. this can make the typefamily business 
+--       below easier (a one time thing) 
+-- 
 
 ----------------------------------------------------------------------------
--- References to scalars that live on the ArBB side. 
-data ArBBRef a = ArBBRef {arbbRefID :: Integer}
+-- References to scalars that live on the ArBB side.
+ 
+data ArBBRef a = ArBBRef {arbbRefVar :: VM.Variable}
 
+class Ref a where
+    mkRef :: a -> ArBB (ArBBRef a)
+
+
+#define RefScal(ty,load)                   \
+  instance Ref (ty) where  {                  \
+    mkRef a =                              \
+      do {                                  \
+          v <- liftVM $ VM.load  a;           \
+          return $ ArBBRef v }} 
+
+RefScal(Int,int64_) -- fix for 32/64 bit
+RefScal(Int8,int8_)
+RefScal(Int16,int16_)
+RefScal(Int32,int32_)
+RefScal(Int64,int64_)
+RefScal(Word,uint64_)
+RefScal(Word8,uint8_)
+RefScal(Word16,uint16_)
+RefScal(Word32,uint32_)
+RefScal(Word64,uint64_)
+RefScal(Float,float32_)
+RefScal(Double,float64_)
 ----------------------------------------------------------------------------
 -- Creating the input output baviour of the ArBB backend.
 -- TODO: Talk to some expert about this.. (Emil, Koen, ? ) 
@@ -386,7 +425,7 @@ ScalarOut(Double)
 
 type instance FunOut (a,b) = FunOut a :- FunOut b 
 type instance FunOut (a,b,c) = FunOut a :- FunOut b :- FunOut c 
-
+type instance FunOut (a -> b) = FunOut b 
 
 type instance FunIn (Exp (DVector t1 a)) (Exp b) = ArBBDVector t1 a 
 type instance FunIn (Exp (DVector t1 a)) () = ArBBDVector t1 a 

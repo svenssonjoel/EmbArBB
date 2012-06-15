@@ -19,8 +19,10 @@ testSaxpy =
      y <- copyIn (V.fromList [2,4..10::Float]) (Z:.5) 
      
      r1 <- new (Z:.5) 0    
-
-     execute f (1 :- x :- y)  r1
+           
+     c <- mkRef 1 
+     
+     execute f (c :- x :- y)  r1
               
      r <- copyOut r1
               
