@@ -34,7 +34,9 @@ import           Intel.ArBB.MonadCapture
 import           Intel.ArBB.Function
 
 import           Intel.ArBB.Backend.ArBB.CodeGen
-import           Intel.ArBB.Backend.ArBB.ArBBVector
+-- import           Intel.ArBB.Backend.ArBB.ArBBVector
+import           Intel.ArBB.Backend.Vector
+import           Intel.ArBB.Backend.Scalar
 
 import qualified Data.Vector.Storable as V 
 import qualified Data.Vector.Storable.Mutable as M
@@ -57,12 +59,15 @@ newtype ArBBBackend a = ArBBBackend {unArBBBackend :: (S.StateT ArBBState VM.Emi
     deriving (Monad, S.MonadState ArBBState, S.MonadIO, Functor) 
 
 -- String FunctionName or FunctionID
-type ArBBState = ( Map.Map Integer (VM.ConvFunction, [Type], [Type])
-                 , Map.Map Integer VM.Variable -- dVectorID to ArBB vector map
-                 , Integer)
---TODO: needs to deal with Scalars in pretty much the same way as dvectors. 
+data ArBBState = ArBBState { arbbFunMap :: Map.Map Integer (VM.ConvFunction, [Type], [Type])
+                           , arbbVarMap :: Map.Map Integer VM.Variable -- backend IDs  to ArBB vector ma
+                           , arbbUnique :: Integer } 
+--TODO: needs to deal with Scalars in pretty much the same way as dvectors.
+ 
 --      A type that refers to a scalar value on the ArBB side is needed. 
 --      It should hold just an identifier pointing out a Variable.
+
+type ArBBVector = BEDVector 
 
 ---------------------------------------------------------------------------- 
 -- 
@@ -76,16 +81,16 @@ liftIO a = ArBBBackend (S.liftIO a)
 runArBBBackend :: ArBBBackend a -> IO a 
 runArBBBackend a = VM.arbbSession$ S.evalStateT (unArBBBackend a) arbbState
     where 
-      arbbState = (Map.empty
-                  ,Map.empty
-                  ,0)
+      arbbState = ArBBState Map.empty
+                            Map.empty
+                            0
 
 
 runArBBBackendAll a = VM.arbbSession$ S.runStateT (unArBBBackend a) arbbState
     where 
-      arbbState = (Map.empty
-                  ,Map.empty
-                  ,0)
+      arbbState = ArBBState Map.empty
+                            Map.empty
+                            0
 
 
 ---------------------------------------------------------------------------- 
@@ -102,19 +107,18 @@ withArBB a = runArBBBackend a
 getFunID :: ArBBBackend  FuncID  
 getFunID = 
     do 
-      funId <- S.gets (\(_,_,x) -> x)
-      S.modify $ \(a,b,c) -> (a,b,c+1)
-      return funId 
+      uniq <- S.gets arbbUnique 
+      S.modify $ \s -> s {arbbUnique = uniq + 1} 
+      return uniq 
 
 getFunMap :: ArBBBackend (Map.Map Integer (VM.ConvFunction, [Type], [Type]))
-getFunMap = S.gets (\(m,_,_) -> m) 
+getFunMap = S.gets arbbFunMap 
 
 addFunction :: FuncID -> VM.ConvFunction -> [Type] -> [Type] -> ArBBBackend ()
 addFunction fid fd ins outs = 
     do
       m <- getFunMap 
-      -- let fid' = "f" ++ show fid 
-      S.modify $ \(m,b,c) -> (Map.insert fid (fd,ins,outs) m,b,c)
+      S.modify $ \s -> s { arbbFunMap = Map.insert fid (fd,ins,outs) m } 
 
 
 
@@ -179,7 +183,7 @@ serialize (Function fid) =
 execute :: (VariableList a, VariableList b) => Function a b -> a -> b -> ArBB ()       
 execute (Function fid) a b = 
   do 
-    (mf,mv,_) <- S.get 
+    (ArBBState mf mv _) <- S.get 
     case Map.lookup fid  mf of 
       Nothing -> error "execute: Invalid function" 
       (Just (f,tins,touts)) -> 
@@ -190,11 +194,11 @@ execute (Function fid) a b =
           liftVM$ VM.execute_ f outs ins 
          
           return ()
-instance VariableList (ArBBDVector t a) where 
+instance VariableList (BEDVector t a) where 
     vlist v = 
         do 
-          (_,mv,_) <- S.get 
-          case Map.lookup (arbbDVectorID v) mv of 
+          (ArBBState  _ mv _) <- S.get 
+          case Map.lookup (beDVectorID v) mv of 
             (Just v) -> return [v] 
             Nothing  -> error "ArBB version of vector not found!"
 -- TODO: Needs More Work 
@@ -208,6 +212,10 @@ class VariableList a where
                    
 instance VariableList (ArBBRef a) where 
     vlist (ArBBRef v) = return [v]
+
+instance VariableList (BEScalar a) where 
+  vlist (BEScalar i) = undefined
+      -- case Map.Lookup
 
 instance (Ref a) => VariableList a where 
     vlist a = 
@@ -256,7 +264,7 @@ instance (VariableList t, VariableList rest) => VariableList (t :- rest) where
 
 ----------------------------------------------------------------------------
 -- Copy data into ArBB 
-copyIn :: (Data a, IsScalar a, V.Storable a, Dimensions t) => V.Vector a -> t -> ArBB (ArBBDVector t a)
+copyIn :: (Data a, IsScalar a, V.Storable a, Dimensions t) => V.Vector a -> t -> ArBB (BEDVector t a)
 copyIn dat t = 
   do 
    -- TODO: Bad. Looking at elements of Dat 
@@ -280,13 +288,14 @@ copyIn dat t =
                       ptr
                       ((foldl (*) 1 dims') * sizeOf elem) 
 
-   (mf,mv,i) <- S.get
+   (ArBBState mf mv i) <- S.get
    
-   let mv' = Map.insert i v mv 
+   -- TODO: an addVector function.. 
+   let mv' = Map.insert i v mv
                 
-   S.put (mf,mv',i+1)
+   S.put (ArBBState mf mv' (i+1))
 
-   return $ ArBBDVector i dims
+   return $ BEDVector i dims
    -- TODO: Figure out if this is one of these cases where makeRefCountable is needed..
    -- TODO: figure out if it is possible to let Haskell Garbage collector 
    --       "free" arbb-allocated memory. 
@@ -299,7 +308,7 @@ copyIn dat t =
 
 -- create a new DVector with same element at all indices. 
 -- TODO: Actually fill it with the elements (constVector)
-new :: (IsScalar a, V.Storable a, Dimensions t) => t -> a -> ArBB (ArBBDVector t a)
+new :: (IsScalar a, V.Storable a, Dimensions t) => t -> a -> ArBB (BEDVector t a)
 new t a = 
   do
    [st] <- liftVM$ toArBBType (scalarType a)             
@@ -314,13 +323,13 @@ new t a =
    -- TODO : Fill the vector!
     
 
-   (mf,mv,i) <- S.get 
+   (ArBBState mf mv i) <- S.get 
    
    let mv' = Map.insert i v mv 
                 
-   S.put (mf,mv',i+1)
+   S.put (ArBBState mf mv' (i+1))
 
-   return $ ArBBDVector i dims
+   return $ BEDVector i dims
   where 
      -- TODO: There should be some insurance that ndims is 1,2 or 3.
      --       Or a way to handle the higher dimensionalities. 
@@ -333,7 +342,7 @@ new t a =
 ----------------------------------------------------------------------------
 -- Copy data out of ArBB 
 copyOut :: (Data a, IsScalar a, V.Storable a, Dimensions t) 
-         =>  ArBBDVector t a  -> ArBB (V.Vector a) 
+         =>  BEDVector t a  -> ArBB (V.Vector a) 
 copyOut dv = 
   do 
    (vec :: M.IOVector a)  <- liftIO$ M.new $ (foldl (*) 1 dims')
@@ -342,9 +351,9 @@ copyOut dv =
        ptr       = unsafeForeignPtrToPtr fptr
 
 
-   (_,mv,_) <- S.get                    
+   (ArBBState  _ mv _) <- S.get                    
   
-   let (Just v) = Map.lookup (arbbDVectorID dv) mv
+   let (Just v) = Map.lookup (beDVectorID dv) mv
    arbbdat <- liftVM$ VM.mapToHost_ v (map fromIntegral dims') VM.ArbbReadOnlyRange
    liftIO$  copyBytes ptr
                       (castPtr arbbdat) 
@@ -358,7 +367,7 @@ copyOut dv =
      -- TODO: There should be some insurance that ndims is 1,2 or 3.
      --       Or a way to handle the higher dimensionalities. 
      ndims = length dims'
-     dims = arbbDVectorShape dv
+     dims = beDVectorShape dv
      (Dim dims') = dims -- TODO: FIX FIX 
 
 --TODO: Someway to copy a scalar out.. (readScalar) 
@@ -405,7 +414,7 @@ RefScal(Double,float64_)
 -- Creating the input output baviour of the ArBB backend.
 -- TODO: Talk to some expert about this.. (Emil, Koen, ? ) 
 
-type instance FunOut (Exp (DVector t a)) = ArBBDVector t a 
+type instance FunOut (Exp (DVector t a)) = BEDVector t a 
 
 #define ScalarOut(scal)                            \
   type instance FunOut (Exp (scal)) = ArBBRef (scal)
@@ -427,8 +436,8 @@ type instance FunOut (a,b) = FunOut a :- FunOut b
 type instance FunOut (a,b,c) = FunOut a :- FunOut b :- FunOut c 
 type instance FunOut (a -> b) = FunOut b 
 
-type instance FunIn (Exp (DVector t1 a)) (Exp b) = ArBBDVector t1 a 
-type instance FunIn (Exp (DVector t1 a)) () = ArBBDVector t1 a 
+type instance FunIn (Exp (DVector t1 a)) (Exp b) = BEDVector t1 a 
+type instance FunIn (Exp (DVector t1 a)) () = BEDVector t1 a 
 
 type instance FunIn (Exp a) (b -> c) = FunIn (Exp a) () :- FunIn b c 
 

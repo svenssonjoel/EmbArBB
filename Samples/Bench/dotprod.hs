@@ -21,29 +21,28 @@ dotprod v1 v2 = index0$ addReduce0 (v1 * v2)
 testDot g size = 
   withArBB $ 
   do 
-     f <- capture2 dotprod
+     f <- capture dotprod
 
      (rs1 :: [Double]) <- liftIO$ randoms g
      (rs2 :: [Double]) <- liftIO$ randoms g
 
-     let x = Vector  (V.fromList (take size (rs1))) (One size) 
-         y = Vector  (V.fromList (take size (rs2))) (One size) 
-     let a = fromList [0,1,2 :: Double] -- (One 3)   
-         b = fromList [0,1,2 :: Double] -- (One 3)     
+     x <- copyIn (V.fromList (take size (rs1))) (Z:.size) 
+     y <- copyIn (V.fromList (take size (rs2))) (Z:.size) 
+     --let a = fromList [0,1,2 :: Double] -- (One 3)   
+     --    b = fromList [0,1,2 :: Double] -- (One 3)     
 
-     r1 <- liftIO$ newIORef 0   
-     r2 <- liftIO$ newIORef 0   
-
-     execute2 f (a :- b)  r2
+     r1 <- mkRef 0 
+   
+     -- execute2 f (a :- b)  r2
 
      t1 <- liftIO getClockTime 
-     execute2 f (x :- y)  r1
+     execute f (x :- y)  r1
      t2 <- liftIO getClockTime          
 
-     r <- liftIO$ readIORef r1
-     r' <- liftIO$ readIORef r2
+     --r <- liftIO$ readIORef r1
+   
               
-     liftIO$ putStrLn$ show r ++ " " ++ show r'
+     --liftIO$ putStrLn$ show r ++ " " ++ show r'
      liftIO $ printf "%f\n"  (diffs (diffClockTimes t2 t1))
             
 
