@@ -5,8 +5,7 @@
              FlexibleInstances,
              UndecidableInstances,
              OverlappingInstances,
-             CPP,
-             TypeFamilies #-} 
+             CPP #-} 
 
 module Intel.ArBB.Backend.ArBB where 
 
@@ -210,18 +209,18 @@ class VariableList a where
   instance VariableList (t) where {              \
      vlist a = S.liftM (:[]) $ liftVM $ VM.load  a}
                    
-instance VariableList (ArBBRef a) where 
-    vlist (ArBBRef v) = return [v]
+--instance VariableList (ArBBRef a) where 
+--    vlist (ArBBRef v) = return [v]
 
 instance VariableList (BEScalar a) where 
   vlist (BEScalar i) = undefined
       -- case Map.Lookup
 
-instance (Ref a) => VariableList a where 
-    vlist a = 
-        do 
-          (ArBBRef v) <- mkRef a 
-          return [v]
+--instance (Ref a) => VariableList a where 
+--    vlist a = 
+--        do 
+--          (ArBBRef v) <- mkRef a 
+--          return [v]
          
 instance VariableList Int where 
     vlist a = 
@@ -384,7 +383,7 @@ copyOut dv =
 
 ----------------------------------------------------------------------------
 -- References to scalars that live on the ArBB side.
- 
+{-  
 data ArBBRef a = ArBBRef {arbbRefVar :: VM.Variable}
 
 class Ref a where
@@ -413,60 +412,5 @@ RefScal(Double,float64_)
 ----------------------------------------------------------------------------
 -- Creating the input output baviour of the ArBB backend.
 -- TODO: Talk to some expert about this.. (Emil, Koen, ? ) 
+-} 
 
-type instance FunOut (Exp (DVector t a)) = BEDVector t a 
-
-#define ScalarOut(scal)                            \
-  type instance FunOut (Exp (scal)) = ArBBRef (scal)
-  
-ScalarOut(Int)
-ScalarOut(Int8)
-ScalarOut(Int16)
-ScalarOut(Int32)
-ScalarOut(Int64)
-ScalarOut(Word)
-ScalarOut(Word8)
-ScalarOut(Word16)
-ScalarOut(Word32)
-ScalarOut(Word64)
-ScalarOut(Float)
-ScalarOut(Double)
-
-type instance FunOut (a,b) = FunOut a :- FunOut b 
-type instance FunOut (a,b,c) = FunOut a :- FunOut b :- FunOut c 
-type instance FunOut (a -> b) = FunOut b 
-
-type instance FunIn (Exp (DVector t1 a)) (Exp b) = BEDVector t1 a 
-type instance FunIn (Exp (DVector t1 a)) () = BEDVector t1 a 
-
-type instance FunIn (Exp a) (b -> c) = FunIn (Exp a) () :- FunIn b c 
-
-#define ScalarIn(scal,r)                                      \
-  type instance FunIn (Exp (scal)) (r) = ArBBRef (scal)
-  
-
-ScalarIn(Int,Exp b)
-ScalarIn(Int8,Exp b)
-ScalarIn(Int16,Exp b)
-ScalarIn(Int32,Exp b)
-ScalarIn(Int64,Exp b)
-ScalarIn(Word,Exp b)
-ScalarIn(Word8,Exp b)
-ScalarIn(Word16,Exp b)
-ScalarIn(Word32,Exp b)
-ScalarIn(Word64,Exp b)
-ScalarIn(Float,Exp b)
-ScalarIn(Double,Exp b)
-
-ScalarIn(Int,())
-ScalarIn(Int8,())
-ScalarIn(Int16,())
-ScalarIn(Int32,())
-ScalarIn(Int64,())
-ScalarIn(Word,())
-ScalarIn(Word8,())
-ScalarIn(Word16,())
-ScalarIn(Word32,())
-ScalarIn(Word64,())
-ScalarIn(Float,())
-ScalarIn(Double,())
