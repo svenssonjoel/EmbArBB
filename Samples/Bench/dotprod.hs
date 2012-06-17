@@ -13,37 +13,41 @@ import System.Environment
 
 import Prelude as P
 
+import qualified Intel.ArbbVM as VM
 
 dotprod :: Exp (DVector Dim1 Double) -> Exp (DVector Dim1 Double) -> Exp Double 
 dotprod v1 v2 = index0$ addReduce0 (v1 * v2)
 
+mb a = a * 1024 * 1024
 
 testDot g size = 
-  withArBB $ 
   do 
-     f <- capture dotprod
+    VM.setHeapSize (mb 1024) (mb 4096) 
+    withArBB $ 
+     do 
+       f <- capture dotprod
 
-     (rs1 :: [Double]) <- liftIO$ randoms g
-     (rs2 :: [Double]) <- liftIO$ randoms g
+       (rs1 :: [Double]) <- liftIO$ randoms g
+       (rs2 :: [Double]) <- liftIO$ randoms g
 
-     x <- copyIn (V.fromList (take size (rs1))) (Z:.size) 
-     y <- copyIn (V.fromList (take size (rs2))) (Z:.size) 
-     --let a = fromList [0,1,2 :: Double] -- (One 3)   
-     --    b = fromList [0,1,2 :: Double] -- (One 3)     
+       x <- copyIn (V.fromList (take size (rs1))) (Z:.size) 
+       y <- copyIn (V.fromList (take size (rs2))) (Z:.size) 
+       --let a = fromList [0,1,2 :: Double] -- (One 3)   
+       --    b = fromList [0,1,2 :: Double] -- (One 3)     
 
-     r1 <- mkScalar 0 
+       r1 <- mkScalar 0 
    
      -- execute2 f (a :- b)  r2
 
-     t1 <- liftIO getClockTime 
-     execute f (x :- y)  r1
-     t2 <- liftIO getClockTime          
+       t1 <- liftIO getClockTime 
+       execute f (x :- y)  r1
+       t2 <- liftIO getClockTime          
 
-     r <- readScalar r1
+       r <- readScalar r1
    
               
-     liftIO$ putStrLn$ show r 
-     liftIO $ printf "%f\n"  (diffs (diffClockTimes t2 t1))
+       liftIO$ putStrLn$ show r 
+       liftIO $ printf "%f\n"  (diffs (diffClockTimes t2 t1))
             
 
 diffs :: TimeDiff -> Float
