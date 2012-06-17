@@ -35,7 +35,7 @@ import           Intel.ArBB.Function
 import           Intel.ArBB.Backend.ArBB.CodeGen
 -- import           Intel.ArBB.Backend.ArBB.ArBBVector
 import           Intel.ArBB.Backend.Vector
-import           Intel.ArBB.Backend.Scalar
+import           Intel.ArBB.Backend.Scalar 
 
 import qualified Data.Vector.Storable as V 
 import qualified Data.Vector.Storable.Mutable as M
@@ -110,6 +110,13 @@ getFunID =
       S.modify $ \s -> s {arbbUnique = uniq + 1} 
       return uniq 
 
+getUnique :: ArBBBackend  Integer  
+getUnique = 
+    do 
+      uniq <- S.gets arbbUnique 
+      S.modify $ \s -> s {arbbUnique = uniq + 1} 
+      return uniq 
+
 getFunMap :: ArBBBackend (Map.Map Integer (VM.ConvFunction, [Type], [Type]))
 getFunMap = S.gets arbbFunMap 
 
@@ -119,7 +126,13 @@ addFunction fid fd ins outs =
       m <- getFunMap 
       S.modify $ \s -> s { arbbFunMap = Map.insert fid (fd,ins,outs) m } 
 
-
+addVariable :: VM.Variable -> ArBBBackend Integer 
+addVariable v = 
+    do 
+      u <- getUnique
+      m <- S.gets arbbVarMap 
+      S.modify $ \s -> s {arbbVarMap = Map.insert u v m }
+      return u
 
 captureGenRecord :: GenRecord -> ArBBBackend FuncID 
 captureGenRecord gr = 
@@ -127,7 +140,7 @@ captureGenRecord gr =
 
       --------------------------------------------------
       -- Begin with capturing any functions that this one 
-      -- calls or maps      
+      -- calls or maps  (depends on)     
       depsMap <- Trav.mapM captureGenRecord (genRecordDepends gr)
       --------------------------------------------------
       
@@ -208,19 +221,9 @@ class VariableList a where
 #define ScalarVList(t,load)                      \
   instance VariableList (t) where {              \
      vlist a = S.liftM (:[]) $ liftVM $ VM.load  a}
-                   
---instance VariableList (ArBBRef a) where 
---    vlist (ArBBRef v) = return [v]
 
 instance VariableList (BEScalar a) where 
   vlist (BEScalar i) = undefined
-      -- case Map.Lookup
-
---instance (Ref a) => VariableList a where 
---    vlist a = 
---        do 
---          (ArBBRef v) <- mkRef a 
---          return [v]
          
 instance VariableList Int where 
     vlist a = 
@@ -297,7 +300,7 @@ copyIn dat t =
    return $ BEDVector i dims
    -- TODO: Figure out if this is one of these cases where makeRefCountable is needed..
    -- TODO: figure out if it is possible to let Haskell Garbage collector 
-   --       "free" arbb-allocated memory. 
+   --       "free" arbb-allocated memory. (using refcountables and foreign ptrs) 
    where 
      -- TODO: There should be some insurance that ndims is 1,2 or 3.
      --       Or a way to handle the higher dimensionalities. 
@@ -371,46 +374,29 @@ copyOut dv =
 
 --TODO: Someway to copy a scalar out.. (readScalar) 
 
---readScalar :: (Data a , IsScalar a) => 
---              a -> ArBB a 
-
-
+readScalar :: (Data a , IsScalar a, Num a, M.Storable a) => 
+              (BEScalar a) -> ArBB a 
+readScalar (BEScalar id) = 
+    do 
+      vm <- S.gets arbbVarMap 
+      case Map.lookup id vm of 
+         Nothing -> error "readScalar: Does not excist" 
+         (Just v) -> liftVM $ VM.readScalar_ v
 
 ----------------------------------------------------------------------------
--- TODO: require an ID system of the backen. this can make the typefamily business 
---       below easier (a one time thing) 
--- 
+-- Scalar instances 
 
-----------------------------------------------------------------------------
--- References to scalars that live on the ArBB side.
-{-  
-data ArBBRef a = ArBBRef {arbbRefVar :: VM.Variable}
-
-class Ref a where
-    mkRef :: a -> ArBB (ArBBRef a)
+class Scalar a where 
+    mkScalar :: a -> ArBB (BEScalar a) 
 
 
-#define RefScal(ty,load)                   \
-  instance Ref (ty) where  {                  \
-    mkRef a =                              \
-      do {                                  \
-          v <- liftVM $ VM.load  a;           \
-          return $ ArBBRef v }} 
 
-RefScal(Int,int64_) -- fix for 32/64 bit
-RefScal(Int8,int8_)
-RefScal(Int16,int16_)
-RefScal(Int32,int32_)
-RefScal(Int64,int64_)
-RefScal(Word,uint64_)
-RefScal(Word8,uint8_)
-RefScal(Word16,uint16_)
-RefScal(Word32,uint32_)
-RefScal(Word64,uint64_)
-RefScal(Float,float32_)
-RefScal(Double,float64_)
-----------------------------------------------------------------------------
--- Creating the input output baviour of the ArBB backend.
--- TODO: Talk to some expert about this.. (Emil, Koen, ? ) 
--} 
+#define MKS(ty,load)                    \
+  instance Scalar (ty) where {          \
+    mkScalar a =                        \
+       do {v <- liftVM $ VM.load a;     \
+           u <- addVariable v;          \
+           return $ BEScalar u } }
 
+MKS(Float,float32_)
+                         

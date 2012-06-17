@@ -18,7 +18,7 @@ main =
 
      r1 <- new (Z:.10) 0 
      
-     c <- mkRef 1 
+     c <- mkScalar 1 
      
      execute f (c :- x)  r1
               

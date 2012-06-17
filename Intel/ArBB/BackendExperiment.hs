@@ -38,8 +38,6 @@ import Intel.ArBB.Data.Int
 -- These should all be backend oblivious. 
 newVar :: Capture Variable 
 newVar = do 
-  --id <- gets unique 
-  --modify $ \s -> s { unique = id + 1 } 
   uniq <- newUnique 
   return $ Variable ("v" ++ show uniq)
 
@@ -80,7 +78,7 @@ getNodeID e =
               return uniq
 
 
-insertNode :: Expr -> Node -> Capture GenRecord -- [NodeID]
+insertNode :: Expr -> Node -> Capture GenRecord 
 insertNode e node = 
     do 
       d <- gets (genRecordDag . genRecord)
@@ -99,13 +97,12 @@ insertNode e node =
                          
                         
 class Reify a where 
-    reify :: a -> Capture GenRecord -- [NodeID]
+    reify :: a -> Capture GenRecord 
 
 runR r = evalStateT r capState 
     where 
       capState = 
          CaptState IntMap.empty 
---                    Map.empty
                    0
                    emptyGenRecord -- Map.empty
 
@@ -114,6 +111,24 @@ reifySimple e =
     do 
       gr <- reify e 
       return (genRecordNids gr) -- gets (genRecordNids . genRecord)
+
+
+reifyLocally :: Expr -> Capture [NodeID] 
+reifyLocally e = 
+    do 
+      -- get all state 
+      (CaptState sh un gr) <- get 
+                              
+      nids <- reifySimple e
+
+      -- restore sharing to as it was before. 
+      -- Should prevent anything "local" to be seen in future sharing detection.. 
+      -- TODO: Make sure this works
+      modify $ \s -> s { sharing = sh }
+      return nids
+                              
+      
+    
 ---------------------------------------------------------------------------- 
 -- 
 instance Reify Expr where 
@@ -122,19 +137,14 @@ instance Reify Expr where
     reify e@(Index0 exp) = 
         do
           [exp'] <- reifySimple exp 
-          -- gr <- reify exp 
-          -- [exp'] <- gets (genRecordNids . genRecord)
           insertNode e (NIndex0 exp')
 
     reify e@(ResIndex exp i) = 
         do 
           [exp'] <- reifySimple exp 
-          --gr <- reify exp 
-          --[exp'] <- reify exp 
           insertNode e (NResIndex exp' i) 
 
-    -- TODO: CALL and MAP needs to change a lot (future work) 
-
+    -- DONE: CALL and MAP needs to change a lot (future work)    
     reify e@(Call cap exprs) = 
         do
           -- This part is messed up!
@@ -190,19 +200,19 @@ instance Reify Expr where
               cond' = cond vexps 
               body' = body vexps 
           i' <- mapM reifySimple state
-          -- Condition and body are special cases.
-          -- Needs to be dealt with locally. 
-          -- Nothing from cond or body should leak out
-          -- TODO: This is bad! repair it 
-          --       Maybe a switch sharing "on/off" is enough ? 
-          [c'] <- reifySimple cond'
-          b' <- mapM reifySimple body'
+   
+          -- TODO: I am very unsure here. Is this right ? 
+          [c'] <- reifyLocally cond'
+          b'   <- mapM reifyLocally body'
           insertNode e (NWhile variables c' (concat b') (concat i')) 
 
     reify e@(Op op exprs) = 
         do
           exprs' <- mapM reifySimple exprs 
           insertNode e (NOp op (concat exprs')) 
+
+----------------------------------------------------------------------------
+-- 
 
 createVariables :: [Expr] -> Capture [Variable]
 createVariables [] = return []
@@ -212,7 +222,10 @@ createVariables (x:xs) =
       let v = Variable ("l"++show uniq)
       vs <- createVariables xs
       return (v:vs)
-         
+
+---------------------------------------------------------------------------- 
+-- 
+      
 instance Reify (Exp a) where 
     reify = reify . unE 
 

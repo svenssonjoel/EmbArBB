@@ -13,7 +13,9 @@ module Intel.ArBB (module Intel.ArBB.Syntax,
 --                   module Intel.ArBB.WithArBB,
                    module Intel.ArBB.Data.Int, 
                    module Intel.ArBB.Backend.ArBB,
-                   module Intel.ArBB.Backend.ArBB.CodeGen) where 
+                   module Intel.ArBB.Backend.ArBB.CodeGen,
+                   module Intel.ArBB.Backend.Vector,
+                   module Intel.ArBB.Backend.Scalar) where 
 
 import Intel.ArBB.Syntax
 --import Intel.ArBB.Capture 
@@ -29,3 +31,5 @@ import Intel.ArBB.Data
 import Intel.ArBB.Data.Int
 import Intel.ArBB.Backend.ArBB
 import Intel.ArBB.Backend.ArBB.CodeGen
+import Intel.ArBB.Backend.Vector
+import Intel.ArBB.Backend.Scalar

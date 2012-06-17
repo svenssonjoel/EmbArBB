@@ -20,7 +20,7 @@ testSaxpy =
      
      r1 <- new (Z:.5) 0    
            
-     c <- mkRef 1 
+     c <- mkScalar 1 
      
      execute f (c :- x :- y)  r1
               

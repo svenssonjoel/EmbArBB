@@ -51,7 +51,7 @@ type Dim3 = Dim2 :. Int
 
 
 -- | Easy to use names. 
-type Scalar   = DVector Dim0  -- This or the next one? 
+--type Scalar   = DVector Dim0  -- This or the next one? 
 type Vector0D = DVector Dim0  -- hmm nice ?
 type Vector   = DVector Dim1
 type Vector2D = DVector Dim2               

@@ -35,7 +35,7 @@ testSgemm =
 
      r1 <- new (Z:.3:.3) 0   
      
-     c <- mkRef 1
+     c <- mkScalar 1
 
      execute f (m1 :- m2 :- m3 :- c :- c)  r1
               
