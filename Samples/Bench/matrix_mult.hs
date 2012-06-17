@@ -8,6 +8,8 @@ import System.Time
 import Text.Printf
 import System.Environment
 
+import GHC.Float
+
 import Prelude as P
 
 matmul :: Exp (DVector Dim2 Float) 
@@ -35,11 +37,11 @@ testMatMul g size  =
      
      --str <- serialize f
      --liftIO$ putStrLn str
-     (rs1 :: [Int]) <- liftIO$ randoms g
-     (rs2 :: [Int])  <- liftIO$ randoms g
+     (rs1 :: [Double]) <- liftIO$ randoms g
+     (rs2 :: [Double]) <- liftIO$ randoms g
                                                              
-     m1 <- copyIn (V.fromList (take (size*size) (P.map fromIntegral rs1))) (Z:.size:.size) 
-     m2 <- copyIn (V.fromList (take (size*size) (P.map fromIntegral rs2))) (Z:.size:.size) 
+     m1 <- copyIn (V.fromList (take (size*size) (P.map double2Float rs1))) (Z:.size:.size) 
+     m2 <- copyIn (V.fromList (take (size*size) (P.map double2Float rs2))) (Z:.size:.size) 
      r1 <- new  (Z:.size:.size) 0
   
      execute f (m1 :- m2)  r1      
