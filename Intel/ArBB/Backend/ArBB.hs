@@ -205,14 +205,11 @@ instance VariableList (BEDVector t a) where
           case Map.lookup (beDVectorID v) mv of 
             (Just v) -> return [v] 
             Nothing  -> error "ArBB version of vector not found!"
--- TODO: Needs More Work 
+
+----------------------------------------------------------------------------
+-- Turn heterogeneous list of 'stuff' into a list of variables. 
 class VariableList a where 
     vlist :: a -> ArBB [VM.Variable]
-
--- TODO: Add the scalar cases 
-#define ScalarVList(t,load)                      \
-  instance VariableList (t) where {              \
-     vlist a = S.liftM (:[]) $ liftVM $ VM.load  a}
 
 instance VariableList (BEScalar a) where 
   vlist (BEScalar i) = 
@@ -221,36 +218,6 @@ instance VariableList (BEScalar a) where
         case Map.lookup i vm of 
           Nothing -> error "vList: Scalar does not excist" 
           (Just v) -> return [v]
-
-{-          
-instance VariableList Int where 
-    vlist a = 
-        case sizeOf a of 
-          4 -> S.liftM (:[]) $ liftVM $ VM.int32_ a
-          8 -> S.liftM (:[]) $ liftVM $ VM.int64_ a
-          _ -> error "Platform not supported"
-
-instance VariableList  Word where 
-    vlist a = 
-        case sizeOf  a of 
-          4 -> S.liftM (:[]) $ liftVM $ VM.uint32_  a
-          8 -> S.liftM (:[]) $ liftVM $ VM.uint64_  a
-          _ -> error "Platform not supported" 
-               
-
--- ScalarVList(Int,int64_) -- incorrect on 32bit archs
-ScalarVList(Int8,int8_)
-ScalarVList(Int16,int16_)
-ScalarVList(Int32,int32_)
-ScalarVList(Int64,int64_)
--- ScalarVList(Word,uint64_)
-ScalarVList(Word8,uint8_)
-ScalarVList(Word16,uint16_)
-ScalarVList(Word32,uint32_)
-ScalarVList(Word64,uint64_)
-ScalarVList(Float,float32_)
-ScalarVList(Double,float64_)
--} 
 
 
 instance (VariableList t, VariableList rest) => VariableList (t :- rest) where 
