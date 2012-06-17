@@ -31,7 +31,7 @@ testDot g size =
      --let a = fromList [0,1,2 :: Double] -- (One 3)   
      --    b = fromList [0,1,2 :: Double] -- (One 3)     
 
-     r1 <- mkRef 0 
+     r1 <- mkScalar 0 
    
      -- execute2 f (a :- b)  r2
 
@@ -39,10 +39,10 @@ testDot g size =
      execute f (x :- y)  r1
      t2 <- liftIO getClockTime          
 
-     --r <- liftIO$ readIORef r1
+     r <- readScalar r1
    
               
-     --liftIO$ putStrLn$ show r ++ " " ++ show r'
+     liftIO$ putStrLn$ show r 
      liftIO $ printf "%f\n"  (diffs (diffClockTimes t2 t1))
             
 

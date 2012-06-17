@@ -9,8 +9,6 @@
 
 module Intel.ArBB.Backend.ArBB where 
 
---import Intel.ArBB.MonadBackend
---import Intel.ArBB.MonadCapture
 import Intel.ArBB.BackendExperiment
 
 import qualified Intel.ArbbVM as VM
@@ -33,7 +31,6 @@ import           Intel.ArBB.MonadCapture
 import           Intel.ArBB.Function
 
 import           Intel.ArBB.Backend.ArBB.CodeGen
--- import           Intel.ArBB.Backend.ArBB.ArBBVector
 import           Intel.ArBB.Backend.Vector
 import           Intel.ArBB.Backend.Scalar 
 
@@ -63,11 +60,6 @@ data ArBBState = ArBBState { arbbFunMap :: Map.Map Integer (VM.ConvFunction, [Ty
                            , arbbUnique :: Integer } 
 --TODO: needs to deal with Scalars in pretty much the same way as dvectors.
  
---      A type that refers to a scalar value on the ArBB side is needed. 
---      It should hold just an identifier pointing out a Variable.
-
-type ArBBVector = BEDVector 
-
 ---------------------------------------------------------------------------- 
 -- 
 liftVM :: VM.EmitArbb a -> ArBBBackend a 
@@ -171,7 +163,7 @@ captureGenRecord gr =
  
       return fid 
   
---            (FlexibleContext)
+--            (a FlexibleContext)
 capture :: Reify (a -> b) => (a -> b) -> ArBB (Function (FunIn a b) (FunOut b))
 capture d = 
     do 
@@ -223,8 +215,14 @@ class VariableList a where
      vlist a = S.liftM (:[]) $ liftVM $ VM.load  a}
 
 instance VariableList (BEScalar a) where 
-  vlist (BEScalar i) = undefined
-         
+  vlist (BEScalar i) = 
+      do 
+        vm <- S.gets arbbVarMap 
+        case Map.lookup i vm of 
+          Nothing -> error "vList: Scalar does not excist" 
+          (Just v) -> return [v]
+
+{-          
 instance VariableList Int where 
     vlist a = 
         case sizeOf a of 
@@ -252,7 +250,7 @@ ScalarVList(Word32,uint32_)
 ScalarVList(Word64,uint64_)
 ScalarVList(Float,float32_)
 ScalarVList(Double,float64_)
-
+-} 
 
 
 instance (VariableList t, VariableList rest) => VariableList (t :- rest) where 
@@ -399,4 +397,5 @@ class Scalar a where
            return $ BEScalar u } }
 
 MKS(Float,float32_)
+MKS(Double,float64_)
                          
