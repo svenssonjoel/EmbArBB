@@ -21,4 +21,4 @@ clean:
 	rm sobel
 #	rm dotprod 
 	rm *.o
-	rm *.h
+	rm *.hi
