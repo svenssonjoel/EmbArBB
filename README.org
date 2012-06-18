@@ -3,16 +3,18 @@
   + Uses the Haskell/ArBB bindings (svenssonjoel/arbb-vm.git on github)
 
 * Status
-  + Big changes all over the code is taking place right now. 
-  + None of the samples are updated for this new version. 
+  + The samples and benchmarks now run again 
     
 * TODOs:  
   + huge cleanup is needed.
+   
+  + Things like mkScalar needs to be separated from the specific backend. 
 
   + The Data a vs Data (Exp a) issue. 
     
   + DONE: separate Reification and code generation somehow.
           the interface between front and back is now encapsulated 
           in something called a GenRecord. 
+
 
 
