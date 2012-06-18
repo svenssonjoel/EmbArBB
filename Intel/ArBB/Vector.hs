@@ -73,7 +73,4 @@ DenseOfScal(DVector Dim0 a,Scalar)
 DenseOfScal(DVector Dim1 a,Dense I)
 DenseOfScal(DVector Dim2 a ,Dense II)
 DenseOfScal(DVector Dim3 a ,Dense III)
-DenseOfScal(Exp (DVector Dim0 a),Scalar)
-DenseOfScal(Exp (DVector Dim1 a),Dense I)
-DenseOfScal(Exp (DVector Dim2 a),Dense II)
-DenseOfScal(Exp (DVector Dim3 a),Dense III)
+

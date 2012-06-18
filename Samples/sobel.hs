@@ -1,7 +1,7 @@
 import Intel.ArBB 
 
 import qualified Data.Vector.Storable as V 
-import Prelude hiding (length,map)
+import Prelude as P hiding (length,map)
 import Data.Word
 
 
@@ -30,13 +30,13 @@ coeffs = [-1,-2,-1,1,2,1]
 
 gx :: Exp Word8 -> Exp Float  
 gx x = foldl (+) 0 
-     $ zipWith (*) [toFloat (getNeighbor2D x a b) / 255 
+     $ P.zipWith (*) [toFloat (getNeighbor2D x a b) / 255 
                     | (a,b) <- s1] coeffs 
 
 
 gy :: Exp Word8 -> Exp Float 
 gy x = foldl (+) 0 
-     $ zipWith (*) [toFloat (getNeighbor2D x a b) / 255
+     $ P.zipWith (*) [toFloat (getNeighbor2D x a b) / 255
                    | (a,b) <- s2] coeffs 
 
 
@@ -54,8 +54,6 @@ kernel x = convertToWord8 $ body x
   where 
     body x = sqrt (x' * x' + y' * y') 
      where 
-       -- y'' = y' * y'
-       -- x'' = x' * x' 
        x' = gx x 
        y' = gy x
         

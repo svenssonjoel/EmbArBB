@@ -27,6 +27,8 @@ import qualified Intel.ArbbVM as VM
 -- Type info needed in cast ops
 import Intel.ArBB.Types
 
+import Prelude as P 
+
 import Data.Int
 import Data.Word
 import Data.Bits
@@ -301,7 +303,97 @@ getNPages (E vec) = E $ Op GetNPages [vec]
 -- | Call an ArBB Function 
 map :: (Data a, Data b) => (Exp a -> Exp b) -> Exp (DVector t a) -> Exp (DVector t b)
 map f (E v) = E $ Map (reify f) [v] 
--- TODO: hmmm Data a, Data (Exp a) why?? 
+
+zipWith :: (Data a, Data b, Data c) 
+         => (Exp a -> Exp b -> Exp c) 
+         -> Exp (DVector t a) 
+         -> Exp (DVector t b) 
+         -> Exp (DVector t c) 
+zipWith f (E v1) (E v2) = E $ Map (reify f) [v1,v2] 
+
+zipWith3 :: (Data a, Data b, Data c, Data d) 
+         => (Exp a -> Exp b -> Exp c -> Exp d) 
+         -> Exp (DVector t a) 
+         -> Exp (DVector t b) 
+         -> Exp (DVector t c) 
+         -> Exp (DVector t d) 
+zipWith3 f (E v1) (E v2) (E v3) = E $ Map (reify f) [v1,v2,v3] 
+
+zipWith4 :: (Data a, Data b, Data c, Data d, Data e) 
+         => (Exp a -> Exp b -> Exp c -> Exp d -> Exp e) 
+         -> Exp (DVector t a) 
+         -> Exp (DVector t b) 
+         -> Exp (DVector t c) 
+         -> Exp (DVector t d) 
+         -> Exp (DVector t e) 
+zipWith4 f (E v1) (E v2) (E v3) (E v4) = E $ Map (reify f) [v1,v2,v3,v4] 
+
+zipWith5 :: (Data a, Data b, Data c, Data d, Data e, Data f) 
+         => (Exp a -> Exp b -> Exp c -> Exp d -> Exp e -> Exp f) 
+         -> Exp (DVector t a) 
+         -> Exp (DVector t b) 
+         -> Exp (DVector t c) 
+         -> Exp (DVector t d) 
+         -> Exp (DVector t e) 
+         -> Exp (DVector t f) 
+zipWith5 f (E v1) (E v2) (E v3) (E v4) (E v5) 
+    = E $ Map (reify f) [v1,v2,v3,v4,v5] 
+
+zipWith6 :: (Data a, Data b, Data c, Data d, Data e, Data f, Data g) 
+         => (Exp a -> Exp b -> Exp c -> Exp d -> Exp e -> Exp f -> Exp g) 
+         -> Exp (DVector t a) 
+         -> Exp (DVector t b) 
+         -> Exp (DVector t c) 
+         -> Exp (DVector t d) 
+         -> Exp (DVector t e) 
+         -> Exp (DVector t f) 
+         -> Exp (DVector t g) 
+zipWith6 f (E v1) (E v2) (E v3) (E v4) (E v5) (E v6) 
+    = E $ Map (reify f) [v1,v2,v3,v4,v5,v6] 
+
+zipWith7 :: (Data a, Data b, Data c, Data d, Data e, Data f, Data g, Data h) 
+         => (Exp a -> Exp b -> Exp c -> Exp d -> Exp e -> Exp f -> Exp g -> Exp h) 
+         -> Exp (DVector t a) 
+         -> Exp (DVector t b) 
+         -> Exp (DVector t c) 
+         -> Exp (DVector t d) 
+         -> Exp (DVector t e) 
+         -> Exp (DVector t f) 
+         -> Exp (DVector t g) 
+         -> Exp (DVector t h) 
+zipWith7 f (E v1) (E v2) (E v3) (E v4) (E v5) (E v6) (E v7) 
+    = E $ Map (reify f) [v1,v2,v3,v4,v5,v6,v7] 
+
+data Stencil a d =  Stencil [a] d 
+
+
+---------------------------------------------------------------------------- 
+-- Experimental. 
+mapStencil :: (Num (Exp a), Data a, Dimensions t ) 
+            => Stencil (Exp a) t 
+             -> Exp (DVector t a) 
+             -> Exp (DVector t a)
+mapStencil (Stencil ls d)  (E v) = E $ Map (reify f {- (getF pos coeff)-}) [v] 
+   where 
+     -- create the function to be mapped. 
+     dim = toDim d 
+     
+     coords = coordsFromDim dim 
+     cs     = zip ls coords 
+     (coeff, pos) = unzip cs 
+     f e = foldl (+) 0 $ P.zipWith (*) 
+                       [getNeighbor e 
+                                    (fromIntegral p) 
+                                    (fromIntegral c) 
+                                    (fromIntegral r)  | (p,c,r) <- pos] 
+                                      coeff
+                    
+coordsFromDim (Dim xs) = coordsFromDim' xs
+    where
+      coordsFromDim' [] = []
+      coordsFromDim' (r:[]) = [(0,0,i) | i <- [0..r-1]]       
+      coordsFromDim' (r:c:[]) = concat [[(0,j,i) | i <- [0..r-1]]| j <- [0..c-1]]
+      coordsFromDim' (r:c:p:[]) = concat $ concat [[[(k,j,i) | i <- [0..r-1]]| j <- [0..c-1]]| k <- [0..p-1]]
 
 ----------------------------------------------------------------------------
 -- unpairing. 

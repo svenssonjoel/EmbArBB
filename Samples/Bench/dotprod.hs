@@ -32,13 +32,9 @@ testDot g size =
 
        x <- copyIn (V.fromList (take size (rs1))) (Z:.size) 
        y <- copyIn (V.fromList (take size (rs2))) (Z:.size) 
-       --let a = fromList [0,1,2 :: Double] -- (One 3)   
-       --    b = fromList [0,1,2 :: Double] -- (One 3)     
 
        r1 <- mkScalar 0 
    
-     -- execute2 f (a :- b)  r2
-
        t1 <- liftIO getClockTime 
        execute f (x :- y)  r1
        t2 <- liftIO getClockTime          

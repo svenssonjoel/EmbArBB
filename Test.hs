@@ -45,6 +45,7 @@ addconst s v = v + ss
 plus75 :: Exp Word32 -> Exp Word32 
 plus75 x = x + 75
 
+
 mapTest :: Exp (DVector Dim1 Word32) -> Exp (DVector Dim1 Word32) 
 mapTest v = Lang.map plus75 v 
 

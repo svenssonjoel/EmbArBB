@@ -9,8 +9,6 @@
   + huge cleanup is needed.
    
   + Things like mkScalar needs to be separated from the specific backend. 
-
-  + The Data a vs Data (Exp a) issue. 
     
   + DONE: separate Reification and code generation somehow.
           the interface between front and back is now encapsulated 
