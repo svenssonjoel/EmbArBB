@@ -170,21 +170,23 @@ genBody' :: DAG
 genBody' dag nid funm depm is = 
   do 
     m <- lift get 
-    -- liftIO$ putStrLn $ "genBody' " ++ show nid
-    -- liftIO$ putStrLn $ "genBody' " ++ show dag
+    liftIO$ putStrLn $ "genBody' " ++ show nid
+    liftIO$ putStrLn $ "genBody' " ++ show dag
+    liftIO$ putStrLn $ "genBody' " ++ show m
     case Map.lookup nid m of 
       (Just v) -> 
         do 
-          -- liftIO$ putStrLn$ "already generated : " ++ show nid 
+          liftIO$ putStrLn$ "genBody': already generated : " ++ show nid 
             
           return v 
       Nothing   -> 
           case Map.lookup nid dag of 
             (Just node) -> 
               do 
+                liftIO$ putStrLn $ "genBody': Adding a node to already computed"
                 -- Update the "already generated" map
                 v <- genNode nid node 
-                (lift . put) (Map.insert nid v m)  
+                lift $ put (Map.insert nid v m)  
                 return v
             Nothing -> error "genBody: DAG is broken" 
             
@@ -636,10 +638,14 @@ toArBBType (Dense II t) =
     return [t']
 toArBBType (Dense III t) = 
   do 
-   
     st <- VM.getScalarType_ t
     t' <- VM.getDenseType_ st 3
     return [t'] 
+toArBBType (Nested t) = 
+    do 
+      st <- VM.getScalarType_ t 
+      t' <- VM.getNestedType_ st 
+      return [t']
 toArBBType (Tuple []) = return [] 
 toArBBType (Tuple (t:ts)) = 
   do

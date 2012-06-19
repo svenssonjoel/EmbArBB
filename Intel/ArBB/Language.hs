@@ -299,6 +299,16 @@ getNCols (E vec) = E $ Op GetNCols [vec]
 getNPages :: Exp (DVector Dim3 a) -> Exp USize 
 getNPages (E vec) = E $ Op GetNPages [vec]
 
+
+----------------------------------------------------------------------------
+-- NESTED OPS 
+split :: Exp (DVector t a) -> Exp (DVector t ISize) -> Exp (NVector a) 
+split (E a) (E i) = E $ Op Split [a,i] 
+
+-- What is the t in the result ? I dont get it. 
+segment :: Exp (NVector a) -> Exp USize -> Exp (DVector t a) 
+segment (E a) (E u) = E $ Op Segment [a,u]
+
 ----------------------------------------------------------------------------
 -- | Call an ArBB Function 
 map :: (Data a, Data b) => (Exp a -> Exp b) -> Exp (DVector t a) -> Exp (DVector t b)

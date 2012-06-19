@@ -207,7 +207,7 @@ typecheckNID d n =
     typeOfOp Extract [Dense II a,i,j] = Just $ Scalar a 
     typeOfOp Extract [Dense III a,i,j,k] = Just $ Scalar a 
     
-    typeOfOp Split xs = undefined    -- dense to nested 
+    typeOfOp Split [Dense _ a,x] = Just $ Nested a    -- dense to nested 
     typeOfOp Unsplit xs = undefined  -- nested to dense
     typeOfOp Index xs = undefined    -- TODO: not sure what to do here!
     typeOfOp Mask xs = Just $ Dense I ArBB.ArbbBoolean
@@ -229,7 +229,8 @@ typecheckNID d n =
     typeOfOp ExtractCol  [t1,t2] = decrRank t1
     typeOfOp ExtractPage [t1,t2] = decrRank t1 
     typeOfOp Section (t:ts) = Just t
-    typeOfOp Segment xs = undefined  -- Nested to dense
+ -- Most likely breaks!
+    typeOfOp Segment [Nested a,x] = Just $ Dense I a  -- TODO: how do you know what the dimensionality is? 
     typeOfOp ReplaceSegment xs = undefined  -- Nested to nested
     typeOfOp Alloc xs = undefined  -- TODO: not sure what to do here! 
     typeOfOp ReplaceElem (t:ts) = Just t

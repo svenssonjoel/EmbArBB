@@ -70,6 +70,7 @@ type instance FunOut (a -> b) = FunOut b
 type family FunIn a b
 
 type instance FunIn (Exp (DVector t1 a)) (Exp b) = BEDVector t1 a 
+type instance FunIn (Exp (DVector t1 a)) (Exp b,Exp c) = BEDVector t1 a 
 type instance FunIn (Exp (DVector t1 a)) () = BEDVector t1 a 
 
 type instance FunIn (Exp a) (b -> c) = FunIn (Exp a) () :- FunIn b c 

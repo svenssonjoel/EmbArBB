@@ -63,15 +63,23 @@ getNodeID e =
             
       case IntMap.lookup hsn sh of 
         (Just hits) -> case lookup (Just sn) [(fromDynamic d,i)| (d,i) <- hits] of 
-                         (Just n) -> return n -- Already computed
+                         (Just n) -> 
+                             do 
+                               liftIO $ putStr "Already computed: " 
+                               liftIO $ putStrLn $ show e 
+                               return n -- Already computed
                          Nothing  -> 
                              do 
+                               liftIO $ putStr "Hit but inserts: "
+                               liftIO $ putStrLn $ show e 
                                uniq <- gets unique 
                                modify $ \s -> s { sharing = IntMap.insert hsn ((toDyn sn,uniq):hits) sh} 
                                modify $ \s -> s { unique = uniq + 1}
                                return uniq
         Nothing     -> 
             do
+              liftIO $ putStr "No Hit! inserts: "
+              liftIO $ putStrLn $ show e 
               uniq <- gets unique
               modify $ \s -> s {sharing = IntMap.insert hsn [(toDyn sn,uniq)] sh}
               modify $ \s -> s {unique = uniq + 1}

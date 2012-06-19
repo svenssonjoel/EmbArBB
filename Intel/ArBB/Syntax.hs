@@ -40,8 +40,13 @@ data Expr = Lit Literal
           | Op Op [Expr]   
 
 
-            deriving (Typeable)
---           deriving (show)
+            deriving (Show,Typeable)
+
+instance Show (Capture a) where 
+    show a = "CAPT" 
+instance Show (a -> b) where 
+    show a = "FUNC" 
+
   
 
 ---------------------------------------------------------------------------- 

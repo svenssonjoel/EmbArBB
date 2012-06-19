@@ -78,10 +78,16 @@ instance (Data a, Data b)
     reifyFunType f = typeOf (undefined :: a) :-> 
                      typeOf (undefined :: b) 
 
+instance (Data a, Data b, Data c)
+   => ReifyableFunType (Exp a) (Exp b,Exp c) where 
+    reifyFunType f = typeOf (undefined :: a) :-> 
+                     Tuple [typeOf (undefined :: b), typeOf (undefined :: c)]
+
 
 instance (ReifyableType (Exp a), ReifyableFunType b c) 
    => ReifyableFunType (Exp a) (b -> c) where 
        reifyFunType f = reifyType (undefined :: Exp a) :-> 
                         reifyFunType (f undefined)    -- Will f undefined work here ?? 
                                                       -- what problems might it cause.
+
                 

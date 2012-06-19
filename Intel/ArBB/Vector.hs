@@ -62,15 +62,17 @@ type Vector3D = DVector Dim3
 data NVector a = NVector { nVectorData :: V.Vector a
                          , nVectorNesting :: V.Vector USize }
 
+
 ----------------------------------------------------------------------------
--- Data Instances.. See if the Exp version are ever used. 
+-- Data Instances.. 
 unS (Scalar a) = a
-#define DenseOfScal(t,mod) instance IsScalar a => Data (t) where { \
+#define ContainerOfScal(t,mod) instance IsScalar a => Data (t) where { \
   typeOf _ = mod (unS (scalarType (undefined :: a)));              \
   sizeOf _ = undefined}                             
 
-DenseOfScal(DVector Dim0 a,Scalar)
-DenseOfScal(DVector Dim1 a,Dense I)
-DenseOfScal(DVector Dim2 a ,Dense II)
-DenseOfScal(DVector Dim3 a ,Dense III)
+ContainerOfScal(DVector Dim0 a,Scalar)
+ContainerOfScal(DVector Dim1 a,Dense I)
+ContainerOfScal(DVector Dim2 a ,Dense II)
+ContainerOfScal(DVector Dim3 a ,Dense III)
 
+ContainerOfScal(NVector a, Nested) 
