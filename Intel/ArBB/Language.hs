@@ -302,12 +302,25 @@ getNPages (E vec) = E $ Op GetNPages [vec]
 
 ----------------------------------------------------------------------------
 -- NESTED OPS 
-split :: Exp (DVector t a) -> Exp (DVector t ISize) -> Exp (NVector a) 
+
+--split :: Exp (DVector t a) -> Exp (DVector t ISize) -> Exp (NVector a) 
+split :: (IsVector t e) => Exp (t e) -> Exp (t ISize) -> Exp (NVector a)
 split (E a) (E i) = E $ Op Split [a,i] 
 
--- What is the t in the result ? I dont get it. 
-segment :: Exp (NVector a) -> Exp USize -> Exp (DVector t a) 
+
+segment :: Exp (NVector a) -> Exp USize -> Exp (DVector Dim1 a) 
 segment (E a) (E u) = E $ Op Segment [a,u]
+
+-- would want to require that t is either nested, or of dim2  or higher. 
+flatten :: (IsVector t e) => Exp (t e) -> Exp (DVector Dim1 a) 
+flatten (E a) = E $ Op Flatten [a] 
+
+replaceSeg :: Exp (NVector a) -> Exp USize -> Exp (DVector Dim1 a) -> Exp (NVector a) 
+replaceSeg (E n) (E u) (E d) = E $ Op ReplaceSegment [n,u,d]
+
+indexSeg :: Exp (NVector a) -> Exp USize -> Exp USize -> Exp a 
+indexSeg (E n) (E s) (E i) = E $ Op Extract [n,s,i] 
+
 
 ----------------------------------------------------------------------------
 -- | Call an ArBB Function 

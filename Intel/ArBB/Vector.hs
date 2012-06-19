@@ -1,7 +1,9 @@
 
 {-# LANGUAGE CPP, TypeOperators, 
              FlexibleInstances,
-             ScopedTypeVariables #-}
+             ScopedTypeVariables,
+             MultiParamTypeClasses,
+             KindSignatures #-}
 
 
 {- 2012 Joel Svensson -} 
@@ -76,3 +78,15 @@ ContainerOfScal(DVector Dim2 a ,Dense II)
 ContainerOfScal(DVector Dim3 a ,Dense III)
 
 ContainerOfScal(NVector a, Nested) 
+
+
+----------------------------------------------------------------------------
+-- IsVector 
+
+class IsVector (t :: * -> *)  e  
+
+instance IsScalar a => IsVector NVector a 
+
+instance (Dimensions t, IsScalar a) => IsVector (DVector t) a 
+    
+    

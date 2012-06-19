@@ -130,7 +130,7 @@ test6 =
       getSeg v s = segment res 0 + segment res 1
           where 
             -- res :: Exp (NVector Word32)
-            !res = split v s
+            res = split v s
 
 
 
