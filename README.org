@@ -5,14 +5,14 @@
 * Status
   + The samples and benchmarks now run again 
     
-* TODOs:  
+* TODOs:
+  + ArBB and recursive functions, does it work ?
+    
+  + print function for DAGs
+    
   + huge cleanup is needed.
    
   + Things like mkScalar needs to be separated from the specific backend. 
-    
-  + DONE: separate Reification and code generation somehow.
-          the interface between front and back is now encapsulated 
-          in something called a GenRecord. 
 
 
 
