@@ -2,7 +2,6 @@
 
 module Intel.ArBB.DAG where 
 
---import Intel.ArBB.Syntax
 import Intel.ArBB.Literal
 import Intel.ArBB.Variable
 import Intel.ArBB.Op
