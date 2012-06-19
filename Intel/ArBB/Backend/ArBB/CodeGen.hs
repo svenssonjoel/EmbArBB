@@ -170,21 +170,20 @@ genBody' :: DAG
 genBody' dag nid funm depm is = 
   do 
     m <- lift get 
-    liftIO$ putStrLn $ "genBody' " +
-    liftIO$ putStrLn $ "genBody' " ++ show nid
-    liftIO$ putStrLn $ "genBody' " ++ show dag
-    liftIO$ putStrLn $ "genBody' " ++ show m
+    -- liftIO$ putStrLn $ "genBody' " ++ show nid
+    -- liftIO$ putStrLn $ "genBody' " ++ show dag
+    -- liftIO$ putStrLn $ "genBody' " ++ show m
     case Map.lookup nid m of 
       (Just v) -> 
         do 
-          liftIO$ putStrLn$ "genBody': already generated : " ++ show nid 
+          -- liftIO$ putStrLn$ "genBody': already generated : " ++ show nid 
             
           return v 
       Nothing   -> 
           case Map.lookup nid dag of 
             (Just node) -> 
               do 
-                liftIO$ putStrLn $ "genBody': Adding a node to already computed"
+                -- liftIO$ putStrLn $ "genBody': Adding a node to already computed"
                 -- Update the "already generated" map
                 v <- genNode nid node 
                 lift $ put (Map.insert nid v m)  

@@ -1,3 +1,4 @@
+
 {-# LANGUAGE ScopedTypeVariables,
              TypeOperators #-} 
 
@@ -16,10 +17,6 @@ import Intel.ArBB.Data.Int
 
 import Intel.ArBB
 import Intel.ArBB.Language as Lang
---import Intel.ArBB.BackendExperiment 
---import Intel.ArBB.Syntax
---import Intel.ArBB.DAG
-
 import Intel.ArBB.Backend.ArBB
 
 import qualified Data.Vector.Storable as V 
@@ -116,24 +113,24 @@ test6 =
       x <- copyIn (V.fromList [1..10::Word32]) (Z:.10)
       s <- copyIn (V.fromList [-1,-1,-1,-1,-1,1,1,1,1,1]) (Z:.10) 
       r1 <- new (Z :. 5) 0 
-      r2 <- new (Z :. 5) 0 
+      -- r2 <- new (Z :. 5) 0 
 
-      execute f (x :- s)  (r1 :- r2) 
+      execute f (x :- s)  r1 -- (r1 :- r2) 
 
       ra <- copyOut r1
-      rb <- copyOut r2
+--      rb <- copyOut r2
 
       liftIO$ putStrLn $ show ra
-      liftIO$ putStrLn $ show rb
+  --    liftIO$ putStrLn $ show rb
           
     where 
       getSeg :: Exp (DVector Dim1 Word32) 
               -> Exp (DVector Dim1 ISize) 
-              -> (Exp (DVector Dim1 Word32),Exp (DVector Dim1 Word32))
-      getSeg v s = (segment res 0,segment res 1) 
+              -> (Exp (DVector Dim1 Word32)) -- ,Exp (DVector Dim1 Word32))
+      getSeg v s = segment res 0 + segment res 1
           where 
-            res :: Exp (NVector Word32)
-            res = split v s
+            -- res :: Exp (NVector Word32)
+            !res = split v s
 
 
 

@@ -34,3 +34,8 @@ data Node = NLit Literal
 
 type DAG = Map.Map NodeID Node
 
+----------------------------------------------------------------------------
+-- TODO: Print DAG in some nice way 
+
+
+

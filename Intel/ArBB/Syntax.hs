@@ -1,7 +1,8 @@
 {-# LANGUAGE TypeOperators, 
              FlexibleInstances,
            --  ExistentialQuantification, 
-             DeriveDataTypeable #-}
+             DeriveDataTypeable, 
+             TypeSynonymInstances #-}
 
 {- 2012 Joel Svensson -} 
 
