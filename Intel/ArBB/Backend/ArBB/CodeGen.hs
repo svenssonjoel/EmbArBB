@@ -170,6 +170,7 @@ genBody' :: DAG
 genBody' dag nid funm depm is = 
   do 
     m <- lift get 
+    liftIO$ putStrLn $ "genBody' " +
     liftIO$ putStrLn $ "genBody' " ++ show nid
     liftIO$ putStrLn $ "genBody' " ++ show dag
     liftIO$ putStrLn $ "genBody' " ++ show m
