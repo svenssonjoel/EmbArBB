@@ -6,7 +6,8 @@
   + The samples and benchmarks now run again 
     
 * TODOs:
-  + ArBB and recursive functions, does it work ?
+  + ArBB and recursive functions, does it work ? 
+    Answer: No. 
     
   + print function for DAGs
     
