@@ -5,15 +5,18 @@
 * Status
   + The samples and benchmarks now run again 
     
-* TODOs:
-  + ArBB and recursive functions, does it work ? 
-    Answer: No. 
-    
+* TODOs:  
+  + think up some new execute interface.. 
+
   + print function for DAGs
     
   + huge cleanup is needed.
    
   + Things like mkScalar needs to be separated from the specific backend. 
+
+* NOTES: 
+  + ArBB and recursive functions, does it work ? 
+    Answer: No. 
 
 
 

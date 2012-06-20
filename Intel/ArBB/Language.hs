@@ -370,12 +370,21 @@ maxScanSeg :: Num a => Exp (NVector a) -> Exp (NVector a)
 maxScanSeg (E v) = E $ Op MaxScan [v,zero,zero]
     where (E zero) = 0 :: Exp USize
 
---minScanSeg
---andScanSeg
---iorScanSeg
---xorScanSeg
+minScanSeg :: Num a => Exp (NVector a) -> Exp (NVector a) 
+minScanSeg (E v) = E $ Op MinScan [v,zero,zero]
+    where (E zero) = 0 :: Exp USize
 
+andScanSeg :: Num a => Exp (NVector a) -> Exp (NVector a) 
+andScanSeg (E v) = E $ Op AndScan [v,zero,zero]
+    where (E zero) = 0 :: Exp USize
 
+iorScanSeg :: Num a => Exp (NVector a) -> Exp (NVector a) 
+iorScanSeg (E v) = E $ Op IorScan [v,zero,zero]
+    where (E zero) = 0 :: Exp USize
+
+xorScanSeg :: Num a => Exp (NVector a) -> Exp (NVector a) 
+xorScanSeg (E v) = E $ Op XorScan [v,zero,zero]
+    where (E zero) = 0 :: Exp USize
  
 ----------------------------------------------------------------------------
 -- | Call an ArBB Function 

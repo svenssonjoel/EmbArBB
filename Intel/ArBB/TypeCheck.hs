@@ -104,6 +104,7 @@ typecheckNID d n =
         ts <- mapM (typecheckNID dag) st 
         return$ Just$ Tuple ts -- TODO: Structured result ?
       
+    -- TODO: fix for 32-bit archs .. 
     typecheckLiteral (LitInt _)   = return$ Just$ Scalar ArBB.ArbbI64 -- FIX !   
     typecheckLiteral (LitInt8 _)   = return$ Just$ Scalar ArBB.ArbbI8
     typecheckLiteral (LitInt16 _)  = return$ Just$ Scalar ArBB.ArbbI16
@@ -122,7 +123,10 @@ typecheckNID d n =
     
     same t1 t2 = if t1 == t2 then Just t1 else Nothing 
     
-    -- LOTS of cheating going on 
+    -- This is more like type guessing.
+    --  But the guesses are "educated" and given that all programs 
+    --  are created using the phantomtype interface this should be enough. 
+    --  No -real- typechecking needed. 
     -- TODO: replace all "undefined" with something useful. 
     typeOfOp :: Op -> [Type] -> Maybe Type
     typeOfOp Add [t1,t2] = same t1 t2
@@ -193,8 +197,16 @@ typecheckNID d n =
     typeOfOp RotateRev [v,d] = Just v
     typeOfOp Reverse [v] = Just v 
     typeOfOp Length  [v] = Just $ Scalar ArBB.ArbbUsize
-    typeOfOp ApplyNesting xs = undefined 
-    typeOfOp GetNesting xs = undefined 
+
+    -- Creates a nested
+    typeOfOp ApplyNesting (Dense _ t:xs) = Just $ Nested t
+    typeOfOp CopyNesting (Dense _ t:xs) = Just $ Nested t 
+
+    -- GetNesting is a really strange op, the output type depends 
+    -- on input data! (If this OP is needed at both types then 
+    -- the EmbArBB Op datatype should have two different constructors for them) 
+    -- Only the USize instance is implemented here 
+    typeOfOp GetNesting xs = Just $ Dense I ArBB.ArbbUsize 
     typeOfOp Cat [t1,t2] = same t1 t2 
 
     -- Cast to type t.. 
@@ -211,7 +223,6 @@ typecheckNID d n =
     typeOfOp Index [Scalar t, Scalar _, Scalar _] = Just $ Dense I t -- undefined    -- TODO: not sure what to do here!
     typeOfOp Index [Scalar t, Scalar _, Scalar _, Scalar _, Scalar _] = Just $ Dense II t 
     typeOfOp Mask xs = Just $ Dense I ArBB.ArbbBoolean
-    typeOfOp CopyNesting xs = undefined -- nested
     typeOfOp Flatten [Dense _ a] = Just $ Dense I a -- undefined     -- nested to dense
     typeOfOp Flatten [Nested a]  = Just $ Dense I a 
     typeOfOp ConstVector [Scalar t,_] = Just$ Dense I t  
@@ -243,22 +254,39 @@ typecheckNID d n =
     typeOfOp GetNeighbor [t,t2,t3,t4] = Just $ t
     typeOfOp ExpectSize xs = undefined    -- used for optimization
 
-    -- TODO: Nested cases for all the reductions and scans
+    
+    typeOfOp AddReduce [Nested t, l] = Just $ Dense I t 
     typeOfOp AddReduce [v,l] = decrRank v  
+
+    typeOfOp MulReduce [Nested t, l] = Just $ Dense I t
     typeOfOp MulReduce [v,l] = decrRank v 
+                               
+    typeOfOp MaxReduce [Nested t, l] = Just $ Dense I t
     typeOfOp MaxReduce [v,l] = decrRank v 
+ 
+    typeOfOp MinReduce [Nested t, l] = Just $ Dense I t
+    typeOfOp MinReduce [v,l] = decrRank v    
+ 
+    -- the Loc versions have 2 outputs. 
     typeOfOp MaxReduceLoc xs = undefined 
-    typeOfOp MinReduce [v,l] = decrRank v 
     typeOfOp MinReduceLoc xs = undefined 
+
+    typeOfOp AndReduce [Nested t, l] = Just $ Dense I t 
     typeOfOp AndReduce [v,l] = decrRank v 
+
+    typeOfOp IorReduce [Nested t, l] = Just $ Dense I t 
     typeOfOp IorReduce [v,l] = decrRank v 
+
+    typeOfOp XorReduce [Nested t, l] = Just $ Dense I t 
     typeOfOp XorReduce [v,l] = decrRank v 
-    typeOfOp AddScan [v,d,l] = Just v --Vec, USize, USise  
-    typeOfOp MulScan [v,d,l] = Just v --Vec, USize, USise  
-    typeOfOp MaxScan [v,d,l] = Just v --Vec, USize, USise  
-    typeOfOp MinScan [v,d,l] = Just v --Vec, USize, USise  
-    typeOfOp AndScan [v,d,l] = Just v --Vec, USize, USise  
-    typeOfOp IorScan [v,d,l] = Just v --Vec, USize, USise  
-    typeOfOp XorScan [v,d,l] = Just v --Vec, USize, USise  
+
+    -- These are valid for Nested also ? (make sure!)
+    typeOfOp AddScan [v,d,l] = Just v --Vec, USize, USize  
+    typeOfOp MulScan [v,d,l] = Just v --Vec, USize, USize  
+    typeOfOp MaxScan [v,d,l] = Just v --Vec, USize, USize  
+    typeOfOp MinScan [v,d,l] = Just v --Vec, USize, USize  
+    typeOfOp AndScan [v,d,l] = Just v --Vec, USize, USize  
+    typeOfOp IorScan [v,d,l] = Just v --Vec, USize, USize  
+    typeOfOp XorScan [v,d,l] = Just v --Vec, USize, USize  
     typeOfOp AddMerge [t1,t2,t3] = Just t1
     typeOfOp AddMergeScalar xs = undefined -- TODO: Don't know what this is
