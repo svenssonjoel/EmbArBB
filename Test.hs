@@ -108,6 +108,7 @@ test6 =
       f <- capture getSeg
       g <- capture segFlat      
       h <- capture indexS
+      i <- capture tRed
 
       str <- serialize f 
       liftIO$ putStrLn str
@@ -117,11 +118,15 @@ test6 =
       
       str <- serialize h
       liftIO$ putStrLn str
+
+      str <- serialize i
+      liftIO$ putStrLn str
       
       x <- copyIn (V.fromList [1..10::Word32]) (Z:.10)
       s <- copyIn (V.fromList [-1,-1,-1,-1,-1,1,1,1,1,1]) (Z:.10) 
       r1 <- new (Z :. 5) 0
       r2 <- new (Z :. 10) 0
+      r4 <- new (Z :. 2) 0 
       
       r3 <- mkScalar 0
 
@@ -130,14 +135,18 @@ test6 =
       execute g (x :- s) r2 
 
       execute h (x :- s) r3
+              
+      execute i (x :- s) r4 
 
       ra <- copyOut r1
       rb <- copyOut r2
       rc <- readScalar r3
+      rd <- copyOut r4
 
       liftIO$ putStrLn $ show ra
       liftIO$ putStrLn $ show rb
       liftIO$ putStrLn $ show rc 
+      liftIO$ putStrLn $ show rd 
           
     where 
       getSeg :: Exp (DVector Dim1 Word32) 
@@ -145,7 +154,7 @@ test6 =
               -> (Exp (DVector Dim1 Word32)) -- ,Exp (DVector Dim1 Word32))
       getSeg v s = segment res 0 + segment res 1
           where 
-            -- res :: Exp (NVector Word32)
+            res :: Exp (NVector Word32)
             res = split v s
 
       segFlat :: Exp (DVector Dim1 Word32) 
@@ -157,6 +166,11 @@ test6 =
                -> Exp (DVector Dim1 ISize) 
                -> Exp Word32
       indexS v s = indexSeg (split v s) 1 0 
+ 
+      tRed :: Exp (DVector Dim1 Word32) 
+               -> Exp (DVector Dim1 ISize) 
+               -> Exp (DVector Dim1 Word32)
+      tRed  v s = addReduceSeg (split v s)
 
 
 sharing :: Exp (DVector Dim1 Word32) -> Exp (DVector Dim1 Word32) 

@@ -325,10 +325,22 @@ indexSeg :: Exp (NVector a) -> Exp USize -> Exp USize -> Exp a
 indexSeg (E n) (E s) (E i) = E $ Op Extract [n,s,i] 
 
 -- TODO: 
---setRegularNesting
---applyNesting
---copyNesting
---getNesting 
+setRegularNesting2D :: Exp (DVector Dim1 a) -> Exp USize -> Exp USize -> Exp (DVector Dim2 a)
+setRegularNesting2D (E v) (E h) (E w) = E $ Op SetRegularNesting [v,h,w]
+
+setRegularNesting3D :: Exp (DVector Dim1 a) -> Exp USize -> Exp USize -> Exp USize -> Exp (DVector Dim3 a) 
+setRegularNesting3D (E v) (E h) (E w) (E p) = E $ Op SetRegularNesting [v,h,w,p] 
+
+-- Will only support the USize nesting descriptors for now. 
+applyNesting :: Exp (DVector Dim1 a) -> Exp (DVector Dim1 USize) -> Exp USize -> Exp (NVector a)
+applyNesting (E v) (E u) (E nt) = E $ Op ApplyNesting [v,u,nt] 
+
+getNesting :: Exp (NVector a) -> Exp USize -> Exp (DVector Dim1 USize) 
+getNesting (E v) (E n) = E $ Op GetNesting [v,n]
+
+copyNesting :: Exp (DVector Dim1 a) -> Exp (NVector b) -> Exp (NVector a) 
+copyNesting (E v) (E n) = E $ Op CopyNesting [v,n]
+
 
 addReduceSeg :: Num a => Exp (NVector a) -> Exp (DVector Dim1 a)
 addReduceSeg (E v) = E $ Op AddReduce [v,zero]
@@ -387,10 +399,15 @@ xorScanSeg (E v) = E $ Op XorScan [v,zero,zero]
     where (E zero) = 0 :: Exp USize
  
 ----------------------------------------------------------------------------
--- | Call an ArBB Function 
+-- | Map an ArBB Function 
 map :: (Data a, Data b) => (Exp a -> Exp b) -> Exp (DVector t a) -> Exp (DVector t b)
 map f (E v) = E $ Map (reify f) [v] 
 
+-- | Call an ArBB Function 
+call :: (Data a, Data b) => (Exp a -> Exp b) -> Exp a -> Exp b 
+call f (E a) = E $ Call (reify f) [a] 
+
+-- | zipWith
 zipWith :: (Data a, Data b, Data c) 
          => (Exp a -> Exp b -> Exp c) 
          -> Exp (DVector t a) 
