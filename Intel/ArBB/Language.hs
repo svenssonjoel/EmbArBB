@@ -19,9 +19,6 @@ import Intel.ArBB.Backend.ArBB
 import Intel.ArBB.BackendExperiment
 import Intel.ArBB.ReifyableType
 
--- TODO: remove this dependency
--- import Intel.ArBB.Capture
-
 import qualified Intel.ArbbVM as VM
 
 -- Type info needed in cast ops
@@ -333,17 +330,46 @@ indexSeg (E n) (E s) (E i) = E $ Op Extract [n,s,i]
 --copyNesting
 --getNesting 
 
---addReduceSeg 
---mulReduceSeg
---maxReduceSeg
---minReduceSeg
---andReduceSeg
---iorReduceSeg
---xorReduceSeg
+addReduceSeg :: Num a => Exp (NVector a) -> Exp (DVector Dim1 a)
+addReduceSeg (E v) = E $ Op AddReduce [v,zero]
+    where (E zero) = 0 :: Exp USize
 
---addScanSeg 
---mulScanSeg
---maxScanSeg
+mulReduceSeg:: Num a => Exp (NVector a) -> Exp (DVector Dim1 a)
+mulReduceSeg (E v) = E $ Op MulReduce [v,zero]
+    where (E zero) = 0 :: Exp USize
+
+maxReduceSeg:: Num a => Exp (NVector a) -> Exp (DVector Dim1 a)
+maxReduceSeg (E v) = E $ Op MaxReduce [v,zero]
+    where (E zero) = 0 :: Exp USize
+
+minReduceSeg:: Num a => Exp (NVector a) -> Exp (DVector Dim1 a)
+minReduceSeg (E v) = E $ Op MinReduce [v,zero]
+    where (E zero) = 0 :: Exp USize
+
+andReduceSeg:: Num a => Exp (NVector a) -> Exp (DVector Dim1 a)
+andReduceSeg (E v) = E $ Op AndReduce [v,zero]
+    where (E zero) = 0 :: Exp USize
+
+iorReduceSeg:: Num a => Exp (NVector a) -> Exp (DVector Dim1 a)
+iorReduceSeg (E v) = E $ Op IorReduce [v,zero]
+    where (E zero) = 0 :: Exp USize
+
+xorReduceSeg:: Num a => Exp (NVector a) -> Exp (DVector Dim1 a)
+xorReduceSeg (E v) = E $ Op XorReduce [v,zero]
+    where (E zero) = 0 :: Exp USize
+
+addScanSeg :: Num a => Exp (NVector a) -> Exp (NVector a) 
+addScanSeg (E v) = E $ Op AddScan [v,zero,zero]
+    where (E zero) = 0 :: Exp USize
+
+mulScanSeg :: Num a => Exp (NVector a) -> Exp (NVector a) 
+mulScanSeg (E v) = E $ Op MulScan [v,zero,zero]
+    where (E zero) = 0 :: Exp USize
+
+maxScanSeg :: Num a => Exp (NVector a) -> Exp (NVector a) 
+maxScanSeg (E v) = E $ Op MaxScan [v,zero,zero]
+    where (E zero) = 0 :: Exp USize
+
 --minScanSeg
 --andScanSeg
 --iorScanSeg
