@@ -365,4 +365,5 @@ class Scalar a where
 
 MKS(Float,float32_)
 MKS(Double,float64_)
+MKS(Word32,uint32_)
                          

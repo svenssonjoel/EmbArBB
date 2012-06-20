@@ -197,22 +197,23 @@ typecheckNID d n =
     typeOfOp GetNesting xs = undefined 
     typeOfOp Cat [t1,t2] = same t1 t2 
 
-    -- TODO: Big Cheat ! 
+    -- Cast to type t.. 
+    -- TODO: Something similar for BitwiseCast ?
     typeOfOp (Cast t) xs = Just $ t -- Dense I ArBB.ArbbUsize 
-    -- TODO: Replace with  
-    -- typeOfOf CastTo t xs = t 
-
-    
+       
     typeOfOp Extract [Dense I a,i] = Just $ Scalar a 
     typeOfOp Extract [Dense II a,i,j] = Just $ Scalar a 
     typeOfOp Extract [Dense III a,i,j,k] = Just $ Scalar a 
+    typeOfOp Extract [Nested a,i,j] = Just $ Scalar a
     
     typeOfOp Split [Dense _ a,x] = Just $ Nested a    -- dense to nested 
-    typeOfOp Unsplit xs = undefined  -- nested to dense
-    typeOfOp Index xs = undefined    -- TODO: not sure what to do here!
+    typeOfOp Unsplit xs = undefined  -- nested to nested.. 
+    typeOfOp Index [Scalar t, Scalar _, Scalar _] = Just $ Dense I t -- undefined    -- TODO: not sure what to do here!
+    typeOfOp Index [Scalar t, Scalar _, Scalar _, Scalar _, Scalar _] = Just $ Dense II t 
     typeOfOp Mask xs = Just $ Dense I ArBB.ArbbBoolean
     typeOfOp CopyNesting xs = undefined -- nested
-    typeOfOp Flatten xs = undefined     -- nested to dense
+    typeOfOp Flatten [Dense _ a] = Just $ Dense I a -- undefined     -- nested to dense
+    typeOfOp Flatten [Nested a]  = Just $ Dense I a 
     typeOfOp ConstVector [Scalar t,_] = Just$ Dense I t  
     typeOfOp Sort [v,d] = Just v
     typeOfOp SortRank [v,d] = Just$ Tuple [v,Dense I ArBB.ArbbUsize] -- DVector Dim1 a -> (DVector Dim1 a, DVector Dim1 USize)
@@ -229,9 +230,10 @@ typecheckNID d n =
     typeOfOp ExtractCol  [t1,t2] = decrRank t1
     typeOfOp ExtractPage [t1,t2] = decrRank t1 
     typeOfOp Section (t:ts) = Just t
- -- Most likely breaks!
-    typeOfOp Segment [Nested a,x] = Just $ Dense I a  -- TODO: how do you know what the dimensionality is? 
+    typeOfOp Segment [Nested a,x] = Just $ Dense I a  -- Result is always Dense I
     typeOfOp ReplaceSegment xs = undefined  -- Nested to nested
+    -- So far Alloc has not occured in generated functions. 
+    -- Only as part of the Haskell - ArBB interface. 
     typeOfOp Alloc xs = undefined  -- TODO: not sure what to do here! 
     typeOfOp ReplaceElem (t:ts) = Just t
     typeOfOp GetEltCoord [] = Just $ Tuple [Scalar ArBB.ArbbUsize, 
@@ -240,6 +242,8 @@ typecheckNID d n =
     typeOfOp BitwiseCast xs = undefined -- TODO: not sure what to do here! 
     typeOfOp GetNeighbor [t,t2,t3,t4] = Just $ t
     typeOfOp ExpectSize xs = undefined    -- used for optimization
+
+    -- TODO: Nested cases for all the reductions and scans
     typeOfOp AddReduce [v,l] = decrRank v  
     typeOfOp MulReduce [v,l] = decrRank v 
     typeOfOp MaxReduce [v,l] = decrRank v 

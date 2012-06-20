@@ -106,22 +106,38 @@ test5 =
 test6 = 
     withArBB $ do 
       f <- capture getSeg
-      
+      g <- capture segFlat      
+      h <- capture indexS
+
       str <- serialize f 
+      liftIO$ putStrLn str
+
+      str <- serialize g 
+      liftIO$ putStrLn str
+      
+      str <- serialize h
       liftIO$ putStrLn str
       
       x <- copyIn (V.fromList [1..10::Word32]) (Z:.10)
       s <- copyIn (V.fromList [-1,-1,-1,-1,-1,1,1,1,1,1]) (Z:.10) 
-      r1 <- new (Z :. 5) 0 
-      -- r2 <- new (Z :. 5) 0 
+      r1 <- new (Z :. 5) 0
+      r2 <- new (Z :. 10) 0
+      
+      r3 <- mkScalar 0
 
-      execute f (x :- s)  r1 -- (r1 :- r2) 
+      execute f (x :- s) r1 
+
+      execute g (x :- s) r2 
+
+      execute h (x :- s) r3
 
       ra <- copyOut r1
---      rb <- copyOut r2
+      rb <- copyOut r2
+      rc <- readScalar r3
 
       liftIO$ putStrLn $ show ra
-  --    liftIO$ putStrLn $ show rb
+      liftIO$ putStrLn $ show rb
+      liftIO$ putStrLn $ show rc 
           
     where 
       getSeg :: Exp (DVector Dim1 Word32) 
@@ -132,7 +148,15 @@ test6 =
             -- res :: Exp (NVector Word32)
             res = split v s
 
+      segFlat :: Exp (DVector Dim1 Word32) 
+               -> Exp (DVector Dim1 ISize) 
+               -> (Exp (DVector Dim1 Word32))
+      segFlat v s = flattenE (split v s) 
 
+      indexS :: Exp (DVector Dim1 Word32) 
+               -> Exp (DVector Dim1 ISize) 
+               -> Exp Word32
+      indexS v s = indexSeg (split v s) 1 0 
 
 
 sharing :: Exp (DVector Dim1 Word32) -> Exp (DVector Dim1 Word32) 

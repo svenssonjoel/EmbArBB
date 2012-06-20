@@ -315,13 +315,42 @@ segment (E a) (E u) = E $ Op Segment [a,u]
 flatten :: (IsVector t e) => Exp (t e) -> Exp (DVector Dim1 a) 
 flatten (E a) = E $ Op Flatten [a] 
 
+flattenD :: Exp (DVector (t:.Int:.Int) a) -> Exp (DVector Dim1 a) 
+flattenD (E a) = E $ Op Flatten [a]  
+
+flattenE :: Exp (NVector a) -> Exp (DVector Dim1 a) 
+flattenE (E a) = E $ Op Flatten [a]  
+
 replaceSeg :: Exp (NVector a) -> Exp USize -> Exp (DVector Dim1 a) -> Exp (NVector a) 
 replaceSeg (E n) (E u) (E d) = E $ Op ReplaceSegment [n,u,d]
 
 indexSeg :: Exp (NVector a) -> Exp USize -> Exp USize -> Exp a 
 indexSeg (E n) (E s) (E i) = E $ Op Extract [n,s,i] 
 
+-- TODO: 
+--setRegularNesting
+--applyNesting
+--copyNesting
+--getNesting 
 
+--addReduceSeg 
+--mulReduceSeg
+--maxReduceSeg
+--minReduceSeg
+--andReduceSeg
+--iorReduceSeg
+--xorReduceSeg
+
+--addScanSeg 
+--mulScanSeg
+--maxScanSeg
+--minScanSeg
+--andScanSeg
+--iorScanSeg
+--xorScanSeg
+
+
+ 
 ----------------------------------------------------------------------------
 -- | Call an ArBB Function 
 map :: (Data a, Data b) => (Exp a -> Exp b) -> Exp (DVector t a) -> Exp (DVector t b)
