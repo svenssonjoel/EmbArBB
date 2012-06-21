@@ -16,7 +16,7 @@ import Intel.ArBB.Data.Int
 import Intel.ArBB.Data
 
 import Intel.ArBB.Backend.ArBB
-import Intel.ArBB.BackendExperiment
+import Intel.ArBB.Reify
 import Intel.ArBB.ReifyableType
 
 import qualified Intel.ArbbVM as VM

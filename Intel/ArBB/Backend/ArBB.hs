@@ -330,8 +330,6 @@ copyOut dv =
                       
    liftIO$ V.freeze vec
 
-   -- return out
-   
    where 
      -- TODO: There should be some insurance that ndims is 1,2 or 3.
      --       Or a way to handle the higher dimensionalities. 

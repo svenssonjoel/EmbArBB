@@ -4,7 +4,7 @@
              ScopedTypeVariables,
              TypeOperators #-}
 
-module Intel.ArBB.BackendExperiment where 
+module Intel.ArBB.Reify where 
 
 import Control.Monad.State.Strict
 import qualified Data.Map as Map
@@ -21,7 +21,8 @@ import Intel.ArBB.Variable
 import Intel.ArBB.Data
 import Intel.ArBB.Vector
 import Intel.ArBB.ReifyableType
-import Intel.ArBB.MonadCapture
+
+import Intel.ArBB.MonadReify
 import Intel.ArBB.GenRecord
  
 import Data.Int
@@ -36,25 +37,25 @@ import Intel.ArBB.Data.Int
 ---------------------------------------------------------------------------- 
 -- Implement operations on the Capture monad. 
 -- These should all be backend oblivious. 
-newVar :: Capture Variable 
+newVar :: R Variable 
 newVar = do 
   uniq <- newUnique 
   return $ Variable ("v" ++ show uniq)
 
-newUnique :: Capture Integer
+newUnique :: R Integer
 newUnique = do 
   uniq <- gets unique 
   modify $ \s -> s {unique = uniq+1}
   return uniq
 
-addVarType :: Variable -> Type -> Capture () 
+addVarType :: Variable -> Type -> R () 
 addVarType v t = do 
   m <- gets (genRecordVarType . genRecord)
-  modify $ \(CaptState sh uniq gr)  -> CaptState sh uniq gr { genRecordVarType = Map.insert v t m } 
+  modify $ \(RState sh uniq gr)  -> RState sh uniq gr { genRecordVarType = Map.insert v t m } 
 
 -- TODO: Break up into tiny functions. 
 -- TODO: I dont really need the Dynamic right ?
-getNodeID :: Expr -> Capture NodeID
+getNodeID :: Expr -> R NodeID
 getNodeID e = 
     do
       sh <- gets sharing  
@@ -86,16 +87,16 @@ getNodeID e =
               return uniq
 
 
-insertNode :: Expr -> Node -> Capture GenRecord 
+insertNode :: Expr -> Node -> R GenRecord 
 insertNode e node = 
     do 
       d <- gets (genRecordDag . genRecord)
       nid <- getNodeID e 
       let d' = Map.insert nid node d 
-      modify $ \(CaptState sh uniq gr) -> CaptState sh uniq (gr { genRecordDag = d'})
+      modify $ \(RState sh uniq gr) -> RState sh uniq (gr { genRecordDag = d'})
       
       
-      modify $ \(CaptState sh uniq gr) -> CaptState sh uniq (gr {genRecordNids = [nid]})
+      modify $ \(RState sh uniq gr) -> RState sh uniq (gr {genRecordNids = [nid]})
       gets genRecord
 ----------------------------------------------------------------------------
 -- 
@@ -105,27 +106,27 @@ insertNode e node =
                          
                         
 class Reify a where 
-    reify :: a -> Capture GenRecord 
+    reify :: a -> R GenRecord 
 
 runR r = evalStateT r capState 
     where 
       capState = 
-         CaptState IntMap.empty 
+         RState IntMap.empty 
                    0
                    emptyGenRecord -- Map.empty
 
-reifySimple :: Expr -> Capture [NodeID] 
+reifySimple :: Expr -> R [NodeID] 
 reifySimple e = 
     do 
       gr <- reify e 
       return (genRecordNids gr) -- gets (genRecordNids . genRecord)
 
 
-reifyLocally :: Expr -> Capture [NodeID] 
+reifyLocally :: Expr -> R [NodeID] 
 reifyLocally e = 
     do 
       -- get all state 
-      (CaptState sh un gr) <- get 
+      (RState sh un gr) <- get 
                               
       nids <- reifySimple e
 
@@ -165,7 +166,7 @@ instance Reify Expr where
           
           depends <- gets (genRecordDepends . genRecord) 
           let depends' = Map.insert uniq depend depends
-          modify $ \(CaptState sh un gr) -> CaptState sh un (gr { genRecordDepends = depends' }) 
+          modify $ \(RState sh un gr) -> RState sh un (gr { genRecordDepends = depends' }) 
           insertNode e (NMap uniq (concat exprs'))
            
           --fid <- lift (runR cap) 
@@ -185,7 +186,7 @@ instance Reify Expr where
           
           depends <- gets (genRecordDepends . genRecord) 
           let depends' = Map.insert uniq depend depends
-          modify $ \(CaptState sh un gr) -> CaptState sh un (gr { genRecordDepends = depends' }) 
+          modify $ \(RState sh un gr) -> RState sh un (gr { genRecordDepends = depends' }) 
           insertNode e (NMap uniq (concat exprs'))
                     
           --fid  <- lift ( runR cap )
@@ -222,7 +223,7 @@ instance Reify Expr where
 ----------------------------------------------------------------------------
 -- 
 
-createVariables :: [Expr] -> Capture [Variable]
+createVariables :: [Expr] -> R [Variable]
 createVariables [] = return []
 createVariables (x:xs) = 
     do 
@@ -243,8 +244,8 @@ instance (ReifyableFunType a b, ReifyableFun a b) => Reify (a -> b) where
         do
           exprs <- reifyFun f
           nids <- mapM reifySimple exprs
-          modify $ \(CaptState sh un gr) -> CaptState sh un ( gr {genRecordNids = (concat nids)})
-          modify $ \(CaptState sh un gr) -> CaptState sh un ( gr {genRecordFunType = reifyFunType f})
+          modify $ \(RState sh un gr) -> RState sh un ( gr {genRecordNids = (concat nids)})
+          modify $ \(RState sh un gr) -> RState sh un ( gr {genRecordFunType = reifyFunType f})
           gr <- gets genRecord
           return gr
           --nids <- mapM reify exprs  
@@ -253,7 +254,7 @@ instance (ReifyableFunType a b, ReifyableFun a b) => Reify (a -> b) where
 ----------------------------------------------------------------------------
 -- 
 class ReifyableFun a b where 
-    reifyFun :: (a -> b) -> Capture [Expr]
+    reifyFun :: (a -> b) -> R [Expr]
 
 
 instance Data a => ReifyableFun (Exp a) (Exp b) where 

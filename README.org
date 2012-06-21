@@ -6,8 +6,8 @@
   + The samples and benchmarks now run again 
     
 * TODOs:  
-  + think up some new execute interface.. 
-
+  + Think up some new execute interface.. 
+ 
   + print function for DAGs
     
   + huge cleanup is needed.

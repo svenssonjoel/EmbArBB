@@ -1,6 +1,5 @@
 {-# LANGUAGE TypeOperators, 
              FlexibleInstances,
-           --  ExistentialQuantification, 
              DeriveDataTypeable, 
              TypeSynonymInstances #-}
 
@@ -13,7 +12,7 @@ import Intel.ArBB.Literal
 import Intel.ArBB.Variable
 import Intel.ArBB.Op
 
-import Intel.ArBB.MonadCapture
+import Intel.ArBB.MonadReify
 import Intel.ArBB.GenRecord
 
 import Data.Typeable
@@ -30,8 +29,8 @@ data Expr = Lit Literal
           | ResIndex Expr Int 
             
             -- Function with correct name and type must exist in some kind of environment
-          | Call (Capture GenRecord) [Expr]  
-          | Map  (Capture GenRecord) [Expr]   
+          | Call (R GenRecord) [Expr]  
+          | Map  (R GenRecord) [Expr]   
           
           -- Hoas for the while loop.. 
           | While ([Expr] -> Expr)  ([Expr] -> [Expr])  [Expr] 
@@ -43,8 +42,8 @@ data Expr = Lit Literal
 
             deriving (Show,Typeable)
 
-instance Show (Capture a) where 
-    show a = "CAPT" 
+instance Show (R a) where 
+    show a = "REIFY" 
 instance Show (a -> b) where 
     show a = "FUNC" 
 
