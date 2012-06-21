@@ -9,8 +9,6 @@
 
 module Intel.ArBB.Backend.ArBB where 
 
-import Intel.ArBB.BackendExperiment
-
 import qualified Intel.ArbbVM as VM
 import qualified Intel.ArbbVM.Convenience as VM hiding (liftIO) 
 import           Intel.ArBB.DAG
@@ -27,7 +25,8 @@ import           Intel.ArBB.Vector
 import           Intel.ArBB.IsScalar
 import           Intel.ArBB.ReifyableType
 import           Intel.ArBB.GenRecord
-import           Intel.ArBB.MonadCapture
+import           Intel.ArBB.MonadReify
+import           Intel.ArBB.Reify
 import           Intel.ArBB.Function
 
 import           Intel.ArBB.Backend.ArBB.CodeGen
