@@ -30,7 +30,7 @@ import Data.Word
 import Intel.ArBB.Data.Int
 
 ----------------------------------------------------------------------------
--- The Capture Monad Stuff 
+-- Create GenRecords from functions.
 ----------------------------------------------------------------------------
 
 
