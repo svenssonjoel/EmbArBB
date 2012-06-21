@@ -287,8 +287,10 @@ new t a =
    ss <- liftVM$ mapM VM.usize_ (dimList dims)
    liftVM$ VM.opDynamicImm_ VM.ArbbOpAlloc [v] ss
 
-   -- TODO : Fill the vector!
-    
+   -- DONE : Fill the vector!
+   arbbdat <- liftVM$ VM.mapToHost_ v (map fromIntegral (dimList dims)) VM.ArbbWriteOnlyRange 
+   liftIO$ pokeArray (castPtr arbbdat) (replicate (foldl (*) 1 (dimList dims)) a)
+
 
    (ArBBState mf mv i) <- S.get 
    

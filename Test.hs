@@ -125,10 +125,10 @@ test6 =
       x <- copyIn (V.fromList [1..10::Word32]) (Z:.10)
       s <- copyIn (V.fromList [-1,-1,-1,-1,-1,1,1,1,1,1]) (Z:.10) 
       r1 <- new (Z :. 5) 0
-      r2 <- new (Z :. 10) 0
-      r4 <- new (Z :. 2) 0 
-      
+      r2 <- new (Z :. 10) 0     
       r3 <- mkScalar 0
+      r4 <- new (Z :. 2) 0 
+      (r5 :: BEDVector Dim2 Word32)  <- new (Z :. 2 :. 5) 102 
 
       execute f (x :- s) r1 
 
@@ -142,11 +142,14 @@ test6 =
       rb <- copyOut r2
       rc <- readScalar r3
       rd <- copyOut r4
+      re <- copyOut r5
 
       liftIO$ putStrLn $ show ra
       liftIO$ putStrLn $ show rb
       liftIO$ putStrLn $ show rc 
       liftIO$ putStrLn $ show rd 
+      liftIO$ putStrLn $ show re 
+      
           
     where 
       getSeg :: Exp (DVector Dim1 Word32) 
