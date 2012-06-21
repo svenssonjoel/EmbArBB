@@ -200,7 +200,10 @@ instance Reify Expr where
           [e2'] <- reifySimple e2
           [e3'] <- reifySimple e3
           insertNode e (NIf e1' e2' e3')
--- TODO: FIX THE WHILE CASE. IT IS BUGY 
+
+    ----------------------------------------------------
+    -- While Loop 
+    ----------------------------------------------------
     reify e@(While cond body state) = 
         do 
           variables <- createVariables state 
