@@ -29,7 +29,6 @@ source-repository head
 Library 
   build-depends: base 
                , mtl 
-     --          , directory
                , containers
                , vector
                , arbb-vm >= 0.1.1.14
