@@ -298,6 +298,21 @@ getNPages (E vec) = E $ Op GetNPages [vec]
 
 
 ----------------------------------------------------------------------------
+-- Section. 
+
+section1D :: Exp (DVector Dim1 a) 
+           -> Exp USize 
+           -> Exp USize 
+           -> Exp USize 
+           -> Exp (DVector Dim1 a) 
+section1D (E v) (E offs) (E len) (E stride) = E $ Op Section [v,offs,len,stride] 
+
+
+--TODO : 
+-- section2D
+-- section3D 
+
+----------------------------------------------------------------------------
 -- NESTED OPS 
 
 --split :: Exp (DVector t a) -> Exp (DVector t ISize) -> Exp (NVector a) 
