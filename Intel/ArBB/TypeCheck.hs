@@ -18,7 +18,7 @@ import qualified Intel.ArbbVM as ArBB
 import Control.Monad.State
 import Control.Monad.Identity
 import qualified Data.Map as Map 
-
+import Data.Maybe (fromJust)
 
 
 ---------------------------------------------------------------------------- 
@@ -219,11 +219,11 @@ typecheckNID d n =
     typeOfOp Extract [Nested a,i,j] = Just $ Scalar a
     
     typeOfOp Split [Dense _ a,x] = Just $ Nested a    -- dense to nested 
-    typeOfOp Unsplit xs = undefined  -- nested to nested.. 
-    typeOfOp Index [Scalar t, Scalar _, Scalar _] = Just $ Dense I t -- undefined    -- TODO: not sure what to do here!
+    typeOfOp Unsplit [n,d] = Just $ n -- nested to nested..
+    typeOfOp Index [Scalar t, Scalar _, Scalar _] = Just $ Dense I t 
     typeOfOp Index [Scalar t, Scalar _, Scalar _, Scalar _, Scalar _] = Just $ Dense II t 
     typeOfOp Mask xs = Just $ Dense I ArBB.ArbbBoolean
-    typeOfOp Flatten [Dense _ a] = Just $ Dense I a -- undefined     -- nested to dense
+    typeOfOp Flatten [Dense _ a] = Just $ Dense I a 
     typeOfOp Flatten [Nested a]  = Just $ Dense I a 
     typeOfOp ConstVector [Scalar t,_] = Just$ Dense I t  
     typeOfOp Sort [v,d] = Just v
@@ -240,19 +240,22 @@ typecheckNID d n =
     typeOfOp ExtractRow [t1,t2] = decrRank t1
     typeOfOp ExtractCol  [t1,t2] = decrRank t1
     typeOfOp ExtractPage [t1,t2] = decrRank t1 
+    -- Section exists in 3 different versions
+    -- Taking 4, 7 and 10 inputs. 
+    -- The result type is always the same as the type of the first input though.. 
     typeOfOp Section (t:ts) = Just t
     typeOfOp Segment [Nested a,x] = Just $ Dense I a  -- Result is always Dense I
-    typeOfOp ReplaceSegment xs = undefined  -- Nested to nested
+    typeOfOp ReplaceSegment (t:ts) = Just t  -- Nested to nested
     -- So far Alloc has not occured in generated functions. 
     -- Only as part of the Haskell - ArBB interface. 
-    typeOfOp Alloc xs = undefined  -- TODO: not sure what to do here! 
+    typeOfOp Alloc xs = error "typeOfOp: Alloc used in function code" 
     typeOfOp ReplaceElem (t:ts) = Just t
     typeOfOp GetEltCoord [] = Just $ Tuple [Scalar ArBB.ArbbUsize, 
                                             Scalar ArBB.ArbbUsize, 
                                             Scalar ArBB.ArbbUsize]
     typeOfOp BitwiseCast xs = undefined -- TODO: not sure what to do here! 
     typeOfOp GetNeighbor [t,t2,t3,t4] = Just $ t
-    typeOfOp ExpectSize xs = undefined    -- used for optimization
+    typeOfOp ExpectSize xs = error "typeOfOp: ExpectSize is not implemented" 
 
     
     typeOfOp AddReduce [Nested t, l] = Just $ Dense I t 
@@ -268,8 +271,14 @@ typecheckNID d n =
     typeOfOp MinReduce [v,l] = decrRank v    
  
     -- the Loc versions have 2 outputs. 
-    typeOfOp MaxReduceLoc xs = undefined 
-    typeOfOp MinReduceLoc xs = undefined 
+    typeOfOp MaxReduceLoc [v,l] = 
+        Just $ Tuple [ fromJust $ decrRank v
+                     , fromJust $ decrRank (container v ArBB.ArbbUsize)]
+                    -- TODO: this is not pretty
+
+    typeOfOp MinReduceLoc [v,l] = 
+        Just $ Tuple [ fromJust $ decrRank v
+                     , fromJust $ decrRank (container v ArBB.ArbbUsize)]
 
     typeOfOp AndReduce [Nested t, l] = Just $ Dense I t 
     typeOfOp AndReduce [v,l] = decrRank v 
@@ -289,4 +298,4 @@ typecheckNID d n =
     typeOfOp IorScan [v,d,l] = Just v --Vec, USize, USize  
     typeOfOp XorScan [v,d,l] = Just v --Vec, USize, USize  
     typeOfOp AddMerge [t1,t2,t3] = Just t1
-    typeOfOp AddMergeScalar xs = undefined -- TODO: Don't know what this is
+    typeOfOp AddMergeScalar [Scalar a, b, c] = Just $ Dense I a 

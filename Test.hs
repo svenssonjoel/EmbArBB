@@ -163,7 +163,7 @@ test6 =
       segFlat :: Exp (DVector Dim1 Word32) 
                -> Exp (DVector Dim1 ISize) 
                -> (Exp (DVector Dim1 Word32))
-      segFlat v s = flattenE (split v s) 
+      segFlat v s = flattenSeg(split v s) 
 
       indexS :: Exp (DVector Dim1 Word32) 
                -> Exp (DVector Dim1 ISize) 

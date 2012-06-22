@@ -94,12 +94,12 @@ mulReduce (E vec) (E lev) =
   E $ Op MulReduce [vec,lev]
 
 -- | reduce along a specified level 
-maxReduce :: Num a => Exp (DVector (t:.Int) a) -> Exp USize -> Exp (DVector t a) 
+maxReduce :: Ord a => Exp (DVector (t:.Int) a) -> Exp USize -> Exp (DVector t a) 
 maxReduce (E vec) (E lev) = 
   E $ Op MaxReduce [vec,lev]
 
 -- | reduce along a specified level 
-minReduce :: Num a => Exp (DVector (t:.Int) a) -> Exp USize -> Exp (DVector t a) 
+minReduce :: Ord a => Exp (DVector (t:.Int) a) -> Exp USize -> Exp (DVector t a) 
 minReduce (E vec) (E lev) = 
   E $ Op MinReduce [vec,lev]
 
@@ -117,6 +117,17 @@ iorReduce (E vec) (E lev) =
 xorReduce :: Exp (DVector (t:.Int) Bool) -> Exp USize -> Exp (DVector t Bool) 
 xorReduce (E vec) (E lev) = 
   E $ Op XorReduce [vec,lev]
+
+-- | maxReduceLoc computes maximas as well as their locations in the source Vector.
+maxReduceLoc :: Ord a => Exp (DVector (t:.Int) a) -> Exp USize -> (Exp (DVector t a), Exp (DVector t USize)) 
+maxReduceLoc (E vec) (E lev) = (fstPair res, sndPair res) 
+    where 
+      res = E $ Op MaxReduceLoc [vec,lev]
+-- | minReduceLoc computes minimas as well as their locations in the source Vector.
+minReduceLoc :: Ord a => Exp (DVector (t:.Int) a) -> Exp USize -> (Exp (DVector t a), Exp (DVector t USize)) 
+minReduceLoc (E vec) (E lev) = (fstPair res, sndPair res) 
+    where 
+      res = E $ Op MinReduceLoc [vec,lev]
 
 ---------------------------------------------------------------------------- 
 -- Add Merge
@@ -307,19 +318,35 @@ section1D :: Exp (DVector Dim1 a)
            -> Exp (DVector Dim1 a) 
 section1D (E v) (E offs) (E len) (E stride) = E $ Op Section [v,offs,len,stride] 
 
+section2D :: Exp (DVector Dim2 a) 
+          -> Exp USize -> Exp USize -> Exp USize 
+          -> Exp USize -> Exp USize -> Exp USize 
+          -> Exp (DVector Dim2 a)
+section2D (E v) (E ro) (E nr) (E rs) (E co) (E nc) (E cs) = 
+    E $ Op Section [v,ro,nr,rs,co,nc,cs]
 
---TODO : 
--- section2D
--- section3D 
+
+section3D :: Exp (DVector Dim3 a) 
+          -> Exp USize -> Exp USize -> Exp USize 
+          -> Exp USize -> Exp USize -> Exp USize 
+          -> Exp USize -> Exp USize -> Exp USize 
+          -> Exp (DVector Dim3 a)
+section3D (E v) (E pr) (E np) (E ps) (E ro) (E nr) (E rs) (E co) (E nc) (E cs) = 
+    E $ Op Section [v,pr,np,ps,ro,nr,rs,co,nc,cs]
 
 ----------------------------------------------------------------------------
 -- NESTED OPS 
 
 --split :: Exp (DVector t a) -> Exp (DVector t ISize) -> Exp (NVector a) 
+-- | split a Dense or Nested vector given a vector of integers (-1,0 or 1) 
 split :: (IsVector t e) => Exp (t e) -> Exp (t ISize) -> Exp (NVector a)
 split (E a) (E i) = E $ Op Split [a,i] 
 
+-- | unsplit 
+unsplit :: (IsVector t ISize) => Exp (NVector e) -> Exp (t ISize) -> Exp (NVector a) 
+unsplit (E n) (E i) = E $ Op Unsplit [n,i]
 
+-- | segment extracts a segment from a nested vector. 
 segment :: Exp (NVector a) -> Exp USize -> Exp (DVector Dim1 a) 
 segment (E a) (E u) = E $ Op Segment [a,u]
 
@@ -327,11 +354,11 @@ segment (E a) (E u) = E $ Op Segment [a,u]
 flatten :: (IsVector t e) => Exp (t e) -> Exp (DVector Dim1 a) 
 flatten (E a) = E $ Op Flatten [a] 
 
-flattenD :: Exp (DVector (t:.Int:.Int) a) -> Exp (DVector Dim1 a) 
-flattenD (E a) = E $ Op Flatten [a]  
+flattenDense :: Exp (DVector (t:.Int:.Int) a) -> Exp (DVector Dim1 a) 
+flattenDense (E a) = E $ Op Flatten [a]  
 
-flattenE :: Exp (NVector a) -> Exp (DVector Dim1 a) 
-flattenE (E a) = E $ Op Flatten [a]  
+flattenSeg :: Exp (NVector a) -> Exp (DVector Dim1 a) 
+flattenSeg (E a) = E $ Op Flatten [a]  
 
 replaceSeg :: Exp (NVector a) -> Exp USize -> Exp (DVector Dim1 a) -> Exp (NVector a) 
 replaceSeg (E n) (E u) (E d) = E $ Op ReplaceSegment [n,u,d]
@@ -355,6 +382,10 @@ getNesting (E v) (E n) = E $ Op GetNesting [v,n]
 
 copyNesting :: Exp (DVector Dim1 a) -> Exp (NVector b) -> Exp (NVector a) 
 copyNesting (E v) (E n) = E $ Op CopyNesting [v,n]
+
+
+replaceSegment :: Exp (NVector a) -> Exp USize -> Exp (DVector Dim1 a) -> Exp (NVector a) 
+replaceSegment (E n) (E u) (E d) = E $ Op ReplaceSegment [n,u,d]
 
 
 addReduceSeg :: Num a => Exp (NVector a) -> Exp (DVector Dim1 a)

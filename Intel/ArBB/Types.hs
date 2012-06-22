@@ -42,6 +42,9 @@ decrRank (Dense II a) = Just$ Dense I a
 decrRank (Dense I a) = Just$ Scalar a 
 decrRank a = Nothing 
 
+container :: Type -> (VM.ScalarType -> Type) 
+container (Dense t a) b = Dense t b 
+container _ _ = error "container: not a container" 
 
 ----------------------------------------------------------------------------
 -- get input/output types from a function type 
