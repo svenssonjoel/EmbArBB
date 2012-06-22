@@ -1,5 +1,5 @@
 Name:           EmbArBB
-Version:        0.2.0.1
+Version:        0.2.0.2
 
 License:                BSD3
 License-file:           LICENSE
@@ -40,8 +40,8 @@ Library
                  , Intel.ArBB.Variable
                  , Intel.ArBB.Literal
                  , Intel.ArBB.Op
-                 , Intel.ArBB.MonadCapture
-                 , Intel.ArBB.BackendExperiment
+                 , Intel.ArBB.MonadReify
+                 , Intel.ArBB.Reify
                  , Intel.ArBB.GenRecord
                  , Intel.ArBB.ReifyableType
                  , Intel.ArBB.Function 		
