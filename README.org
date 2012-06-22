@@ -6,7 +6,7 @@
   + The samples and benchmarks now run again 
     
 * TODOs:  
-  + Think up some new execute interface.. 
+  + Think up some new execute interface. 
  
   + print function for DAGs
     
@@ -14,9 +14,19 @@
    
   + Things like mkScalar needs to be separated from the specific backend. 
 
+  + The make_ref_countable family of functions in the arbb-vm needs to be understood. 
+    Currently things stored on the ArBB heap are not freed. Manual freeing 
+    of vectors does not sound very attractive so figuring out some way to automate this 
+    is important. 
+
 * NOTES: 
-  + ArBB and recursive functions, does it work ? 
-    Answer: No. 
+  + An ArBB function cannot "Call" itself. That is, ArBB functions 
+    cannot be recursive. To upweigh this there are many forms of loops, 
+    Do, While, For. 
+  + The nested vector capabilities feel a bit wing-clipped from the 
+    missing recursion. Finding a few example apps that use the nested 
+    vectors might cast some light.
+ 
 
 
 
