@@ -291,6 +291,21 @@ sort :: Exp (Vector a) -> Exp USize -> Exp (Vector a)
 sort (E vec) (E us) = 
   E $ Op Sort [vec,us] 
 
+-- | interleave elements from different dense containers
+shuffle :: Exp (DVector t a) -> Exp (DVector t a) -> Exp USize -> Exp (DVector t a) 
+shuffle (E v1) (E v2) (E u) = E $ Op Shuffle [v1,v2,u,zero]
+    where (E zero) = 0 :: Exp USize 
+
+-- Shows an inconsistency. Here both Nested and Dense require the same number of arguemnts 
+-- So the the zero is just a dummy (not used in the dense case) 
+
+-- | the inverse of shuffle 
+unshuffle :: Exp (DVector t a) -> Exp USize -> Exp (DVector t a) 
+unshuffle (E v) (E u) = E $ Op Unshuffle [v,u,zero]
+    where (E zero) = 0 :: Exp USize 
+
+--Another inconsistency. Other ArBB ops have two outputs. This one concatenates its
+-- two output vectors..
 ---------------------------------------------------------------------------- 
 -- get sizes of vectors 
 
@@ -366,7 +381,21 @@ replaceSeg (E n) (E u) (E d) = E $ Op ReplaceSegment [n,u,d]
 indexSeg :: Exp (NVector a) -> Exp USize -> Exp USize -> Exp a 
 indexSeg (E n) (E s) (E i) = E $ Op Extract [n,s,i] 
 
--- TODO: 
+-- | interleave segments from different nested containers
+shuffleSegments :: Exp (NVector a) -> Exp (NVector a) -> Exp USize -> Exp (NVector a) 
+shuffleSegments (E n1) (E n2) (E u) = E $ Op Shuffle [n1,n2,u,one]
+    where (E one) = 1 :: Exp USize
+
+-- | interleave elements from different nested containers
+shuffleSeg :: Exp (NVector a) -> Exp (NVector a) -> Exp USize -> Exp (NVector a) 
+shuffleSeg (E n1) (E n2) (E u) = E $ Op Shuffle [n1,n2,u,zero] 
+    where (E zero) = 0 :: Exp USize 
+
+-- TODO:
+-- unshuffleSegments 
+-- unshuffleSeg
+
+
 setRegularNesting2D :: Exp (DVector Dim1 a) -> Exp USize -> Exp USize -> Exp (DVector Dim2 a)
 setRegularNesting2D (E v) (E h) (E w) = E $ Op SetRegularNesting [v,h,w]
 
