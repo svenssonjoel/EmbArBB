@@ -26,6 +26,11 @@
 
   + Support more general looping states. 
 
+  + Keep track of what functions have been captured. If a function uses "Call"  on 
+    the same other function many times, each of these calls will lead to a captured 
+    instance of that function. Some map of "functionHash -> functionID" is needed. 
+    A way to get unique identifiers from a GenRecord could do as the hash
+
 * NOTES: 
   + An ArBB function cannot "Call" itself. That is, ArBB functions 
     cannot be recursive. To upweigh this there are many forms of loops, 
