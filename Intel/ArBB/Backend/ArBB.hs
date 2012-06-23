@@ -56,8 +56,10 @@ newtype ArBBBackend a = ArBBBackend {unArBBBackend :: (S.StateT ArBBState VM.Emi
 -- String FunctionName or FunctionID
 data ArBBState = ArBBState { arbbFunMap :: Map.Map Integer (VM.ConvFunction, [Type], [Type])
                            , arbbVarMap :: Map.Map Integer VM.Variable -- backend IDs  to ArBB vector ma
+                      --     , arbbGenerated :: Map.Map Integer Integer  -- genRecord hashes to ids  
                            , arbbUnique :: Integer } 
---TODO: needs to deal with Scalars in pretty much the same way as dvectors.
+
+--DONE: needs to deal with Scalars in pretty much the same way as dvectors.
  
 ---------------------------------------------------------------------------- 
 -- 
@@ -168,6 +170,9 @@ capture d =
     do 
       d' <- liftIO (runR (reify d))
       fid <- captureGenRecord d'
+      
+      let h =  genRecordHash d' 
+      liftIO$ putStrLn $ "genRecordHash: " ++ show h
       return $ Function fid 
 
 serialize :: Function i o  -> ArBBBackend String 

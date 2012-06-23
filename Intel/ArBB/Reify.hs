@@ -27,6 +27,8 @@ import Intel.ArBB.GenRecord
  
 import Data.Int
 import Data.Word
+import Data.Hashable 
+
 import Intel.ArBB.Data.Int
 
 ----------------------------------------------------------------------------
@@ -249,10 +251,14 @@ instance (ReifyableFunType a b, ReifyableFun a b) => Reify (a -> b) where
           nids <- mapM reifySimple exprs
           modify $ \(RState sh un gr) -> RState sh un ( gr {genRecordNids = (concat nids)})
           modify $ \(RState sh un gr) -> RState sh un ( gr {genRecordFunType = reifyFunType f})
-          gr <- gets genRecord
-          return gr
-          --nids <- mapM reify exprs  
-          --return $ concat nids 
+
+          dag <- gets (genRecordDag . genRecord) 
+          
+          let h = hash dag 
+          
+          modify $ \(RState sh un gr) -> RState sh un ( gr {genRecordHash = h}) 
+
+          gets genRecord
 
 ----------------------------------------------------------------------------
 -- 

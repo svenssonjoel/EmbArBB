@@ -17,7 +17,6 @@ import Intel.ArBB.GenRecord
 
 import Data.Typeable
 
-
 ----------------------------------------------------------------------------
 -- Structure 
 
@@ -70,7 +69,6 @@ data Expr = Lit Literal
           
           -- TODO: would anything be gained from adding the two other 
           --       kinds of ArBB loops. (For and Do loop). 
-
             
           | If Expr Expr Expr -- could have been an op 
 

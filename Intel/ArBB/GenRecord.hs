@@ -16,7 +16,8 @@ data GenRecord = GenRecord { genRecordDag     :: DAG
                            , genRecordFunType :: Type 
                            , genRecordNids    :: [NodeID]
                            , genRecordVarType :: Map.Map Variable Type 
-                           , genRecordDepends :: Map.Map Integer GenRecord}
+                           , genRecordDepends :: Map.Map Integer GenRecord
+                           , genRecordHash    :: Int}
                  deriving Show
 
 emptyGenRecord = GenRecord Map.empty
@@ -24,6 +25,8 @@ emptyGenRecord = GenRecord Map.empty
                            [] 
                            Map.empty
                            Map.empty
+                           0 
+                        
 
 {- About the GenRecord. 
    

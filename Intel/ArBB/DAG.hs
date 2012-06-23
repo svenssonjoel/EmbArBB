@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleInstances #-}
+
 {- 2012 Joel Svensson -} 
 
 module Intel.ArBB.DAG where 
@@ -9,6 +11,11 @@ import Intel.ArBB.Op
 import Data.Word
 import Data.Int
 import qualified Data.Map as Map
+
+import Data.Hashable 
+import Data.Text
+
+import Prelude as P 
 
 ---------------------------------------------------------------------------- 
 -- DAG
@@ -34,7 +41,13 @@ data Node = NLit Literal
 type DAG = Map.Map NodeID Node
 
 ----------------------------------------------------------------------------
--- TODO: Print DAG in some nice way 
+-- Hash DAGs
+
+-- Probably horrible!
+instance Hashable Node where 
+    hash n = hash $ pack $ show n
+    hashWithSalt i n = hashWithSalt i (pack (show n)) 
 
 
-
+instance Hashable (Map.Map NodeID Node)  where 
+    hash dag = P.foldl hashWithSalt 0 (Map.toList dag)
