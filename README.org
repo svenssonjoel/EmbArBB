@@ -9,8 +9,6 @@
   + Think up some new execute interface. 
  
   + print function for DAGs
-    
-  + huge cleanup is needed.
    
   + Things like mkScalar needs to be separated from the specific backend. 
 
@@ -18,6 +16,15 @@
     Currently things stored on the ArBB heap are not freed. Manual freeing 
     of vectors does not sound very attractive so figuring out some way to automate this 
     is important. 
+
+  + 'copyIn', 'copyOut' and 'new' functions for NVectors. 
+    
+  + See if there is a point to having some set of "immediate functions" that can 
+    be executed directly in an withArBB session. 
+
+  + Array of Tuple to Tuple of Array compilation step
+
+  + Support more general looping states. 
 
 * NOTES: 
   + An ArBB function cannot "Call" itself. That is, ArBB functions 
