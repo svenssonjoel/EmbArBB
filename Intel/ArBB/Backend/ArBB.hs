@@ -55,8 +55,7 @@ newtype ArBBBackend a = ArBBBackend {unArBBBackend :: (S.StateT ArBBState VM.Emi
 
 -- String FunctionName or FunctionID
 data ArBBState = ArBBState { arbbFunMap :: Map.Map Integer (VM.ConvFunction, [Type], [Type])
-                           , arbbVarMap :: Map.Map Integer VM.Variable -- backend IDs  to ArBB vector ma
-                      --     , arbbGenerated :: Map.Map Integer Integer  -- genRecord hashes to ids  
+                           , arbbVarMap :: Map.Map Integer VM.Variable -- backend IDs  to ArBB vector map
                            , arbbUnique :: Integer } 
 
 --DONE: needs to deal with Scalars in pretty much the same way as dvectors.
@@ -164,7 +163,7 @@ captureGenRecord gr =
  
       return fid 
   
---            (a FlexibleContext)
+--      (a FlexibleContext)
 capture :: Reify (a -> b) => (a -> b) -> ArBB (Function (FunIn a b) (FunOut b))
 capture d = 
     do 
@@ -175,7 +174,7 @@ capture d =
       liftIO$ putStrLn $ "genRecordHash: " ++ show h
       return $ Function fid 
 
-serialize :: Function i o  -> ArBBBackend String 
+serialize :: Function i o -> ArBBBackend String 
 serialize (Function fid) = 
     do 
       m <- getFunMap 
@@ -341,23 +340,156 @@ copyOut dv =
      dims = beDVectorShape dv
      (Dim dims') = dims -- TODO: FIX FIX 
 
---TODO: Someway to copy a scalar out.. (readScalar) 
 
+----------------------------------------------------------------------------
+-- NESTED VERSIONS 
+----------------------------------------------------------------------------
+-- Copy data into ArBB 
+copyInNested :: (Data a, IsScalar a, V.Storable a) 
+              => V.Vector a -> V.Vector USize -> ArBB (BENVector a)
+copyInNested dat nesting = 
+  do 
+   -- TODO: Bad. Looking at elements of Dat 
+   let elem = dat V.! 0 
+   [st1] <- liftVM$ toArBBType (scalarType elem)             
+   dt1 <- liftVM$ VM.getDenseType_ st1 1 
+         
+   [st2] <- liftVM$ toArBBType (Scalar VM.ArbbUsize) 
+   dt2 <- liftVM$ VM.getDenseType_ st2 1
+
+   nt1 <- liftVM$ VM.getNestedType_ st1 
+   
+   g1 <- liftVM$ VM.createGlobal_nobind_ dt1 "i1"
+   v1 <- liftVM$ VM.variableFromGlobal_ g1  
+ 
+   g2 <- liftVM$ VM.createGlobal_nobind_ dt2 "i2"
+   v2 <- liftVM$ VM.variableFromGlobal_ g2 
+
+   g3 <- liftVM$ VM.createGlobal_nobind_ nt1 "nested"
+   v3 <- liftVM$ VM.variableFromGlobal_ g3
+
+   
+
+   ds <- liftVM$ VM.usize_ datSize
+   liftVM$ VM.opDynamicImm_ VM.ArbbOpAlloc [v1] [ds]
+   ns <- liftVM$ VM.usize_ nestSize 
+   liftVM$ VM.opDynamicImm_ VM.ArbbOpAlloc [v2] [ns]
+
+   let (fptr,_)  = V.unsafeToForeignPtr0 dat
+       ptr       = unsafeForeignPtrToPtr fptr
+       (fptr2,_) = V.unsafeToForeignPtr0 nesting 
+       ptr2      = unsafeForeignPtrToPtr fptr2
+
+   -- get a ptr to the data in the VM and copy Haskell vector into it. 
+   arbbdat  <- liftVM$ VM.mapToHost_ v1 [fromIntegral datSize] VM.ArbbWriteOnlyRange
+   arbbnest <- liftVM$ VM.mapToHost_ v2 [fromIntegral nestSize] VM.ArbbWriteOnlyRange
+   liftIO$  copyBytes (castPtr arbbdat) 
+                      ptr
+                      (datSize * sizeOf elem) 
+   liftIO$  copyBytes (castPtr arbbnest) 
+                      ptr2
+                      (nestSize * sizeOf elem) 
+
+   vs_length <- liftVM$ VM.usize_ 1
+   liftVM$ VM.opImm_ VM.ArbbOpApplyNesting [v3] [v1,v2,vs_length]
+
+   (ArBBState mf mv i) <- S.get
+   
+   -- TODO: an addVector function.. 
+   let mv' = Map.insert i v3 mv
+                
+   S.put (ArBBState mf mv' (i+1))
+
+   return $ BENVector i --
+       where 
+         datSize = V.length dat
+         nestSize = V.length nesting
+{- 
+-- create a new DVector with same element at all indices. 
+-- TODO: Actually fill it with the elements (constVector)
+new :: (IsScalar a, V.Storable a, Dimensions t) => t -> a -> ArBB (BEDVector t a)
+new t a = 
+  do
+   [st] <- liftVM$ toArBBType (scalarType a)             
+   dt <- liftVM$ VM.getDenseType_ st ndims   
+   
+   g <- liftVM$ VM.createGlobal_nobind_ dt "output"
+   v <- liftVM$ VM.variableFromGlobal_ g  
+ 
+   ss <- liftVM$ mapM VM.usize_ (dimList dims)
+   liftVM$ VM.opDynamicImm_ VM.ArbbOpAlloc [v] ss
+
+   -- DONE : Fill the vector!
+   arbbdat <- liftVM$ VM.mapToHost_ v (map fromIntegral (dimList dims)) VM.ArbbWriteOnlyRange 
+   liftIO$ pokeArray (castPtr arbbdat) (replicate (foldl (*) 1 (dimList dims)) a)
+
+
+   (ArBBState mf mv i) <- S.get 
+   
+   let mv' = Map.insert i v mv 
+                
+   S.put (ArBBState mf mv' (i+1))
+
+   return $ BEDVector i dims
+  where 
+     -- TODO: There should be some insurance that ndims is 1,2 or 3.
+     --       Or a way to handle the higher dimensionalities. 
+     ndims = dimensions dims 
+     dims = toDim t    
+    
+
+
+
+----------------------------------------------------------------------------
+-- Copy data out of ArBB 
+copyOut :: (Data a, IsScalar a, V.Storable a, Dimensions t) 
+         =>  BEDVector t a  -> ArBB (V.Vector a) 
+copyOut dv = 
+  do 
+   (vec :: M.IOVector a)  <- liftIO$ M.new $ (foldl (*) 1 dims')
+
+   let (fptr,n') = M.unsafeToForeignPtr0 vec
+       ptr       = unsafeForeignPtrToPtr fptr
+
+
+   (ArBBState  _ mv _) <- S.get                    
+  
+   let (Just v) = Map.lookup (beDVectorID dv) mv
+   arbbdat <- liftVM$ VM.mapToHost_ v (map fromIntegral dims') VM.ArbbReadOnlyRange
+   liftIO$  copyBytes ptr
+                      (castPtr arbbdat) 
+                      ((foldl (*) 1 dims') * (sizeOf (undefined :: a)) ) 
+                      
+   liftIO$ V.freeze vec
+
+   where 
+     -- TODO: There should be some insurance that ndims is 1,2 or 3.
+     --       Or a way to handle the higher dimensionalities. 
+     ndims = length dims'
+     dims = beDVectorShape dv
+     (Dim dims') = dims -- TODO: FIX FIX 
+
+
+
+
+
+-}
+
+----------------------------------------------------------------------------
+-- Read a scalar from the backend
 readScalar :: (Data a , IsScalar a, Num a, M.Storable a) => 
               (BEScalar a) -> ArBB a 
 readScalar (BEScalar id) = 
     do 
       vm <- S.gets arbbVarMap 
       case Map.lookup id vm of 
-         Nothing -> error "readScalar: Does not excist" 
+         Nothing -> error "readScalar: That scalar does not exist" 
          (Just v) -> liftVM $ VM.readScalar_ v
 
 ----------------------------------------------------------------------------
--- Scalar instances 
-
+-- Scalar instances  ("uploads" scalars into the backend) 
 class Scalar a where 
     mkScalar :: a -> ArBB (BEScalar a) 
-
 
 
 #define MKS(ty,load)                    \
@@ -369,5 +501,14 @@ class Scalar a where
 
 MKS(Float,float32_)
 MKS(Double,float64_)
+MKS(Word8,uint8_)
+MKS(Word16,uint16_)
 MKS(Word32,uint32_)
+MKS(Word64,uint64_)
+MKS(Int8,int8_)
+MKS(Int16,int16_)
+MKS(Int32,int32_)
+MKS(Int64,int64_)
+
+
                          
