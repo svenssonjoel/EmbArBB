@@ -360,6 +360,20 @@ unpack :: (IsVector v a, IsVector v Bool)
         => Exp (v a) -> Exp (v Bool) -> Exp a -> Exp (v a) 
 unpack (E v) (E b) (E a) = E $ Op Unpack [v,b,a]
 
+
+-- repeatRow
+-- repeatCol
+-- repeatPage
+-- distribute 
+-- transpose
+-- swapRow
+-- swapCol
+-- swapPage
+-- shift
+-- shiftRev
+-- shiftClamp
+-- shiftClampRev
+
 ---------------------------------------------------------------------------- 
 -- get sizes of vectors 
 
@@ -469,11 +483,6 @@ copyNesting (E v) (E n) = E $ Op CopyNesting [v,n]
 
 replaceSegment :: Exp (NVector a) -> Exp USize -> Exp (DVector Dim1 a) -> Exp (NVector a) 
 replaceSegment (E n) (E u) (E d) = E $ Op ReplaceSegment [n,u,d]
-
-
---packSeg :: Exp (NVector a) -> Exp (NVector Bool) -> Exp (NVector a) 
---packSeg (E v) (E b) = 
--- unpackSeg :: 
 
 addReduceSeg :: Num a => Exp (NVector a) -> Exp (DVector Dim1 a)
 addReduceSeg (E v) = E $ Op AddReduce [v,zero]
