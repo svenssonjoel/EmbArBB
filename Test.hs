@@ -204,3 +204,4 @@ testSharing =
       r <- copyOut r1
           
       liftIO$ putStrLn $ show r 
+

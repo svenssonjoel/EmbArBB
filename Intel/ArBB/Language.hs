@@ -306,6 +306,60 @@ unshuffle (E v) (E u) = E $ Op Unshuffle [v,u,zero]
 
 --Another inconsistency. Other ArBB ops have two outputs. This one concatenates its
 -- two output vectors..
+
+-- | Gather 
+gather1D :: Exp (DVector Dim1 a) -> Exp (DVector Dim1 USize) -> Exp a -> Exp (DVector Dim1 a) 
+gather1D (E v) (E cols) (E a) = E $ Op Gather [v,cols,a] 
+
+gather2D :: Exp (DVector Dim2 a) 
+          -> Exp (DVector Dim2 USize) 
+          -> Exp (DVector Dim2 USize) 
+          -> Exp a 
+          -> Exp (DVector Dim2 a) 
+gather2D (E v) (E rows) (E cols) (E a) = E $ Op Gather [v,rows,cols,a] 
+
+
+gather3D :: Exp (DVector Dim3 a) 
+          -> Exp (DVector Dim3 USize) 
+          -> Exp (DVector Dim3 USize) 
+          -> Exp (DVector Dim3 USize) 
+          -> Exp a 
+          -> Exp (DVector Dim3 a) 
+gather3D (E v) (E pages) (E rows) (E cols) (E a) = E $ Op Gather [v,pages,rows,cols,a] 
+
+-- | Scatter
+scatter1D :: Exp (DVector Dim1 a) 
+           -> Exp (DVector Dim1 USize) 
+           -> Exp (DVector Dim1 a) 
+           -> Exp (DVector Dim1 a) 
+scatter1D (E inp) (E cols) (E into) = E $ Op Scatter [inp,cols,into] 
+
+scatter2D :: Exp (DVector Dim2 a) 
+           -> Exp (DVector Dim2 USize) 
+           -> Exp (DVector Dim2 USize) 
+           -> Exp (DVector Dim2 a) 
+           -> Exp (DVector Dim2 a) 
+scatter2D (E inp) (E rows) (E cols) (E into) = E $ Op Scatter [inp,rows,cols,into] 
+
+scatter3D :: Exp (DVector Dim3 a) 
+           -> Exp (DVector Dim3 USize) 
+           -> Exp (DVector Dim3 USize) 
+           -> Exp (DVector Dim3 USize) 
+           -> Exp (DVector Dim3 a) 
+           -> Exp (DVector Dim3 a) 
+scatter3D (E inp) (E pages) (E rows) (E cols) (E into) 
+    = E $ Op Scatter [inp,pages,rows,cols,into] 
+
+-- | compacts data in a container using a mask container. 
+--   Works for nested and dense containers.
+pack :: (IsVector v a, IsVector v Bool) 
+      => Exp (v a) -> Exp (v Bool) -> Exp (v a) 
+pack (E v) (E b) = E $ Op Pack [v,b]
+
+unpack :: (IsVector v a, IsVector v Bool) 
+        => Exp (v a) -> Exp (v Bool) -> Exp a -> Exp (v a) 
+unpack (E v) (E b) (E a) = E $ Op Unpack [v,b,a]
+
 ---------------------------------------------------------------------------- 
 -- get sizes of vectors 
 
@@ -416,6 +470,10 @@ copyNesting (E v) (E n) = E $ Op CopyNesting [v,n]
 replaceSegment :: Exp (NVector a) -> Exp USize -> Exp (DVector Dim1 a) -> Exp (NVector a) 
 replaceSegment (E n) (E u) (E d) = E $ Op ReplaceSegment [n,u,d]
 
+
+--packSeg :: Exp (NVector a) -> Exp (NVector Bool) -> Exp (NVector a) 
+--packSeg (E v) (E b) = 
+-- unpackSeg :: 
 
 addReduceSeg :: Num a => Exp (NVector a) -> Exp (DVector Dim1 a)
 addReduceSeg (E v) = E $ Op AddReduce [v,zero]

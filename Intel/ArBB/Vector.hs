@@ -87,6 +87,7 @@ class IsVector (t :: * -> *)  e
 
 instance IsScalar a => IsVector NVector a 
 
-instance (Dimensions t, IsScalar a) => IsVector (DVector t) a 
+-- Zero dimensional DVectors are not Vectors. 
+instance (Dimensions t, IsScalar a) => IsVector (DVector (t:.Int)) a 
     
     
