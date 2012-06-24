@@ -205,3 +205,35 @@ testSharing =
           
       liftIO$ putStrLn $ show r 
 
+
+{-             
+testSeg = 
+    withArBB $ do
+      f <- capture getSeg
+
+      -- Show a string representation of a function     
+      str <- serialize f 
+      liftIO$ putStrLn str
+
+      -- Turn a normal Data.Vector into a backend-vector 
+      x <- copyIn (V.fromList [1..10::Word32]) (Z:.10)
+      i <- copyIn (V.fromList [-1,-1,-1,-1,-1,1,1,1,1,1]) (Z:.10) 
+      -- Create a new vector in the backend for the result. )
+      -- backend vectors are mutable.
+      liftIO$ putStrLn "beforeNew"
+      r1  <- newNested 10 2 0
+      liftIO$ putStrLn "before"
+      execute f (x :- i) r1
+
+      -- This freezes a mutable DVector into a normal Data.Vector.                                  
+      (rd,rn) <- copyOutNested r1
+          
+      liftIO$ putStrLn $ show rd
+      liftIO$ putStrLn $ show rn
+      
+    where
+      getSeg :: Exp (DVector Dim1 Word32) 
+              -> Exp (DVector Dim1 ISize) 
+              -> (Exp (NVector Word32))
+      getSeg v s = split v s 
+-}

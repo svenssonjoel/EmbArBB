@@ -29,6 +29,8 @@ import           Intel.ArBB.MonadReify
 import           Intel.ArBB.Reify
 import           Intel.ArBB.Function
 
+import           Intel.ArBB.Language hiding (length,map)
+
 import           Intel.ArBB.Backend.ArBB.CodeGen
 import           Intel.ArBB.Backend.Vector
 import           Intel.ArBB.Backend.Scalar 
@@ -38,7 +40,7 @@ import qualified Data.Vector.Storable.Mutable as M
 import Foreign.ForeignPtr 
 import Foreign.Ptr
 import Foreign.Marshal.Array
-import Foreign.Marshal.Utils
+import Foreign.Marshal.Utils hiding (new)
 import System.Mem.StableName
 
 import qualified Control.Monad.State.Strict as S
@@ -201,18 +203,15 @@ execute (Function fid) a b =
           liftVM$ VM.execute_ f outs ins 
          
           return ()
-instance VariableList (BEDVector t a) where 
-    vlist v = 
-        do 
-          (ArBBState  _ mv _) <- S.get 
-          case Map.lookup (beDVectorID v) mv of 
-            (Just v) -> return [v] 
-            Nothing  -> error "ArBB version of vector not found!"
+
+
 
 ----------------------------------------------------------------------------
 -- Turn heterogeneous list of 'stuff' into a list of variables. 
 class VariableList a where 
     vlist :: a -> ArBB [VM.Variable]
+
+
 
 instance VariableList (BEScalar a) where 
   vlist (BEScalar i) = 
@@ -221,6 +220,23 @@ instance VariableList (BEScalar a) where
         case Map.lookup i vm of 
           Nothing -> error "vList: Scalar does not excist" 
           (Just v) -> return [v]
+
+
+instance VariableList (BEDVector t a) where 
+    vlist v = 
+        do 
+          (ArBBState  _ mv _) <- S.get 
+          case Map.lookup (beDVectorID v) mv of 
+            (Just v) -> return [v] 
+            Nothing  -> error "ArBB version of vector not found!"
+
+instance VariableList (BENVector a) where 
+    vlist v = 
+        do 
+          (ArBBState  _ mv _) <- S.get 
+          case Map.lookup (beNVectorID v) mv of 
+            (Just v) -> return [v] 
+            Nothing  -> error "ArBB version of vector not found!"
 
 
 instance (VariableList t, VariableList rest) => VariableList (t :- rest) where 
@@ -340,11 +356,12 @@ copyOut dv =
      dims = beDVectorShape dv
      (Dim dims') = dims -- TODO: FIX FIX 
 
-
+{-
 ----------------------------------------------------------------------------
 -- NESTED VERSIONS 
 ----------------------------------------------------------------------------
 -- Copy data into ArBB 
+{- 
 copyInNested :: (Data a, IsScalar a, V.Storable a) 
               => V.Vector a -> V.Vector USize -> ArBB (BENVector a)
 copyInNested dat nesting = 
@@ -367,8 +384,6 @@ copyInNested dat nesting =
 
    g3 <- liftVM$ VM.createGlobal_nobind_ nt1 "nested"
    v3 <- liftVM$ VM.variableFromGlobal_ g3
-
-   
 
    ds <- liftVM$ VM.usize_ datSize
    liftVM$ VM.opDynamicImm_ VM.ArbbOpAlloc [v1] [ds]
@@ -400,80 +415,80 @@ copyInNested dat nesting =
                 
    S.put (ArBBState mf mv' (i+1))
 
-   return $ BENVector i --
+   return $ BENVector i datSize nestSize
        where 
          datSize = V.length dat
          nestSize = V.length nesting
-{- 
--- create a new DVector with same element at all indices. 
--- TODO: Actually fill it with the elements (constVector)
-new :: (IsScalar a, V.Storable a, Dimensions t) => t -> a -> ArBB (BEDVector t a)
-new t a = 
-  do
-   [st] <- liftVM$ toArBBType (scalarType a)             
-   dt <- liftVM$ VM.getDenseType_ st ndims   
-   
-   g <- liftVM$ VM.createGlobal_nobind_ dt "output"
-   v <- liftVM$ VM.variableFromGlobal_ g  
+-} 
  
-   ss <- liftVM$ mapM VM.usize_ (dimList dims)
-   liftVM$ VM.opDynamicImm_ VM.ArbbOpAlloc [v] ss
-
-   -- DONE : Fill the vector!
-   arbbdat <- liftVM$ VM.mapToHost_ v (map fromIntegral (dimList dims)) VM.ArbbWriteOnlyRange 
-   liftIO$ pokeArray (castPtr arbbdat) (replicate (foldl (*) 1 (dimList dims)) a)
-
-
-   (ArBBState mf mv i) <- S.get 
+newNested :: (IsScalar a, V.Storable a) 
+           => Int -> Int -> a -> ArBB (BENVector a)
+newNested elements segments a = 
+  do
+    
+    elts <- new (Z:.elements) a 
+    segs <- new (Z:.segments) (0 :: USize) 
+            
+    mv <- S.gets arbbVarMap
+            
+    liftIO$ putStrLn "Start"
+    let (Just ve) = Map.lookup (beDVectorID elts) mv 
+        (Just vs) = Map.lookup (beDVectorID segs) mv 
+    
+    liftIO$ putStrLn "Create types"
+    [st] <- liftVM$ toArBBType (scalarType a)             
+    nt <- liftVM$ VM.getNestedType_ st 
    
-   let mv' = Map.insert i v mv 
-                
-   S.put (ArBBState mf mv' (i+1))
+    liftIO$ putStrLn "Create Global and Variable"
+    g <- liftVM$ VM.createGlobal_nobind_ nt "fresh"
+    v <- liftVM$ VM.variableFromGlobal_ g  
+ 
+    liftIO$ putStrLn "Allocate memory"
+    -- ss <- liftVM$ VM.usize_ (fromIntegral elements)
+    -- liftVM$ VM.opDynamicImm_ VM.ArbbOpAlloc [v] [ss]
 
-   return $ BEDVector i dims
-  where 
-     -- TODO: There should be some insurance that ndims is 1,2 or 3.
-     --       Or a way to handle the higher dimensionalities. 
-     ndims = dimensions dims 
-     dims = toDim t    
+    liftIO$ putStrLn "Apply nesting"
+    vs_length <- liftVM$ VM.usize_ 1
+    liftVM$ VM.opImm_ VM.ArbbOpApplyNesting [v] [ve,vs,vs_length] 
+
+
+    liftIO$ putStrLn "Done"
+    (ArBBState mf mv i) <- S.get 
+   
+    let mv' = Map.insert i v mv 
+                
+    S.put (ArBBState mf mv' (i+1))
+
+    return $ BENVector i elts segs
     
 
 
 
 ----------------------------------------------------------------------------
 -- Copy data out of ArBB 
-copyOut :: (Data a, IsScalar a, V.Storable a, Dimensions t) 
-         =>  BEDVector t a  -> ArBB (V.Vector a) 
-copyOut dv = 
+copyOutNested :: (Data a, IsScalar a, V.Storable a) 
+         =>  BENVector a -> ArBB (V.Vector a, V.Vector USize) 
+copyOutNested nv = 
   do 
-   (vec :: M.IOVector a)  <- liftIO$ M.new $ (foldl (*) 1 dims')
-
-   let (fptr,n') = M.unsafeToForeignPtr0 vec
-       ptr       = unsafeForeignPtrToPtr fptr
-
-
    (ArBBState  _ mv _) <- S.get                    
   
-   let (Just v) = Map.lookup (beDVectorID dv) mv
-   arbbdat <- liftVM$ VM.mapToHost_ v (map fromIntegral dims') VM.ArbbReadOnlyRange
-   liftIO$  copyBytes ptr
-                      (castPtr arbbdat) 
-                      ((foldl (*) 1 dims') * (sizeOf (undefined :: a)) ) 
-                      
-   liftIO$ V.freeze vec
+   let (Just v) = Map.lookup (beNVectorID nv) mv
+       (Just nd) = Map.lookup (beDVectorID (beNVectorData nv)) mv 
+       (Just nn) = Map.lookup (beDVectorID (beNVectorNest nv)) mv 
 
+   liftVM$ VM.opDynamicImm_ VM.ArbbOpGetNesting [nn] [v]
+   liftVM$ VM.opDynamicImm_ VM.ArbbOpFlatten [nd] [v] 
+
+   vec <- copyOut (beNVectorData nv) --(Z:.nelems) 
+   seg <- copyOut (beNVectorNest nv) --(Z:.nsegs)
+   
+   return (vec,seg)
    where 
-     -- TODO: There should be some insurance that ndims is 1,2 or 3.
-     --       Or a way to handle the higher dimensionalities. 
-     ndims = length dims'
-     dims = beDVectorShape dv
-     (Dim dims') = dims -- TODO: FIX FIX 
+     nelems = sum $ dimList $ beDVectorShape $ beNVectorData nv
+     nsegs  = sum $ dimList $ beDVectorShape $ beNVectorNest nv 
 
 
-
-
-
--}
+-} 
 
 ----------------------------------------------------------------------------
 -- Read a scalar from the backend

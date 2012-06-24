@@ -15,7 +15,7 @@ import Intel.ArBB.Op
 import Intel.ArBB.Data.Int 
 import Intel.ArBB.Data
 
-import Intel.ArBB.Backend.ArBB
+-- import Intel.ArBB.Backend.ArBB
 import Intel.ArBB.Reify
 import Intel.ArBB.ReifyableType
 

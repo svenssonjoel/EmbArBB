@@ -46,6 +46,7 @@ instance ArgList a => ArgList (Exp b :- a) where
 -- 
 type family FunOut b 
 type instance FunOut (Exp (DVector t a)) = BEDVector t a 
+type instance FunOut (Exp (NVector a))   = BENVector a 
 
 #define ScalarOut(scal)                             \
   type instance FunOut (Exp (scal)) = BEScalar (scal)
