@@ -356,15 +356,22 @@ pack :: (IsVector v a, IsVector v Bool)
       => Exp (v a) -> Exp (v Bool) -> Exp (v a) 
 pack (E v) (E b) = E $ Op Pack [v,b]
 
+-- | unpack a vector. 
 unpack :: (IsVector v a, IsVector v Bool) 
         => Exp (v a) -> Exp (v Bool) -> Exp a -> Exp (v a) 
 unpack (E v) (E b) (E a) = E $ Op Unpack [v,b,a]
 
+-- | repeat elements of a container
+distribute :: Exp (DVector (t:.Int) a) -> Exp USize -> Exp (DVector (t:.Int) a) 
+distribute (E v) (E u) = E $ Op Distribute [v,u,zero] 
+    where (E zero) = 0 :: Exp USize         
 
--- repeatRow
--- repeatCol
--- repeatPage
--- distribute 
+-- TODO: rename this once you figure out what it does. 
+distribute2 :: Exp (DVector (t:.Int) a) -> Exp (DVector (t:.Int) USize) -> Exp (DVector (t:.Int) a) 
+distribute2 (E v) (E us) = E $ Op Distribute [v,us,zero] 
+    where (E zero) = 0 :: Exp USize                           
+             
+-- TODO: distribute on Nested (implement below) 
 -- transpose
 -- swapRow
 -- swapCol
@@ -459,11 +466,17 @@ shuffleSeg :: Exp (NVector a) -> Exp (NVector a) -> Exp USize -> Exp (NVector a)
 shuffleSeg (E n1) (E n2) (E u) = E $ Op Shuffle [n1,n2,u,zero] 
     where (E zero) = 0 :: Exp USize 
 
--- TODO:
--- unshuffleSegments 
--- unshuffleSeg
+-- | unshuffles on a per segment basis 
+unshuffleSegments :: Exp (NVector a) -> Exp USize -> Exp (NVector a) 
+unshuffleSegments (E n) (E u) = E $ Op Unshuffle [n,u,one] 
+    where (E one) = 1 :: Exp USize
 
+-- | ushuffles on a per element basis
+unshuffleSeg :: Exp (NVector a) -> Exp USize -> Exp (NVector a) 
+unshuffleSeg (E n) (E u) = E $ Op Unshuffle [n,u,zero]
+    where (E zero) = 0 :: Exp USize 
 
+-- | apply regular nesting to a container 
 setRegularNesting2D :: Exp (DVector Dim1 a) -> Exp USize -> Exp USize -> Exp (DVector Dim2 a)
 setRegularNesting2D (E v) (E h) (E w) = E $ Op SetRegularNesting [v,h,w]
 
