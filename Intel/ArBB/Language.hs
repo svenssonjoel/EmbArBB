@@ -601,8 +601,12 @@ zipWith7 :: (Data a, Data b, Data c, Data d, Data e, Data f, Data g, Data h)
 zipWith7 f (E v1) (E v2) (E v3) (E v4) (E v5) (E v6) (E v7) 
     = E $ Map (reify f) [v1,v2,v3,v4,v5,v6,v7] 
 
-data Stencil a d =  Stencil [a] d 
 
+
+----------------------------------------------------------------------------
+-- Stencil operations. 
+
+data Stencil a d =  Stencil [a] d 
 
 ---------------------------------------------------------------------------- 
 -- Experimental. 
@@ -610,7 +614,7 @@ mapStencil :: (Num (Exp a), Data a, Dimensions t )
             => Stencil (Exp a) t 
              -> Exp (DVector t a) 
              -> Exp (DVector t a)
-mapStencil (Stencil ls d)  (E v) = E $ Map (reify f {- (getF pos coeff)-}) [v] 
+mapStencil (Stencil ls d)  (E v) = E $ Map (reify f) [v] 
    where 
      -- create the function to be mapped. 
      dim = toDim d 
