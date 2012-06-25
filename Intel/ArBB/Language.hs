@@ -367,19 +367,38 @@ distribute (E v) (E u) = E $ Op Distribute [v,u,zero]
     where (E zero) = 0 :: Exp USize         
 
 -- TODO: rename this once you figure out what it does. 
-distribute2 :: Exp (DVector (t:.Int) a) -> Exp (DVector (t:.Int) USize) -> Exp (DVector (t:.Int) a) 
+distribute2 :: Exp (DVector (t:.Int) a) 
+             -> Exp (DVector (t:.Int) USize) 
+             -> Exp (DVector (t:.Int) a) 
 distribute2 (E v) (E us) = E $ Op Distribute [v,us,zero] 
     where (E zero) = 0 :: Exp USize                           
              
--- TODO: distribute on Nested (implement below) 
--- transpose
--- swapRow
--- swapCol
--- swapPage
+
+swapRow :: Exp (DVector (t:.Int:.Int) a) 
+         -> Exp USize 
+         -> Exp USize 
+         -> Exp (DVector (t:.Int:.Int) a)
+swapRow (E v) (E i) (E j) = E $ Op SwapRow [v,i,j]
+
+swapCol :: Exp (DVector (t:.Int:.Int) a) 
+         -> Exp USize 
+         -> Exp USize 
+         -> Exp (DVector (t:.Int:.Int) a) 
+swapCol (E v) (E i) (E j) = E $ Op SwapCol [v,i,j]
+
+swapPage :: Exp (DVector Dim3 a) 
+          -> Exp USize 
+          -> Exp USize 
+          -> Exp (DVector Dim3 a) 
+swapPage (E v) (E i) (E j) = E $ Op SwapPage [v,i,j]
+
 -- shift
 -- shiftRev
 -- shiftClamp
 -- shiftClampRev
+
+cat :: IsVector t a => Exp (t a) -> Exp (t a) -> Exp (t a) 
+cat (E v1) (E v2) = E $ Op Cat [v1,v2] 
 
 ---------------------------------------------------------------------------- 
 -- get sizes of vectors 
@@ -553,6 +572,20 @@ xorScanSeg :: Num a => Exp (NVector a) -> Exp (NVector a)
 xorScanSeg (E v) = E $ Op XorScan [v,zero,zero]
     where (E zero) = 0 :: Exp USize
  
+
+distributeSeg :: Exp (NVector a) -> Exp USize -> Exp (NVector a) 
+distributeSeg (E v) (E u) = E $ Op Distribute [v,u,zero] 
+    where (E zero) = 0 :: Exp USize 
+
+distributeSegment :: Exp (NVector a) -> Exp USize -> Exp (NVector a) 
+distributeSegment (E v) (E u) = E $ Op Distribute [v,u,one]
+    where (E one) = 1 :: Exp USize 
+
+
+transposeSeg :: Exp (NVector a) -> Exp (NVector a) 
+transposeSeg (E v) = E $ Op Transpose [v]
+
+
 ----------------------------------------------------------------------------
 -- | Map an ArBB Function 
 map :: (Data a, Data b) => (Exp a -> Exp b) -> Exp (DVector t a) -> Exp (DVector t b)
