@@ -36,7 +36,7 @@ data Op = Add | Sub  | Mul | Div
         | ExtractRow | ExtractCol | ExtractPage 
         | Section | Segment | ReplaceSegment
         | Alloc | ReplaceElem 
-        | GetEltCoord | BitwiseCast
+        | GetEltCoord | BitwiseCast Type
         | GetNeighbor | ExpectSize 
         | AddReduce | MulReduce | MaxReduce | MaxReduceLoc 
         | MinReduce | MinReduceLoc 

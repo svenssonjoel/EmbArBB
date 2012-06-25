@@ -40,7 +40,7 @@ constVector (E a) (E s) =
 
 
 ----------------------------------------------------------------------------
--- Specific casts (BIG CHEATS GOING ON HERE) 
+-- Specific casts
 
 vecToUSize :: Exp (Vector a) -> Exp (Vector USize) 
 vecToUSize (E a) = 
@@ -58,6 +58,14 @@ toFloat :: Exp a -> Exp Float
 toFloat (E a) = 
   E $ Op (Cast (Scalar VM.ArbbF32)) [a] 
 
+vecToDouble :: Exp (Vector a) -> Exp (Vector Double) 
+vecToDouble (E a) = 
+  E $ Op (Cast (Dense I VM.ArbbF64)) [a]
+
+toDouble :: Exp a -> Exp Double
+toDouble (E a) = 
+  E $ Op (Cast (Scalar VM.ArbbF64)) [a] 
+
 vecToWord8 :: Exp (Vector a) -> Exp (Vector Word8) 
 vecToWord8 (E a) = 
   E $ Op (Cast (Dense I VM.ArbbU8)) [a]
@@ -65,6 +73,34 @@ vecToWord8 (E a) =
 toWord8 :: Exp a -> Exp Word8 
 toWord8 (E a) = 
   E $ Op (Cast (Scalar VM.ArbbU8)) [a] 
+
+toWord16 :: Exp a -> Exp Word16
+toWord16 (E a) = 
+  E $ Op (Cast (Scalar VM.ArbbU16)) [a] 
+
+toWord32 :: Exp a -> Exp Word32 
+toWord32 (E a) = 
+  E $ Op (Cast (Scalar VM.ArbbU32)) [a] 
+
+toWord64 :: Exp a -> Exp Word64 
+toWord64 (E a) = 
+  E $ Op (Cast (Scalar VM.ArbbU64)) [a] 
+
+convWord8 :: Exp a -> Exp Word8
+convWord8 (E a) = 
+    E $ Op (BitwiseCast (Scalar VM.ArbbU8)) [a] 
+
+convWord16 :: Exp a -> Exp Word16
+convWord16 (E a) = 
+    E $ Op (BitwiseCast (Scalar VM.ArbbU16)) [a] 
+
+convWord32 :: Exp a -> Exp Word32
+convWord32 (E a) = 
+    E $ Op (BitwiseCast (Scalar VM.ArbbU32)) [a] 
+
+convWord64 :: Exp a -> Exp Word64
+convWord64 (E a) = 
+    E $ Op (BitwiseCast (Scalar VM.ArbbU64)) [a] 
 
 
 
@@ -392,10 +428,41 @@ swapPage :: Exp (DVector Dim3 a)
           -> Exp (DVector Dim3 a) 
 swapPage (E v) (E i) (E j) = E $ Op SwapPage [v,i,j]
 
--- shift
--- shiftRev
--- shiftClamp
--- shiftClampRev
+shift1D :: Exp (DVector Dim1 a) -> Exp ISize -> Exp (DVector Dim1 a) 
+shift1D (E v) (E i) = E $ Op ShiftConst [v,i]
+
+shift2D :: Exp (DVector Dim2 a) -> Exp ISize -> Exp ISize -> Exp (DVector Dim2 a) 
+shift2D (E v) (E i) (E j)  = E $ Op ShiftConst [v,i,j]
+
+shift3D :: Exp (DVector Dim3 a) -> Exp ISize -> Exp ISize -> Exp ISize -> Exp (DVector Dim3 a) 
+shift3D (E v) (E i) (E j) (E k)  = E $ Op ShiftConst [v,i,j,k]
+
+shiftRev1D :: Exp (DVector Dim1 a) -> Exp ISize -> Exp (DVector Dim1 a) 
+shiftRev1D (E v) (E i) = E $ Op ShiftConstRev [v,i]
+
+shiftRev2D :: Exp (DVector Dim2 a) -> Exp ISize -> Exp ISize -> Exp (DVector Dim2 a) 
+shiftRev2D (E v) (E i) (E j)  = E $ Op ShiftConstRev [v,i,j]
+
+shiftRev3D :: Exp (DVector Dim3 a) -> Exp ISize -> Exp ISize -> Exp ISize -> Exp (DVector Dim3 a) 
+shiftRev3D (E v) (E i) (E j) (E k)  = E $ Op ShiftConstRev [v,i,j,k]
+
+shiftClamp1D :: Exp (DVector Dim1 a) -> Exp ISize -> Exp (DVector Dim1 a) 
+shiftClamp1D (E v) (E i) = E $ Op ShiftClamp [v,i]
+
+shiftClamp2D :: Exp (DVector Dim2 a) -> Exp ISize -> Exp ISize -> Exp (DVector Dim2 a) 
+shiftClamp2D (E v) (E i) (E j)  = E $ Op ShiftClamp [v,i,j]
+
+shiftClamp3D :: Exp (DVector Dim3 a) -> Exp ISize -> Exp ISize -> Exp ISize -> Exp (DVector Dim3 a) 
+shiftClamp3D (E v) (E i) (E j) (E k)  = E $ Op ShiftClamp [v,i,j,k]
+
+shiftClampRev1D :: Exp (DVector Dim1 a) -> Exp ISize -> Exp (DVector Dim1 a) 
+shiftClampRev1D (E v) (E i) = E $ Op ShiftClampRev [v,i]
+
+shiftClampRev2D :: Exp (DVector Dim2 a) -> Exp ISize -> Exp ISize -> Exp (DVector Dim2 a) 
+shiftClampRev2D (E v) (E i) (E j)  = E $ Op ShiftClampRev [v,i,j]
+
+shiftClampRev3D :: Exp (DVector Dim3 a) -> Exp ISize -> Exp ISize -> Exp ISize -> Exp (DVector Dim3 a) 
+shiftClampRev3D (E v) (E i) (E j) (E k)  = E $ Op ShiftClampRev [v,i,j,k]
 
 cat :: IsVector t a => Exp (t a) -> Exp (t a) -> Exp (t a) 
 cat (E v1) (E v2) = E $ Op Cat [v1,v2] 

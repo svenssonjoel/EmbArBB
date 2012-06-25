@@ -210,7 +210,6 @@ typecheckNID d n =
     typeOfOp Cat [t1,t2] = same t1 t2 
 
     -- Cast to type t.. 
-    -- TODO: Something similar for BitwiseCast ?
     typeOfOp (Cast t) xs = Just $ t -- Dense I ArBB.ArbbUsize 
        
     typeOfOp Extract [Dense I a,i] = Just $ Scalar a 
@@ -253,7 +252,7 @@ typecheckNID d n =
     typeOfOp GetEltCoord [] = Just $ Tuple [Scalar ArBB.ArbbUsize, 
                                             Scalar ArBB.ArbbUsize, 
                                             Scalar ArBB.ArbbUsize]
-    typeOfOp BitwiseCast xs = undefined -- TODO: not sure what to do here! 
+    typeOfOp (BitwiseCast t) xs = Just t 
     typeOfOp GetNeighbor [t,t2,t3,t4] = Just $ t
     typeOfOp ExpectSize xs = error "typeOfOp: ExpectSize is not implemented" 
 
