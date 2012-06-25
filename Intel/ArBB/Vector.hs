@@ -30,6 +30,10 @@ data Dim = Dim {dimList :: [Int]}
 
 dimensions = length . dimList
 
+-- In ArBB the order seems to be Pages, Rows, Cols.  
+-- so                            Z:.Cols:.Rows:.Pages  in EmbArBB.
+-- Does that make sense ? 
+
 class Dimensions a where 
     toDim :: a -> Dim 
 instance Dimensions Z where 

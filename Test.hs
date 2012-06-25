@@ -103,6 +103,45 @@ test5 =
 
 
 
+testLayout = withArBB $ do 
+      f <- capture numr
+      g <- capture numc
+      h <- capture nump
+      
+      str <- serialize f 
+      liftIO$ putStrLn str
+      --                                           Col Row Pag
+      x <- copyIn (V.fromList [1..30::Word32]) (Z:.20:.5:.3)
+      r1 <- new (Z:.1) 0 
+      r2 <- new (Z:.1) 0 
+      r3 <- new (Z:.1) 0
+
+      execute f x r1 
+      execute g x r2 
+      execute h x r3
+
+      r <- copyOut r1
+      c <- copyOut r2
+      p <- copyOut r3
+
+      liftIO$ putStrLn $ "Rows: "++ show r ++ 
+                         " || Cols: " ++ show c ++ 
+                         " || Pags: " ++ show p 
+          
+    where 
+      numr :: Exp (DVector Dim3 Word32) -> Exp (DVector Dim1 USize)
+      numr v = constVector n 1 
+          where n = getNRows v
+
+      numc :: Exp (DVector Dim3 Word32) -> Exp (DVector Dim1 USize)
+      numc v = constVector n 1 
+          where n = getNCols v
+
+      nump :: Exp (DVector Dim3 Word32) -> Exp (DVector Dim1 USize)
+      nump v = constVector n 1 
+          where n = getNPages v
+
+
 test6 = 
     withArBB $ do 
       f <- capture getSeg

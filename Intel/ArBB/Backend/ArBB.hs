@@ -264,6 +264,8 @@ copyIn dat t =
    g <- liftVM$ VM.createGlobal_nobind_ dt "output"
    v <- liftVM$ VM.variableFromGlobal_ g  
  
+
+   -- liftIO $ putStrLn $ "dims: " ++ show dims'
    ss <- liftVM$ mapM VM.usize_ dims'
    liftVM$ VM.opDynamicImm_ VM.ArbbOpAlloc [v] ss
 
