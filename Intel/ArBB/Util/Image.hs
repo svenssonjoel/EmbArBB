@@ -67,7 +67,7 @@ toGray v = vec2DToWord8 $ ((redPlane * constVector2D wr w h) +
                            (greenPlane * constVector2D wg w h) + 
                            (bluePlane * constVector2D wb w h) ) * scale
   where
-    w = getNCols v
+    w = getNRows v
     h = getNCols v
     fv = vec3DToFloat v
     redPlane   = (extractPage fv 0) / scale
