@@ -3,8 +3,10 @@
   + Uses the Haskell/ArBB bindings (svenssonjoel/arbb-vm.git on github)
 
 * Status
-  + The samples and benchmarks now run again 
-    
+  + The samples and benchmarks DOES NOT run right now
+  + The sharing detection seems to be not working properly 
+    all the time. Something is wrong there. 
+
 * TODOs:  
   + Think up some new execute interface. 
  
@@ -30,7 +32,7 @@
     the same other function many times, each of these calls will lead to a captured 
     instance of that function. Some map of "functionHash -> functionID" is needed. 
     A way to get unique identifiers from a GenRecord could do as the hash
-
+    
 * NOTES: 
   + An ArBB function cannot "Call" itself. That is, ArBB functions 
     cannot be recursive. To upweigh this there are many forms of loops, 
