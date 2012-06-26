@@ -562,6 +562,8 @@ unshuffleSeg :: Exp (NVector a) -> Exp USize -> Exp (NVector a)
 unshuffleSeg (E n) (E u) = E $ Op Unshuffle [n,u,zero]
     where (E zero) = 0 :: Exp USize 
 
+-- TODO: Something may be broken when it comes to setRegularNesting. 
+--       Figure out what and where.. 
 -- | apply regular nesting to a container 
 setRegularNesting2D :: Exp (DVector Dim1 a) -> Exp USize -> Exp USize -> Exp (DVector Dim2 a)
 setRegularNesting2D (E v) (E h) (E w) = E $ Op SetRegularNesting [v,h,w]
@@ -578,7 +580,6 @@ getNesting (E v) (E n) = E $ Op GetNesting [v,n]
 
 copyNesting :: Exp (DVector Dim1 a) -> Exp (NVector b) -> Exp (NVector a) 
 copyNesting (E v) (E n) = E $ Op CopyNesting [v,n]
-
 
 replaceSegment :: Exp (NVector a) -> Exp USize -> Exp (DVector Dim1 a) -> Exp (NVector a) 
 replaceSegment (E n) (E u) (E d) = E $ Op ReplaceSegment [n,u,d]
@@ -1017,6 +1018,8 @@ instance Num (Exp Double) where
 
 ----------------------------------------------------------------------------
 -- 
+
+
 instance Num a => Num (Exp (DVector t a)) where 
   (+) (E v1) (E v2) = E $ Op Add [v1,v2] 
   (*) (E v1) (E v2) = E $ Op Mul [v1,v2] 
@@ -1027,7 +1030,27 @@ instance Num a => Num (Exp (DVector t a)) where
   
   fromInteger = undefined 
   
-  
+instance Fractional a => Fractional (Exp (DVector t a)) where 
+    (/) (E v1) (E v2) = E $ Op Div [v1,v2]
+    recip = undefined
+    fromRational = undefined 
+
+
+instance Num a => Ord  (Exp (DVector t a)) -- Cheat
+instance Enum (Exp (DVector t a)) -- Cheat
+instance Num a => Real (Exp (DVector t a)) -- Cheat 
+    
+
+-- TODO: implement
+instance Integral a => Integral (Exp (DVector t a)) where 
+    div (E v1) (E v2) = E $ Op Div [v1,v2] 
+    quot = undefined 
+    rem = undefined 
+    mod = undefined 
+    quotRem = undefined 
+    divMod = undefined 
+    toInteger = undefined 
+
 ----------------------------------------------------------------------------
 instance (Num (Exp a), Bits a) => Bits (Exp a) where  
   (.&.) (E a) (E b) = E $ Op Bit_and [a,b]

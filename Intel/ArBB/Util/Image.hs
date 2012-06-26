@@ -5,15 +5,18 @@ module Intel.ArBB.Util.Image where
 
 
 import Intel.ArBB.Vector 
+import Intel.ArBB.Language
+import Intel.ArBB.Syntax
 
 import Codec.Picture 
 import Codec.Picture.Types
 import qualified Data.Vector.Storable as V
 
 import System.IO hiding (putStrLn) 
-import Data.ByteString as BS hiding (putStrLn) 
+import Data.ByteString as BS hiding (putStrLn,length) 
 import Data.Word
 
+import Prelude hiding (length)
 
 ----------------------------------------------------------------------------
 -- Load an RGB bitmap. 
@@ -26,28 +29,25 @@ loadBMP_RGB fp =
       bs <- BS.hGetContents handle 
       case decodeBitmap bs of 
         (Left str) -> error str 
-        (Right (ImageRGB8 (Image w h img))) ->
-              return $ DVector img (Dim [w,h,3])
-
-
-loadBMP_DBG fp = 
-    withFile fp ReadMode $ \handle -> do 
-      bs <- BS.hGetContents handle 
-      case decodeBitmap bs of 
-        (Left str) -> error str 
         (Right (ImageRGB8 img)) ->
-            do 
-              let red   = extractComponent 0 img
-                  green = extractComponent 1 img
-                  blue  = extractComponent 2 img 
-                  (Image _ _ vr)    = red 
-                  (Image _ _ vg)    = green
-                  (Image _ _ vb)    = blue 
-              putStrLn $ show vr
-              putStrLn $ show vg 
-              putStrLn $ show vb
-            
+             do 
+               let (Image _ _ r) = extractC 0 img 
+                   (Image _ _ g) = extractC 1 img 
+                   (Image w h b) = extractC 2 img
+               return $ DVector (r V.++ g V.++ b)  (Dim [3,w,h])
 
 
+extractC c (Image x y v)  = Image x y (V.ifilter (\i a -> i `mod` 3 == c) v) 
 
+toGrayNaive :: Exp (DVector Dim3 Word8) -> Exp (DVector Dim2 Word8)  
+toGrayNaive v = (addReduce v 2)  `div` ss'
+    where 
+      h = getNRows v
+      w = getNCols v 
+      ss = constVector 3 w 
+      ss' = repeatRow ss h 
+      
+
+floatImage :: Exp (DVector Dim3 Word8) -> Exp (DVector Dim3 Float) 
+floatImage v = undefined 
 
