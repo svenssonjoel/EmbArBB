@@ -250,15 +250,16 @@ instance (VariableList t, VariableList rest) => VariableList (t :- rest) where
 
 ----------------------------------------------------------------------------
 -- Copy data into ArBB 
-copyIn :: (Data a, IsScalar a, V.Storable a, Dimensions t) => V.Vector a -> t -> ArBB (BEDVector t a)
-copyIn dat t = 
+-- copyIn :: (Data a, IsScalar a, V.Storable a, Dimensions t) => V.Vector a -> t -> ArBB (BEDVector t a)
+copyIn :: (Data a, IsScalar a, V.Storable a, Dimensions t) => DVector t a -> ArBB (BEDVector t a)
+copyIn dvec = 
   do 
    -- TODO: Bad. Looking at elements of Dat 
-   let elem = dat V.! 0 
+   let elem = dVectorData dvec  V.! 0 
    [st] <- liftVM$ toArBBType (scalarType elem)             
    dt <- liftVM$ VM.getDenseType_ st ndims 
    
-   let (fptr,n') = V.unsafeToForeignPtr0 dat
+   let (fptr,n') = V.unsafeToForeignPtr0 $ dVectorData dvec
        ptr       = unsafeForeignPtrToPtr fptr
 
    g <- liftVM$ VM.createGlobal_nobind_ dt "output"
@@ -291,7 +292,7 @@ copyIn dat t =
      -- TODO: There should be some insurance that ndims is 1,2 or 3.
      --       Or a way to handle the higher dimensionalities. 
      ndims = length dims'
-     dims = toDim t    
+     dims = dVectorShape dvec -- toDim t    
      (Dim dims') = dims -- TODO: FIX FIX 
 
 -- create a new DVector with same element at all indices. 
@@ -331,8 +332,10 @@ new t a =
 
 ----------------------------------------------------------------------------
 -- Copy data out of ArBB 
+--copyOut :: (Data a, IsScalar a, V.Storable a, Dimensions t) 
+--         =>  BEDVector t a  -> ArBB (V.Vector a) 
 copyOut :: (Data a, IsScalar a, V.Storable a, Dimensions t) 
-         =>  BEDVector t a  -> ArBB (V.Vector a) 
+         =>  BEDVector t a  -> ArBB (DVector t a) 
 copyOut dv = 
   do 
    (vec :: M.IOVector a)  <- liftIO$ M.new $ (foldl (*) 1 dims')
@@ -349,7 +352,8 @@ copyOut dv =
                       (castPtr arbbdat) 
                       ((foldl (*) 1 dims') * (sizeOf (undefined :: a)) ) 
                       
-   liftIO$ V.freeze vec
+   fv <- liftIO$ V.freeze vec
+   return $ DVector fv dims
 
    where 
      -- TODO: There should be some insurance that ndims is 1,2 or 3.

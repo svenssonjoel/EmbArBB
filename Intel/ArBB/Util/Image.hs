@@ -7,6 +7,7 @@ module Intel.ArBB.Util.Image where
 import Intel.ArBB.Vector 
 import Intel.ArBB.Language
 import Intel.ArBB.Syntax
+import Intel.ArBB.Literal
 
 import Codec.Picture 
 import Codec.Picture.Types
@@ -21,8 +22,9 @@ import Prelude hiding (length)
 ----------------------------------------------------------------------------
 -- Load an RGB bitmap. 
 
--- TODO: make sure that the Red, Green and Blue channels are 
+-- Done: make sure that the Red, Green and Blue channels are 
 --       distributed correctly over the pages of the DVector. 
+--  * Works for now. 
 loadBMP_RGB :: FilePath -> IO (DVector Dim3 Word8)
 loadBMP_RGB fp = 
     withFile fp ReadMode $ \handle -> do 
@@ -48,6 +50,26 @@ toGrayNaive v = (addReduce v 2)  `div` ss'
       ss' = repeatRow ss h 
       
 
-floatImage :: Exp (DVector Dim3 Word8) -> Exp (DVector Dim3 Float) 
-floatImage v = undefined 
+-- Convers to grayscale and corrects for perception 
+-- of intensities of different color components 
+toGray :: Exp (DVector Dim3 Word8) -> Exp (DVector Dim2 Word8) 
+toGray v = vec2DToWord8 $ ((redPlane * constVector2D wr w h) + 
+                           (greenPlane * constVector2D wg w h) + 
+                           (bluePlane * constVector2D wb w h) ) * scale
+  where
+    w = getNCols v
+    h = getNCols v
+    fv = vec3DToFloat v
+    redPlane = extractPage fv 0
+    greenPlane = extractPage fv 1
+    bluePlane  = extractPage fv 2  
+    scale      = constVector2D (mkFloat 255.0) w h 
+    wr = mkFloat 0.2989 
+    wg = mkFloat 0.5870 
+    wb = mkFloat 0.1140 
+
+-- TODO: Improve on this. At least it definitely should not be defined here. 
+mkFloat :: Float -> Exp Float 
+mkFloat f = E $ Lit (LitFloat f) 
+
 

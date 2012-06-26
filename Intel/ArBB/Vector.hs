@@ -97,3 +97,10 @@ instance IsScalar a => IsVector NVector a
 instance (Dimensions t, IsScalar a) => IsVector (DVector (t:.Int)) a 
     
     
+
+----------------------------------------------------------------------------
+-- Show 
+
+instance (M.Storable a, Show a) => Show (DVector t a) where 
+    show (DVector dat t) = show dat
+-- TODO: show based on the dimensions. (so a matrix appears as a matrix)

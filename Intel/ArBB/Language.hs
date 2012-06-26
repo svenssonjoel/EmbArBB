@@ -38,6 +38,12 @@ constVector :: Exp a -> Exp USize -> Exp (DVector Dim1 a)
 constVector (E a) (E s) = 
   E $ Op ConstVector [a,s]
 
+-- TODO: Really make up mind about a specific order of W and H
+constVector2D :: Exp a -> Exp USize -> Exp USize -> Exp (DVector Dim2 a) 
+constVector2D a w h = ss'
+    where ss = constVector a w 
+          ss' = repeatRow ss h 
+    
 
 ----------------------------------------------------------------------------
 -- Specific casts
@@ -54,6 +60,15 @@ vecToFloat :: Exp (Vector a) -> Exp (Vector Float)
 vecToFloat (E a) = 
   E $ Op (Cast (Dense I VM.ArbbF32)) [a]
 
+vec2DToFloat :: Exp (DVector Dim2 a) -> Exp (DVector Dim2 Float) 
+vec2DToFloat (E a) = 
+  E $ Op (Cast (Dense II VM.ArbbF32)) [a]
+
+vec3DToFloat :: Exp (DVector Dim3 a) -> Exp (DVector Dim3 Float) 
+vec3DToFloat (E a) = 
+  E $ Op (Cast (Dense III VM.ArbbF32)) [a]
+
+
 toFloat :: Exp a -> Exp Float 
 toFloat (E a) = 
   E $ Op (Cast (Scalar VM.ArbbF32)) [a] 
@@ -69,6 +84,10 @@ toDouble (E a) =
 vecToWord8 :: Exp (Vector a) -> Exp (Vector Word8) 
 vecToWord8 (E a) = 
   E $ Op (Cast (Dense I VM.ArbbU8)) [a]
+
+vec2DToWord8 :: Exp (DVector Dim2 a) -> Exp (DVector Dim2 Word8) 
+vec2DToWord8 (E a) = 
+  E $ Op (Cast (Dense II VM.ArbbU8)) [a]
 
 toWord8 :: Exp a -> Exp Word8 
 toWord8 (E a) = 
