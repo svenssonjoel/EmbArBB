@@ -47,16 +47,6 @@ histImage input = fst $ while cond body (cvn,0)
       m   = index0 (maxReduce input 0)
 
 
-
--- TODO: This one messes up code generation. 
---       The map of variables to types gets confused.
---       FIX THIS ! 
---       m gets inlined into scale? Is that the problem ? 
--- scaleVals :: Exp (DVector Dim1 Word32) -> Exp (DVector Dim1 Word32)
---scaleVals input = map (scale 255 m) input 
---    where 
---      m = index0 (maxReduce input 0) 
-
 -- a little less a hack..
 testHist =
   do  
