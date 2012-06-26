@@ -29,7 +29,7 @@ histogram input = addMerge cv (vecToUSize flat) 256
       c  = getNCols input
       
 
-
+-- Visiualise the histogram of an image.
 histImage :: Exp (Vector Word32) -> Exp (DVector Dim2 Word8) 
 histImage input = fst $ while cond body (cvn,0)    
     where 
