@@ -35,9 +35,6 @@ liftVM = (lift.lift)
 
 runGen :: Gen a -> VarType -> VM.EmitArbb a 
 runGen g vt = fst `fmap` (runGen' g vt (Map.empty))
---  do 
---    let m = runTypeChecker g vt 
---    evalStateT m (Map.empty) 
 
 type NodeIDVar = Map.Map NodeID [VM.Variable]
 
@@ -61,11 +58,11 @@ runGenAllState g (vt,nv) =
 ---------------------------------------------------------------------------- 
 -- attempt to define operations on new Gen a 
 
-visited :: NodeID -> Gen (Maybe [VM.Variable]) 
-visited nid = 
-  do 
-    m <- lift get 
-    return$ Map.lookup nid m 
+--visited :: NodeID -> Gen (Maybe [VM.Variable]) 
+--visited nid = 
+--  do 
+--    m <- lift get 
+--    return$ Map.lookup nid m 
 
 addNode :: NodeID -> [VM.Variable] -> Gen () 
 addNode nid v = 
@@ -169,23 +166,28 @@ genBody' :: DAG
            -> Gen [VM.Variable] 
 genBody' dag nid funm depm is = 
   do 
+    -- TODO: Look at this again. Make sure it uses the information 
+    --       about what has been computed correctly.
     m <- lift get 
-    -- liftIO$ putStrLn $ "genBody' " ++ show nid
-    -- liftIO$ putStrLn $ "genBody' " ++ show dag
-    -- liftIO$ putStrLn $ "genBody' " ++ show m
+    --liftIO$ putStrLn $ "genBody' " ++ show nid
+    --liftIO$ putStrLn $ "genBody' " ++ show dag
+    --liftIO$ putStrLn $ "genBody' " ++ show m
     case Map.lookup nid m of 
       (Just v) -> 
         do 
-          -- liftIO$ putStrLn$ "genBody': already generated : " ++ show nid 
+          --liftIO$ putStrLn$ "genBody': already generated : " ++ show nid 
             
           return v 
       Nothing   -> 
           case Map.lookup nid dag of 
             (Just node) -> 
               do 
-                -- liftIO$ putStrLn $ "genBody': Adding a node to already computed"
+                --liftIO$ putStrLn $ "genBody': Adding a node to already computed: " ++ show nid
                 -- Update the "already generated" map
                 v <- genNode nid node 
+                -- genNode above potentially changes the "already computed" map. 
+                -- So get the state again. 
+                m <- lift get 
                 lift $ put (Map.insert nid v m)  
                 return v
             Nothing -> error "genBody: DAG is broken" 

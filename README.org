@@ -4,8 +4,6 @@
 
 * Status
   + The samples and benchmarks DOES NOT run right now
-  + The sharing detection seems to be not working properly 
-    all the time. Something is wrong there. 
 
 * TODOs:  
   + Think up some new execute interface. 

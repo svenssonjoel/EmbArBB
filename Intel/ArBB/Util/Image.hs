@@ -41,8 +41,8 @@ loadBMP_RGB fp =
 
 extractC c (Image x y v)  = Image x y (V.ifilter (\i a -> i `mod` 3 == c) v) 
 
-saveBMP_g :: FilePath -> DVector Dim2 Word8 -> IO () 
-saveBMP_g fp img = 
+saveBMP_G :: FilePath -> DVector Dim2 Word8 -> IO () 
+saveBMP_G fp img = 
     writeBitmap fp image
 
       where 
