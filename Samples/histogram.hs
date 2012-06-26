@@ -54,15 +54,18 @@ testHist =
       do 
         f <- capture histogram 
         g <- capture histImage
+        tg <- capture toGray
       
-        raw <- liftIO$ loadRAW_Gray "window.raw" 256 256 
+        bmp <- liftIO$ loadBMP_RGB "cat.bmp" 
              
-        v1 <- copyIn raw  
+        v1 <- copyIn bmp
+        gray <- new (Z:.256:.256) 0 
         r1 <- new (Z:.256) 0 
         r2 <- new (Z:.256:.256) 0 
       
-        
-        execute f v1 r1
+        execute tg v1 gray
+              
+        execute f gray r1
 
         execute g r1 r2
               
