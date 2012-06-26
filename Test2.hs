@@ -98,7 +98,7 @@ testToGray=
      
       r' <- copyOut r
 
-      liftIO$ saveBMP_G "out.bmp" r'
+      liftIO$ saveBMP_Gray "out.bmp" r'
 --       liftIO$ putStrLn $ show r'
       liftIO$ putStrLn "Done!"
    

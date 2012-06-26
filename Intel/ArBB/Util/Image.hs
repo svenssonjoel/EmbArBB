@@ -13,7 +13,9 @@ import Codec.Picture
 import Codec.Picture.Types
 import qualified Data.Vector.Storable as V
 
-import System.IO hiding (putStrLn) 
+import System.IO hiding (putStrLn)
+import Foreign 
+ 
 import Data.ByteString as BS hiding (putStrLn,length) 
 import Data.Word
 
@@ -38,11 +40,32 @@ loadBMP_RGB fp =
                    (Image w h b) = extractC 2 img
                return $ DVector (r V.++ g V.++ b)  (Dim [3,w,h])
 
+loadRAW_RGB :: FilePath -> Int -> Int -> IO (DVector Dim3 Word8) 
+loadRAW_RGB fp w h = 
+    withFile fp ReadMode $ \handle -> do 
+      ptr <- mallocBytes (3*w*h) 
+      --TODO: Stop going through lists 
+      dat <- peekArray (3*w*h) ptr 
+      let img = Image w h (V.fromList dat) :: Image PixelRGB8 
+          (Image _ _ r) = extractC 0 img 
+          (Image _ _ g) = extractC 1 img 
+          (Image w h b) = extractC 2 img
+      free ptr 
+      return $ DVector (r V.++ g V.++ b) (Dim [3,w,h])
+
+loadRAW_Gray :: FilePath -> Int -> Int -> IO (DVector Dim2 Word8) 
+loadRAW_Gray fp w h =  withFile fp ReadMode $ \handle -> do 
+      ptr <- mallocBytes (w*h) 
+      --TODO: Stop going through lists 
+      dat <- peekArray (w*h) ptr 
+      let vec = (V.fromList dat)
+      free ptr 
+      return $ DVector vec (Dim [w,h]) 
 
 extractC c (Image x y v)  = Image x y (V.ifilter (\i a -> i `mod` 3 == c) v) 
 
-saveBMP_G :: FilePath -> DVector Dim2 Word8 -> IO () 
-saveBMP_G fp img = 
+saveBMP_Gray :: FilePath -> DVector Dim2 Word8 -> IO () 
+saveBMP_Gray fp img = 
     writeBitmap fp image
 
       where 

@@ -3,6 +3,7 @@
 {- 2012 Joel Svensson -} 
 
 import Intel.ArBB 
+import Intel.ArBB.Util.Image
 
 import qualified Data.Vector.Storable as V 
 
@@ -18,31 +19,30 @@ import Foreign hiding (new)
 --       add_merge(1,input,256) ... 
 
 
-histogram :: Exp (Vector Word8)  -> Exp (Vector Word32)
-histogram input = addMerge cv (vecToUSize input) 256
+histogram :: Exp (DVector Dim2 Word8)  -> Exp (Vector Word32)
+histogram input = addMerge cv (vecToUSize flat) 256
     where
-      cv = constVector 1 s
-      s  = length input 
+      flat = flatten input
+      cv = constVector 1 (r * c) 
+      r  = getNRows input 
+      c  = getNCols input
+      
 
--- Very much a hack.. 
+-- a little less a hack..
 testHist2 =
   do  
-    ptr <- mallocBytes (256 * 256) 
-    withBinaryFile "window.raw" ReadMode $ \ handle -> 
-      hGetBuf handle ptr (256 * 256) 
-    ls <- peekArray (256 * 256) ptr
-
-    -- TODO: Stop going through lists.
     withArBB $ 
       do 
         f <- capture histogram 
       
-        v1 <- copyIn (V.fromList ls) (Z:.(256*256)) 
+        raw <- liftIO$ loadRAW_Gray "window.raw" 256 256 
+             
+        v1 <- copyIn raw  
         r1 <- new (Z:.256) 0  
 
         execute f v1 r1
               
-        r <- copyOut r1 -- (Vector r _) <- liftIO$ freeze r1
+        (DVector r _) <- copyOut r1 
         
         let r' = V.toList r
 
