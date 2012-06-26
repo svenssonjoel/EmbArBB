@@ -316,7 +316,6 @@ new t a =
    arbbdat <- liftVM$ VM.mapToHost_ v (map fromIntegral (dimList dims)) VM.ArbbWriteOnlyRange 
    liftIO$ pokeArray (castPtr arbbdat) (replicate (foldl (*) 1 (dimList dims)) a)
 
-
    (ArBBState mf mv i) <- S.get 
    
    let mv' = Map.insert i v mv 

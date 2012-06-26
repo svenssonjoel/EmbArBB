@@ -31,6 +31,10 @@
     instance of that function. Some map of "functionHash -> functionID" is needed. 
     A way to get unique identifiers from a GenRecord could do as the hash
     
+  + Code generation is messed up for certain uses of Map. 
+    For example see. breaks.hs 
+    
+    
 * NOTES: 
   + An ArBB function cannot "Call" itself. That is, ArBB functions 
     cannot be recursive. To upweigh this there are many forms of loops, 
