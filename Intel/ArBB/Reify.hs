@@ -117,6 +117,16 @@ runR r = evalStateT r capState
                    0
                    emptyGenRecord -- Map.empty
 
+runRUnique r u = 
+    do
+      (a,RState _ u _) <- runStateT r capState 
+      return (u,a)
+    where 
+      capState = 
+          RState IntMap.empty
+                 u
+                 emptyGenRecord
+
 reifySimple :: Expr -> R [NodeID] 
 reifySimple e = 
     do 
@@ -163,6 +173,7 @@ instance Reify Expr where
           let exprs' = map genRecordNids imm
           -- -----------------------
           
+          
           depend <- lift $ runR cap
           uniq <- newUnique 
           
@@ -183,6 +194,7 @@ instance Reify Expr where
           let exprs' = map genRecordNids imm
           -- -----------------------
           
+          -- TODO: 
           depend <- lift $ runR cap
           uniq <- newUnique 
           

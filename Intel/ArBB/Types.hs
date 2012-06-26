@@ -40,7 +40,7 @@ is3D _ = False
 decrRank (Dense III a) = Just$ Dense II a 
 decrRank (Dense II a) = Just$ Dense I a 
 decrRank (Dense I a) = Just$ Scalar a 
-decrRank a = Nothing 
+decrRank a = error $ "decrRank on :" ++ show a  -- Nothing 
 
 container :: Type -> (VM.ScalarType -> Type) 
 container (Dense t a) b = Dense t b 

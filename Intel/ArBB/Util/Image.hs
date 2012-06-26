@@ -44,6 +44,7 @@ loadRAW_RGB :: FilePath -> Int -> Int -> IO (DVector Dim3 Word8)
 loadRAW_RGB fp w h = 
     withFile fp ReadMode $ \handle -> do 
       ptr <- mallocBytes (3*w*h) 
+      hGetBuf handle ptr (3*w*h) 
       --TODO: Stop going through lists 
       dat <- peekArray (3*w*h) ptr 
       let img = Image w h (V.fromList dat) :: Image PixelRGB8 
@@ -56,6 +57,7 @@ loadRAW_RGB fp w h =
 loadRAW_Gray :: FilePath -> Int -> Int -> IO (DVector Dim2 Word8) 
 loadRAW_Gray fp w h =  withFile fp ReadMode $ \handle -> do 
       ptr <- mallocBytes (w*h) 
+      hGetBuf handle ptr (w*h) 
       --TODO: Stop going through lists 
       dat <- peekArray (w*h) ptr 
       let vec = (V.fromList dat)
@@ -73,6 +75,15 @@ saveBMP_Gray fp img =
         -- Is this the right order again?! 
         Dim [w,h] = dVectorShape img
 
+
+saveRAW_Gray :: FilePath -> DVector Dim2 Word8 -> IO () 
+saveRAW_Gray fp img = 
+    withFile fp WriteMode $ \handle -> do 
+      let (fptr,_) = V.unsafeToForeignPtr0 (dVectorData img) 
+          ptr      = unsafeForeignPtrToPtr fptr
+      hPutBuf handle ptr (w*h)
+    where 
+      Dim [w,h] = dVectorShape img
 
 toGrayNaive :: Exp (DVector Dim3 Word8) -> Exp (DVector Dim2 Word8)  
 toGrayNaive v = (addReduce v 2)  `div` ss'

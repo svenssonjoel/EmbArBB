@@ -64,6 +64,7 @@ typecheckNID d n =
                   Nothing -> error "typecheckNID: DAG is broken" 
                   (Just nod) -> nod
     typ  <- typecheckNode d node 
+    
     case typ of 
       Nothing -> error $ "typecheckNID: typecheck error " ++ show (Map.lookup n d) 
       (Just typ') -> 
@@ -80,8 +81,7 @@ typecheckNID d n =
         nt <- typecheckNID dag n 
         if isScalar nt 
           then return$ Just$ nt 
-          else return Nothing 
-
+          else return $ error "Index0 into something that is not a zero dimensional array"
     typecheckNode dag (NResIndex n i) =   
       do 
         (Tuple nt) <- typecheckNID dag n 
@@ -103,6 +103,7 @@ typecheckNID d n =
         mapM (typecheckNID dag) body
         ts <- mapM (typecheckNID dag) st 
         return$ Just$ Tuple ts -- TODO: Structured result ?
+    typecheckNode dag (NMap i ns) = error "typecheck a map node" 
       
     -- TODO: fix for 32-bit archs .. 
     typecheckLiteral (LitInt _)   = return$ Just$ Scalar ArBB.ArbbI64 -- FIX !   

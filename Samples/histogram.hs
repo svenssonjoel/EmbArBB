@@ -1,4 +1,5 @@
-{-# LANGUAGE ScopedTypeVariables #-} 
+{-# LANGUAGE ScopedTypeVariables,
+             BangPatterns #-} 
 
 {- 2012 Joel Svensson -} 
 
@@ -7,7 +8,7 @@ import Intel.ArBB.Util.Image
 
 import qualified Data.Vector.Storable as V 
 
-import Prelude hiding (length)
+import Prelude hiding (length,map)
 
 import Data.Int
 import Data.Word
@@ -28,43 +29,61 @@ histogram input = addMerge cv (vecToUSize flat) 256
       c  = getNCols input
       
 
+
+histImage :: Exp (Vector Word32) -> Exp (DVector Dim2 Word8) 
+histImage input = fst $ while cond body (cvn,0)    
+    where 
+      cond (img,i) = i <* n 
+      body (img,i) = (replaceCol img i col',i+1) 
+          where 
+            val = index1 input i 
+            col = extractCol img i 
+            col' = fill col 255 n 255  
+            n = 255 - (scale 255 m val)  
+                    
+      n = length input 
+      cv = constVector 0 (n*n) 
+      cvn = setRegularNesting2D cv n n
+      m   = index0 (maxReduce input 0)
+
+
+
+-- TODO: This one messes up code generation. 
+--       The map of variables to types gets confused.
+--       FIX THIS ! 
+--       m gets inlined into scale? Is that the problem ? 
+-- scaleVals :: Exp (DVector Dim1 Word32) -> Exp (DVector Dim1 Word32)
+--scaleVals input = map (scale 255 m) input 
+--    where 
+--      m = index0 (maxReduce input 0) 
+
 -- a little less a hack..
-testHist2 =
+testHist =
   do  
     withArBB $ 
       do 
         f <- capture histogram 
+        g <- capture histImage
       
         raw <- liftIO$ loadRAW_Gray "window.raw" 256 256 
              
         v1 <- copyIn raw  
-        r1 <- new (Z:.256) 0  
-
-        execute f v1 r1
-              
-        (DVector r _) <- copyOut r1 
+        r1 <- new (Z:.256) 0 
+        r2 <- new (Z:.256:.256) 0 
+      
         
-        let r' = V.toList r
+        execute f v1 r1
 
-        pt2 <- liftIO$ mallocBytes (256 * 256 * 3) 
-        liftIO $ pokeArray pt2 (replicate (256*256*3) 0) 
-        let m = maximum r' 
+        execute g r1 r2
+              
+        img <- copyOut r2
+        
+        liftIO$ saveRAW_Gray "hist.raw" img
 
-       
-        liftIO $ sequence_ [lineH pt2 i 0 (scale 256 m  (r' !! i)) | i <- [0..255]]
-        liftIO $ withBinaryFile "out.raw" WriteMode $ \ handle -> 
-            hPutBuf handle pt2 (256 * 256 * 3)   
-        liftIO $ putStrLn "Result is stored in: out.raw" 
+   
 
-
-scale w m x = round (fromIntegral w / fromIntegral m * fromIntegral x)
+scale :: Exp Word32 -> Exp Word32 -> Exp Word32 -> Exp USize
+scale w m x = toUsize $ ((toFloat w) / (toFloat m) * (toFloat x))
 
 
-lineH pt2 y x1 x2 =
-    sequence_ 
-    $ concat [[pokeElemOff pt2 ((y*256+x)*3) (255 :: Word8),
-               pokeElemOff pt2 ((y*256+x)*3+1) (255 :: Word8),
-               pokeElemOff pt2 ((y*256+x)*3+2) (255 :: Word8)] | x <- [x1..x2]]
-
-
-main = testHist2
+main = testHist

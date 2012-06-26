@@ -242,6 +242,26 @@ replacePage :: Exp (DVector Dim3 a) -> Exp USize -> Exp (DVector Dim2 a) -> Exp 
 replacePage (E m) (E u) (E v) = 
   E $ Op ReplacePage [m,u,v]
 
+replace1D :: Exp (DVector Dim1 a) 
+          -> Exp USize 
+          -> Exp USize 
+          -> Exp USize 
+          -> Exp (DVector Dim1 a) 
+          -> Exp (DVector Dim1 a) 
+replace1D (E dst) (E first) (E n) (E stride) (E src) =
+    E $ Op Replace [dst,first,n,stride,src] 
+
+fill :: Exp (DVector Dim1 a) 
+     -> Exp a -- fill value 
+     -> Exp USize -- start 
+     -> Exp USize -- end 
+     -> Exp (DVector Dim1 a) 
+fill dst val start end = 
+    replace1D dst start n 1 cv
+    where 
+      n  = end - start
+      cv = constVector val n 
+        
 
 ---------------------------------------------------------------------------- 
 -- Scans 
@@ -1070,6 +1090,8 @@ instance Integral a => Integral (Exp (DVector t a)) where
     divMod = undefined 
     toInteger = undefined 
 
+
+
 ----------------------------------------------------------------------------
 instance (Num (Exp a), Bits a) => Bits (Exp a) where  
   (.&.) (E a) (E b) = E $ Op Bit_and [a,b]
@@ -1133,5 +1155,13 @@ instance Floating (Exp Float) where
 
 
 instance Ord (Exp Float) where 
+  min (E a) (E b) = E $ Op Min [a,b]
+  max (E a) (E b) = E $ Op Max [a,b]
+
+instance Ord (Exp Word32) where 
+  min (E a) (E b) = E $ Op Min [a,b]
+  max (E a) (E b) = E $ Op Max [a,b]
+
+instance Ord (Exp USize) where 
   min (E a) (E b) = E $ Op Min [a,b]
   max (E a) (E b) = E $ Op Max [a,b]

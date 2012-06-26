@@ -211,6 +211,9 @@ genBody' dag nid funm depm is =
         return [vs !! i]
     genNode thisNid (NIndex0 n) = 
       do 
+        (vt,nidt) <- get 
+        liftIO$ putStrLn $ "NIndex0 :" ++ show n
+        liftIO$ putStrLn $ show nidt
         vs <- genBody' dag n  funm depm is 
         return vs
  
@@ -309,12 +312,18 @@ genBody' dag nid funm depm is =
         vs <- liftM concat $ mapM (\n -> genBody' dag n funm depm is) ns 
        
         -- In order to obtain dimensionality of result. 
+        liftIO$ putStrLn "typecheck args" 
         ts <- mapM (typecheckNID dag) ns
-        let    dim = (\(Dense d _) -> d) $ head ts 
-        
+        let   dim = (\(Dense d _) -> d) $ head ts 
+        liftIO$ putStrLn "typecheck args done" 
         let (Just funId) = Map.lookup f depm
         let (Just (fun,ti,to)) = Map.lookup funId funm
-      
+        liftIO$ putStrLn $ "In  : " ++ show ti
+        liftIO$ putStrLn $ "Out : " ++ show to
+        -- TODO: This needs more thought
+        let [Scalar to'] = to
+        addNodeIDType thisNid (Dense dim to') -- insert type info
+                                 
         -- TODO: All this starts feeling a bit "hacky".
         --       Put adding structure to the TODO list 
  

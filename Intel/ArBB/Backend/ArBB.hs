@@ -131,11 +131,13 @@ addVariable v =
 captureGenRecord :: GenRecord -> ArBBBackend FuncID 
 captureGenRecord gr = 
     do 
-
+      liftIO$ putStrLn "Entering captureGenRecord" 
       --------------------------------------------------
       -- Begin with capturing any functions that this one 
-      -- calls or maps  (depends on)     
+      -- calls or maps  (depends on) 
+    
       depsMap <- Trav.mapM captureGenRecord (genRecordDepends gr)
+      -- let depsMap = Map.empty
       --------------------------------------------------
       
       let tins = getInputTypes (genRecordFunType gr)
@@ -151,7 +153,8 @@ captureGenRecord gr =
       let d = genRecordDag gr
           vt = genRecordVarType gr 
           nids = genRecordNids gr
-
+      
+      liftIO $ putStrLn $ "captureGenRecord :" ++ show vt
       fd <- liftVM $ VM.funDef_ "generated" (concat arbbOuts) (concat arbbIns) $ \ os is -> 
             do 
               vs <- accmBody d nids vt funMap depsMap (zip names is) 
