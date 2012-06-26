@@ -41,6 +41,16 @@ loadBMP_RGB fp =
 
 extractC c (Image x y v)  = Image x y (V.ifilter (\i a -> i `mod` 3 == c) v) 
 
+saveBMP_g :: FilePath -> DVector Dim2 Word8 -> IO () 
+saveBMP_g fp img = 
+    writeBitmap fp image
+
+      where 
+        image = Image w h (dVectorData img) :: Image Pixel8
+        -- Is this the right order again?! 
+        Dim [w,h] = dVectorShape img
+
+
 toGrayNaive :: Exp (DVector Dim3 Word8) -> Exp (DVector Dim2 Word8)  
 toGrayNaive v = (addReduce v 2)  `div` ss'
     where 
@@ -60,9 +70,9 @@ toGray v = vec2DToWord8 $ ((redPlane * constVector2D wr w h) +
     w = getNCols v
     h = getNCols v
     fv = vec3DToFloat v
-    redPlane = extractPage fv 0
-    greenPlane = extractPage fv 1
-    bluePlane  = extractPage fv 2  
+    redPlane   = (extractPage fv 0) / scale
+    greenPlane = (extractPage fv 1) / scale
+    bluePlane  = (extractPage fv 2) / scale  
     scale      = constVector2D (mkFloat 255.0) w h 
     wr = mkFloat 0.2989 
     wg = mkFloat 0.5870 
