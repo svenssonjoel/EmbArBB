@@ -40,8 +40,8 @@ testMatMul g size  =
      (rs1 :: [Double]) <- liftIO$ randoms g
      (rs2 :: [Double]) <- liftIO$ randoms g
                                                              
-     m1 <- copyIn (V.fromList (take (size*size) (P.map double2Float rs1))) (Z:.size:.size) 
-     m2 <- copyIn (V.fromList (take (size*size) (P.map double2Float rs2))) (Z:.size:.size) 
+     m1 <- copyIn $ mkDVector (V.fromList (take (size*size) (P.map double2Float rs1))) (Z:.size:.size) 
+     m2 <- copyIn $ mkDVector (V.fromList (take (size*size) (P.map double2Float rs2))) (Z:.size:.size) 
      r1 <- new  (Z:.size:.size) 0
   
      execute f (m1 :- m2)  r1      

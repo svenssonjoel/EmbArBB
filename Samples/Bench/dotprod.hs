@@ -30,8 +30,8 @@ testDot g size =
        (rs1 :: [Double]) <- liftIO$ randoms g
        (rs2 :: [Double]) <- liftIO$ randoms g
 
-       x <- copyIn (V.fromList (take size (rs1))) (Z:.size) 
-       y <- copyIn (V.fromList (take size (rs2))) (Z:.size) 
+       x <- copyIn $ mkDVector (V.fromList (take size (rs1))) (Z:.size) 
+       y <- copyIn $ mkDVector (V.fromList (take size (rs2))) (Z:.size) 
 
        r1 <- mkScalar 0 
    

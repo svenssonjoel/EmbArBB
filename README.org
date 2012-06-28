@@ -2,9 +2,13 @@
   + Embedded language for data parallel programming targetting Intel ArBB. 
   + Uses the Haskell/ArBB bindings (svenssonjoel/arbb-vm.git on github)
 
+* Help Wanted 
+  + If you are interested in Haskell EDSLs and data parallelism 
+    and want to help improve this library, please let me know. There 
+    is a lot to improve upon here. 
+
 * Status
-  + The samples run again
-  + Currently the benchmarks do not run (need to be updated to new interface) 
+  + The samples and benchmarks run again
 
 * TODOs:  
   + Think up some new execute interface. 
@@ -30,10 +34,12 @@
   + Keep track of what functions have been captured. If a function uses "Call"  on 
     the same other function many times, each of these calls will lead to a captured 
     instance of that function. Some map of "functionHash -> functionID" is needed. 
-    A way to get unique identifiers from a GenRecord could do as the hash
+    A way to get unique identifiers from a GenRecord could do as the hash.
+    
     
   + Code generation is messed up for certain uses of Map. 
-    For example see. breaks.hs 
+    For example see. breaks.hs. Partial applicaiton of the mapee function 
+    may cause variables to leak out of scope. 
     
     
 * NOTES: 
@@ -43,6 +49,7 @@
   + The nested vector capabilities feel a bit wing-clipped from the 
     missing recursion. Finding a few example apps that use the nested 
     vectors might cast some light.
+
  
 
 
