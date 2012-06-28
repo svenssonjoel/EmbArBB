@@ -25,14 +25,14 @@ testMatMul =
   do 
      f <- capture matmul
     
-     m1 <- copyIn (V.fromList [2,0,0,
-                               0,2,0,
-                               0,0,2])
-                  (Z:.3:.3) 
-     m2 <- copyIn (V.fromList [1,2,3,
-                               4,5,6,
-                               7,8,9])
-                  (Z:.3:.3) 
+     m1 <- copyIn $ mkDVector (V.fromList [2,0,0,
+                                           0,2,0,
+                                           0,0,2])
+                              (Z:.3:.3) 
+     m2 <- copyIn $ mkDVector (V.fromList [1,2,3,
+                                           4,5,6,
+                                           7,8,9])
+                              (Z:.3:.3) 
             
      r1 <- new (Z:.3:.3) 0
   

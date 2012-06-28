@@ -29,9 +29,9 @@ testSgemm =
      liftIO$ putStrLn str
 
 
-     m1 <- copyIn (V.fromList [1,2,3,1,2,3,1,2,3]) (Z:.3:.3) 
-     m2 <- copyIn (V.fromList [2,0,0,0,2,0,0,0,2]) (Z:.3:.3) 
-     m3 <- copyIn (V.fromList [1,0,0,0,1,0,0,0,1]) (Z:.3:.3) 
+     m1 <- copyIn $ mkDVector (V.fromList [1,2,3,1,2,3,1,2,3]) (Z:.3:.3) 
+     m2 <- copyIn $ mkDVector (V.fromList [2,0,0,0,2,0,0,0,2]) (Z:.3:.3) 
+     m3 <- copyIn $ mkDVector (V.fromList [1,0,0,0,1,0,0,0,1]) (Z:.3:.3) 
 
      r1 <- new (Z:.3:.3) 0   
      

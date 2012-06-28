@@ -23,8 +23,8 @@ import Intel.ArBB.IsScalar
 data DVector d a = DVector { dVectorData  :: V.Vector a  -- dVectorID :: Integer, 
                            , dVectorShape :: Dim}
 
-mkDVector :: V.Vector a -> Dim -> DVector Dim a 
-mkDVector v d = DVector v d 
+mkDVector :: Dimensions t => V.Vector a -> t -> DVector t a 
+mkDVector v d = DVector v (toDim d)  
 
 data Dim = Dim {dimList :: [Int]}
 

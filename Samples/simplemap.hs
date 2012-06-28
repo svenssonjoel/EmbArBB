@@ -44,7 +44,7 @@ testMap =
 
             
        
-     x <- copyIn (V.fromList [1..10::Word32]) (Z:.10) 
+     x <- copyIn $ mkDVector (V.fromList [1..10::Word32]) (Z:.10) 
         
      r1 <- new (Z:.10) 0
      r2 <- new (Z:.10) 0

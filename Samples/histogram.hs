@@ -38,8 +38,8 @@ histImage input = fst $ while cond body (cvn,0)
           where 
             val = index1 input i 
             col = extractCol img i 
-            col' = fill col 255 n 255  
-            n = 255 - (scale 255 m val)  
+            col' = fill col 255 n 256  
+            n = 256 - (scale 256 m val)  
                     
       n = length input 
       cv = constVector 0 (n*n) 

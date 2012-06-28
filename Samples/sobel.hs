@@ -1,4 +1,5 @@
 import Intel.ArBB 
+import Intel.ArBB.Util.Image
 
 import qualified Data.Vector.Storable as V 
 import Prelude as P hiding (length,map)
@@ -63,35 +64,21 @@ sobel :: Exp (DVector Dim2 Word8)
 sobel image = map kernel image  
 
 
--- Very much a hack.. 
-testSobel =
-  do  
-    ptr <- mallocBytes (256 * 256) 
-    withBinaryFile "window.raw" ReadMode $ \ handle -> 
-      hGetBuf handle ptr (256 * 256) 
-    ls <- peekArray (256 * 256) ptr
-
-    -- TODO: Stop going through lists.
+testSobel =  
     withArBB $ 
       do 
-        f    <- capture sobel 
-        
-        v1 <- copyIn (V.fromList ls) (Z:.256:.256)
+        f <- capture sobel 
+     
+        img <- liftIO$  loadRAW_Gray "window.raw" 256 256 
+   
+        v1 <- copyIn img 
         r1 <- new (Z:.256:.256) 0
 
         execute f v1 r1
               
         r <- copyOut r1
 
-        let r' = V.toList r
-
-        pt2 <- liftIO$ mallocBytes (256 * 256) 
-        liftIO $ pokeArray pt2 r'
-       
-       
-        liftIO $ withBinaryFile "sobout.raw" WriteMode $ \ handle -> 
-            hPutBuf handle pt2 (256 * 256)   
-        liftIO $ putStrLn "Result is stored in: sobout.raw" 
-
+        liftIO $ saveRAW_Gray "sobout.raw" r  
+             
 
 main = testSobel

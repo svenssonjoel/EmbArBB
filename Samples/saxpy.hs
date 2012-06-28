@@ -14,9 +14,9 @@ testSaxpy =
   withArBB $ 
   do 
      f <- capture axpy
-   
-     x <- copyIn (V.fromList [1,3..10::Float]) (Z:.5) 
-     y <- copyIn (V.fromList [2,4..10::Float]) (Z:.5) 
+     
+     x <- copyIn $ mkDVector (V.fromList [1,3..10::Float]) (Z:.5) 
+     y <- copyIn $ mkDVector (V.fromList [2,4..10::Float]) (Z:.5) 
      
      r1 <- new (Z:.5) 0    
            

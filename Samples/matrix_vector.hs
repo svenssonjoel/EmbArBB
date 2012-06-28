@@ -20,8 +20,8 @@ main =
                           0,0,0,2]
          v1 = V.fromList [1,2,3,4] 
      
-     m <- copyIn m1 (Z:.4:.4) 
-     v <- copyIn v1 (Z:.4) 
+     m <- copyIn $ mkDVector m1 (Z:.4:.4) 
+     v <- copyIn $ mkDVector v1 (Z:.4) 
 
      r1 <- new (Z:.4) 0 
 

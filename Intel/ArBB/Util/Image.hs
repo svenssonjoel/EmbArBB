@@ -1,7 +1,13 @@
 
 {- Joel Svensson 2012 -} 
 
-module Intel.ArBB.Util.Image where 
+module Intel.ArBB.Util.Image ( loadBMP_RGB
+                             , loadRAW_RGB 
+                             , loadRAW_Gray 
+                             , saveBMP_Gray
+                             , saveRAW_Gray 
+                             , toGrayNaive 
+                             , toGray ) where 
 
 
 import Intel.ArBB.Vector 
@@ -33,12 +39,13 @@ loadBMP_RGB fp =
       bs <- BS.hGetContents handle 
       case decodeBitmap bs of 
         (Left str) -> error str 
-        (Right (ImageRGB8 img)) ->
-             do 
-               let (Image _ _ r) = extractC 0 img 
-                   (Image _ _ g) = extractC 1 img 
-                   (Image w h b) = extractC 2 img
-               return $ DVector (r V.++ g V.++ b)  (Dim [3,w,h])
+        (Right (ImageRGB8 img)) -> return $ imageToDVectorRGB img 
+
+imageToDVectorRGB img = 
+    let (Image _ _ r) = extractComponent 0 img 
+        (Image _ _ g) = extractComponent 1 img 
+        (Image w h b) = extractComponent 2 img
+    in DVector (r V.++ g V.++ b)  (Dim [3,w,h])
 
 loadRAW_RGB :: FilePath -> Int -> Int -> IO (DVector Dim3 Word8) 
 loadRAW_RGB fp w h = 
@@ -48,11 +55,9 @@ loadRAW_RGB fp w h =
       --TODO: Stop going through lists 
       dat <- peekArray (3*w*h) ptr 
       let img = Image w h (V.fromList dat) :: Image PixelRGB8 
-          (Image _ _ r) = extractC 0 img 
-          (Image _ _ g) = extractC 1 img 
-          (Image w h b) = extractC 2 img
+          dv  = imageToDVectorRGB img
       free ptr 
-      return $ DVector (r V.++ g V.++ b) (Dim [3,w,h])
+      return $ dv 
 
 loadRAW_Gray :: FilePath -> Int -> Int -> IO (DVector Dim2 Word8) 
 loadRAW_Gray fp w h =  withFile fp ReadMode $ \handle -> do 
@@ -63,8 +68,6 @@ loadRAW_Gray fp w h =  withFile fp ReadMode $ \handle -> do
       let vec = (V.fromList dat)
       free ptr 
       return $ DVector vec (Dim [w,h]) 
-
-extractC c (Image x y v)  = Image x y (V.ifilter (\i a -> i `mod` 3 == c) v) 
 
 saveBMP_Gray :: FilePath -> DVector Dim2 Word8 -> IO () 
 saveBMP_Gray fp img = 
@@ -85,6 +88,10 @@ saveRAW_Gray fp img =
     where 
       Dim [w,h] = dVectorShape img
 
+
+----------------------------------------------------------------------------
+-- EmbArBB image manip. functions
+
 toGrayNaive :: Exp (DVector Dim3 Word8) -> Exp (DVector Dim2 Word8)  
 toGrayNaive v = (addReduce v 2)  `div` ss'
     where 
@@ -94,7 +101,7 @@ toGrayNaive v = (addReduce v 2)  `div` ss'
       ss' = repeatRow ss h 
       
 
--- Convers to grayscale and corrects for perception 
+-- Converts to grayscale and corrects for perception 
 -- of intensities of different color components 
 toGray :: Exp (DVector Dim3 Word8) -> Exp (DVector Dim2 Word8) 
 toGray v = vec2DToWord8 $ (redPlane * constVector2D wr w h) + 

@@ -3,7 +3,8 @@
   + Uses the Haskell/ArBB bindings (svenssonjoel/arbb-vm.git on github)
 
 * Status
-  + The samples and benchmarks DOES NOT run right now
+  + The samples run again
+  + Currently the benchmarks do not run (need to be updated to new interface) 
 
 * TODOs:  
   + Think up some new execute interface. 

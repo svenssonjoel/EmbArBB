@@ -32,6 +32,7 @@ Library
                , containers
                , vector
                , arbb-vm >= 0.1.1.14
+	       , JuicyPixels >= 1.3
 
 
 
@@ -56,7 +57,8 @@ Library
                  , Intel.ArBB.Backend.ArBB.CodeGen
                  , Intel.ArBB.Backend.ArBB
                  , Intel.ArBB.Backend.Vector
-                 , Intel.ArBB.Backend.Scalar		 
+                 , Intel.ArBB.Backend.Scalar
+                 , Intel.ArBB.Util.Image		 
 
 
   GHC-Options: 
