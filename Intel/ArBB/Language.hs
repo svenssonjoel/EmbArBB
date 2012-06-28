@@ -89,6 +89,11 @@ vec2DToWord8 :: Exp (DVector Dim2 a) -> Exp (DVector Dim2 Word8)
 vec2DToWord8 (E a) = 
   E $ Op (Cast (Dense II VM.ArbbU8)) [a]
 
+vec2DToWord32 :: Exp (DVector Dim2 a) -> Exp (DVector Dim2 Word32) 
+vec2DToWord32 (E a) = 
+  E $ Op (Cast (Dense II VM.ArbbU32)) [a]
+
+
 toWord8 :: Exp a -> Exp Word8 
 toWord8 (E a) = 
   E $ Op (Cast (Scalar VM.ArbbU8)) [a] 
@@ -794,9 +799,9 @@ mapStencil (Stencil ls d)  (E v) = E $ Map (reify f) [v]
 coordsFromDim (Dim xs) = coordsFromDim' xs
     where
       coordsFromDim' [] = []
-      coordsFromDim' (r:[]) = [(0,0,i) | i <- [0..r-1]]       
-      coordsFromDim' (r:c:[]) = concat [[(0,j,i) | i <- [0..r-1]]| j <- [0..c-1]]
-      coordsFromDim' (r:c:p:[]) = concat $ concat [[[(k,j,i) | i <- [0..r-1]]| j <- [0..c-1]]| k <- [0..p-1]]
+      -- coordsFromDim' (r:[]) = [(0,0,i) | i <- [0..r-1]]       
+      coordsFromDim' (r:c:[]) = concat [[(0,j,i) | i <- [(-((r-1)`div`2))..((r-1)`div`2)]]| j <- [(-((c-1)`div`2))..((c-1)`div`2)]]
+      -- coordsFromDim' (r:c:p:[]) = concat $ concat [[[(k,j,i) | i <- [0..r-1]]| j <- [0..c-1]]| k <- [0..p-1]]
 
 ----------------------------------------------------------------------------
 -- unpairing. 

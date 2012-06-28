@@ -9,6 +9,7 @@ all:
 	ghc --make addconst.hs -i../
 	ghc --make simplemap.hs -i../
 	ghc --make sobel.hs -i../ 
+	ghc --make convolve.hs -i../
 #	ghc --make dotprod.hs -i../
 
 
@@ -19,6 +20,7 @@ clean:
 	rm matrix_vector
 	rm sgemm
 	rm sobel
+	rm convolve
 #	rm dotprod 
 	rm *.o
 	rm *.hi

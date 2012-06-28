@@ -27,6 +27,7 @@ type VarType      = Map.Map Variable Type
 
 type NodeIDType   = Map.Map NodeID Type 
 
+--TODO: Clear up
 type CheckState' m a = StateT (VarType,NodeIDType) m a 
 type TypeChecker m a = StateT (VarType,NodeIDType) m a
 
@@ -103,8 +104,16 @@ typecheckNID d n =
         mapM (typecheckNID dag) body
         ts <- mapM (typecheckNID dag) st 
         return$ Just$ Tuple ts -- TODO: Structured result ?
-    typecheckNode dag (NMap i ns) = error "typecheck a map node" 
-      
+    typecheckNode dag (NMap i ns) = -- error "typecheck a map node" 
+      do 
+        ts <- mapM (typecheckNID dag) ns
+        -- Get typ of i. 
+        -- TODO: need types of function here
+        -- fm <- gets funMap
+        -- For now, cheat 
+        -- let (Dense II _) = head ts
+        return $ Just $ Dense II ArBB.ArbbU32
+          
     -- TODO: fix for 32-bit archs .. 
     typecheckLiteral (LitInt _)   = return$ Just$ Scalar ArBB.ArbbI64 -- FIX !   
     typecheckLiteral (LitInt8 _)   = return$ Just$ Scalar ArBB.ArbbI8
