@@ -41,11 +41,12 @@ loadBMP_RGB fp =
         (Left str) -> error str 
         (Right (ImageRGB8 img)) -> return $ imageToDVectorRGB img 
 
+
 imageToDVectorRGB img = 
     let (Image _ _ r) = extractComponent 0 img 
         (Image _ _ g) = extractComponent 1 img 
         (Image w h b) = extractComponent 2 img
-    in DVector (r V.++ g V.++ b)  (Dim [3,w,h])
+    in DVector (r V.++ g V.++ b)  (fromDim (Dim [3,w,h]))
 
 loadRAW_RGB :: FilePath -> Int -> Int -> IO (DVector Dim3 Word8) 
 loadRAW_RGB fp w h = 
@@ -67,7 +68,7 @@ loadRAW_Gray fp w h =  withFile fp ReadMode $ \handle -> do
       dat <- peekArray (w*h) ptr 
       let vec = (V.fromList dat)
       free ptr 
-      return $ DVector vec (Dim [w,h]) 
+      return $ DVector vec (fromDim (Dim [w,h])) 
 
 saveBMP_Gray :: FilePath -> DVector Dim2 Word8 -> IO () 
 saveBMP_Gray fp img = 
@@ -76,7 +77,7 @@ saveBMP_Gray fp img =
       where 
         image = Image w h (dVectorData img) :: Image Pixel8
         -- Is this the right order again?! 
-        Dim [w,h] = dVectorShape img
+        Dim [w,h] = toDim$ dVectorShape img
 
 
 saveRAW_Gray :: FilePath -> DVector Dim2 Word8 -> IO () 
@@ -86,7 +87,7 @@ saveRAW_Gray fp img =
           ptr      = unsafeForeignPtrToPtr fptr
       hPutBuf handle ptr (w*h)
     where 
-      Dim [w,h] = dVectorShape img
+      Dim [w,h] = toDim$ dVectorShape img
 
 
 ----------------------------------------------------------------------------

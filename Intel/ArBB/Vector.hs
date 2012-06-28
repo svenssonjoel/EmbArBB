@@ -21,10 +21,10 @@ import Intel.ArBB.IsScalar
 ----------------------------------------------------------------------------
 -- Dense Vectors
 data DVector d a = DVector { dVectorData  :: V.Vector a  -- dVectorID :: Integer, 
-                           , dVectorShape :: Dim}
+                           , dVectorShape :: d } --Dim}
 
 mkDVector :: Dimensions t => V.Vector a -> t -> DVector t a 
-mkDVector v d = DVector v (toDim d)  
+mkDVector v d = DVector v d  
 
 data Dim = Dim {dimList :: [Int]}
 
@@ -36,13 +36,17 @@ dimensions = length . dimList
 
 class Dimensions a where 
     toDim :: a -> Dim 
+    fromDim :: Dim -> a 
+    
 instance Dimensions Z where 
     toDim Z = Dim []
+    fromDim (Dim []) = Z 
 
 instance Dimensions t => Dimensions (t :. Int) where  
     toDim (is :. i) = Dim (i:is')
         where (Dim is') = toDim is
-
+    fromDim (Dim (i:is)) = fromDim (Dim is) :. i 
+    
 -- | Encode Dimensionality in the type of vectors                    
 data a :. b = a :. b  
 infixl :. 

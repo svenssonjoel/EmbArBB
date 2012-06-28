@@ -58,7 +58,7 @@ test4 =
       liftIO$ putStrLn str
 
       -- Turn a normal Data.Vector into a backend-vector 
-      x <- copyIn (V.fromList [1..10::Word32]) (Z :. 10)
+      x <- copyIn $ mkDVector (V.fromList [1..10::Word32]) (Z :. 10)
       
       -- Create a new vector in the backend for the result. )
       -- backend vectors are mutable.
@@ -71,7 +71,7 @@ test4 =
           
       liftIO$ putStrLn $ show r 
 
-
+{-
 test5 = 
     withArBB $ do 
       f <- capture numr
@@ -275,4 +275,5 @@ testSeg =
               -> Exp (DVector Dim1 ISize) 
               -> (Exp (NVector Word32))
       getSeg v s = split v s 
+-}
 -}

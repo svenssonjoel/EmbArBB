@@ -7,7 +7,7 @@ import Intel.ArBB.Data.Int
 
 
 data BEDVector d a = BEDVector { beDVectorID :: Integer
-                               , beDVectorShape :: Dim}  
+                               , beDVectorShape :: d}  
 
 data BENVector a = BENVector { beNVectorID :: Integer
                              , beNVectorData :: BEDVector Dim1 a

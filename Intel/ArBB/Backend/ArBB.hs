@@ -287,7 +287,7 @@ copyIn dvec =
                 
    S.put (ArBBState mf mv' (i+1))
 
-   return $ BEDVector i dims
+   return $ BEDVector i (dVectorShape dvec) 
    -- TODO: Figure out if this is one of these cases where makeRefCountable is needed..
    -- TODO: figure out if it is possible to let Haskell Garbage collector 
    --       "free" arbb-allocated memory. (using refcountables and foreign ptrs) 
@@ -295,7 +295,7 @@ copyIn dvec =
      -- TODO: There should be some insurance that ndims is 1,2 or 3.
      --       Or a way to handle the higher dimensionalities. 
      ndims = length dims'
-     dims = dVectorShape dvec -- toDim t    
+     dims = toDim $ dVectorShape dvec -- toDim t    
      (Dim dims') = dims -- TODO: FIX FIX 
 
 -- create a new DVector with same element at all indices. 
@@ -322,7 +322,7 @@ new t a =
                 
    S.put (ArBBState mf mv' (i+1))
 
-   return $ BEDVector i dims
+   return $ BEDVector i t 
   where 
      -- TODO: There should be some insurance that ndims is 1,2 or 3.
      --       Or a way to handle the higher dimensionalities. 
@@ -355,13 +355,13 @@ copyOut dv =
                       ((foldl (*) 1 dims') * (sizeOf (undefined :: a)) ) 
                       
    fv <- liftIO$ V.freeze vec
-   return $ DVector fv dims
+   return $ DVector fv (beDVectorShape dv) -- same shape 
 
    where 
      -- TODO: There should be some insurance that ndims is 1,2 or 3.
      --       Or a way to handle the higher dimensionalities. 
      ndims = length dims'
-     dims = beDVectorShape dv
+     dims = toDim$ beDVectorShape dv
      (Dim dims') = dims -- TODO: FIX FIX 
 
 {-
