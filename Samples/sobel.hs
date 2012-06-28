@@ -34,12 +34,10 @@ gx x = foldl (+) 0
      $ P.zipWith (*) [toFloat (getNeighbor2D x a b) / 255 
                     | (a,b) <- s1] coeffs 
 
-
 gy :: Exp Word8 -> Exp Float 
 gy x = foldl (+) 0 
      $ P.zipWith (*) [toFloat (getNeighbor2D x a b) / 255
                    | (a,b) <- s2] coeffs 
-
 
 convertToWord8 :: Exp Float -> Exp Word8 
 convertToWord8 x = toWord8 $ (clamp x)  * 255

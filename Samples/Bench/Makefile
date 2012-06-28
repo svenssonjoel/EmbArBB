@@ -10,4 +10,4 @@ clean:
 	rm matrix_mult
 	rm dotprod
 	rm *.o
-	rm *.h
+	rm *.hi

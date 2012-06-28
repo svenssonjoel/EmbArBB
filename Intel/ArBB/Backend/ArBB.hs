@@ -131,7 +131,7 @@ addVariable v =
 captureGenRecord :: GenRecord -> ArBBBackend FuncID 
 captureGenRecord gr = 
     do 
-      liftIO$ putStrLn "Entering captureGenRecord" 
+      -- liftIO$ putStrLn "Entering captureGenRecord" 
       --------------------------------------------------
       -- Begin with capturing any functions that this one 
       -- calls or maps  (depends on) 
@@ -154,7 +154,7 @@ captureGenRecord gr =
           vt = genRecordVarType gr 
           nids = genRecordNids gr
       
-      liftIO $ putStrLn $ "captureGenRecord :" ++ show vt
+      --liftIO $ putStrLn $ "captureGenRecord :" ++ show vt
       fd <- liftVM $ VM.funDef_ "generated" (concat arbbOuts) (concat arbbIns) $ \ os is -> 
             do 
               vs <- accmBody d nids vt funMap depsMap (zip names is) 
@@ -176,7 +176,7 @@ capture d =
       fid <- captureGenRecord d'
       
       let h =  genRecordHash d' 
-      liftIO$ putStrLn $ "genRecordHash: " ++ show h
+      -- liftIO$ putStrLn $ "genRecordHash: " ++ show h
       return $ Function fid 
 
 serialize :: Function i o -> ArBBBackend String 
@@ -191,6 +191,8 @@ serialize (Function fid) =
               str <- liftVM $ VM.serializeFunction_ f
               return (VM.getCString str) 
   
+finish :: ArBBBackend ()     
+finish  = liftVM $ VM.finish_
 
 execute :: (VariableList a, VariableList b) => Function a b -> a -> b -> ArBB ()       
 execute (Function fid) a b = 

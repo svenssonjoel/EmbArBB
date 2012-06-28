@@ -48,7 +48,7 @@ testMatMul g size  =
      
      t1 <- liftIO getClockTime 
      execute f (m1 :- m2)  r1      
-     --finish 
+     finish 
      
      t2 <- liftIO getClockTime 
 
