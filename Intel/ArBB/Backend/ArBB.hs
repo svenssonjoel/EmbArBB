@@ -155,16 +155,16 @@ captureGenRecord gr =
           nids = genRecordNids gr
       -- TODO: See if the problem is in the arbb-vm package.. 
       --       sometimes the funDef_ causes exceptions.. 
-      liftIO $ putStrLn $ "captureGenRecord before fundef" 
+      --liftIO $ putStrLn $ "captureGenRecord before fundef" 
       fd <- liftVM $ VM.funDef_ "generated" (concat arbbOuts) (concat arbbIns) $ \ os is -> 
             do 
-              S.lift$ putStrLn "Inside funDef_"
+              --S.lift$ putStrLn "Inside funDef_"
               vs <- accmBody d nids vt funMap depsMap (zip names is) 
-              S.lift$ putStrLn "after body"
+              --S.lift$ putStrLn "after body"
               copyAll os vs
-              S.lift$ putStrLn "after copies"
+              --S.lift$ putStrLn "after copies"
 
-      liftIO $ putStrLn $ "captureGenRecord after fundef" 
+      --liftIO $ putStrLn $ "captureGenRecord after fundef" 
       fid <- getFunID 
 
       addFunction fid fd tins touts
