@@ -12,17 +12,17 @@ import Foreign hiding (new)
 
 -- TODO: Remember that there is cheating going on in 
 --       the code generation parts to make this work (typecheck)
-conv :: Exp (DVector Dim2 Word8) 
+blur :: Exp (DVector Dim2 Word8) 
         -> Exp (DVector Dim2 Word8) 
-conv image = vec2DToWord8 (blur `div`  all16) 
+blur image = vec2DToWord8 (res `div`  all16) 
   where 
     all16 = constVector2D 16 (getNRows image) (getNCols image)
-    blur = mapStencil (Stencil [1,2,1
-                               ,2,4,2   
-                               ,1,2,1] (Z:.3:.3)) image'      
+    res = mapStencil (Stencil [1,2,1
+                              ,2,4,2   
+                              ,1,2,1] (Z:.3:.3)) image'      
     image' = vec2DToWord32 image        
 
-testSobel =  
+testConv =  
     withArBB $ 
       do 
         f <- capture conv 
@@ -39,4 +39,4 @@ testSobel =
         liftIO $ saveRAW_Gray "convout.raw" r  
              
 
-main = testSobel
+main = testConv

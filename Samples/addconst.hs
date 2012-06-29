@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeOperators #-} 
 import Intel.ArBB 
 
 import qualified Data.Vector.Storable as V 
@@ -12,16 +13,10 @@ addconst s v = v + ss
 main = 
   withArBB $ 
   do 
-     f <- capture addconst
-             
+     f <- capture addconst             
      x <- copyIn $ mkDVector (V.fromList [1..10 :: Float]) (Z:.10)
-
      r1 <- new (Z:.10) 0 
-     
-     c <- mkScalar 1 
-     
-     execute f (c :- x)  r1
-              
-     r <- copyOut r1
-              
+     c <- mkScalar 1      
+     execute f (c :- x)  r1              
+     r <- copyOut r1              
      liftIO$ putStrLn$ show r
