@@ -41,6 +41,10 @@
     For example see. breaks.hs. Partial applicaiton of the mapee function 
     may cause variables to leak out of scope. 
     
+  + For some functions the system crashes during capture with a 
+    "terminate called after throwing an instance of 'ExceptionImpl*'" error message. 
+    This message comes from the ArBB library. Right now the cause of it is unknown
+    to me. 
     
 * NOTES: 
   + An ArBB function cannot "Call" itself. That is, ArBB functions 

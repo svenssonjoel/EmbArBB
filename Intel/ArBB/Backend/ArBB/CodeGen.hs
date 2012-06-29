@@ -212,13 +212,15 @@ genBody' dag nid funm depm is =
     genNode thisNid (NIndex0 n) = 
       do 
         (vt,nidt) <- get 
-        -- liftIO$ putStrLn $ "NIndex0 :" ++ show n
+        --liftIO$ putStrLn $ "NIndex0 :" ++ show n
         -- liftIO$ putStrLn $ show nidt
         vs <- genBody' dag n  funm depm is 
         return vs
  
     genNode thisNid (NOp op ns) = 
       do 
+        --liftIO $ putStrLn $ "starting generate " ++ show op ++ " node"
+
         vs <- mapM (\n -> genBody' dag n funm depm is) ns 
        
         t <- typecheckNID dag thisNid
@@ -227,6 +229,8 @@ genBody' dag nid funm depm is =
         case isOpDynamic op of 
           True -> liftVM$ VM.opDynamic_ (opToArBB op) imm (concat vs)
           False -> liftVM$ VM.op_ (opToArBB op) imm (concat vs) 
+
+        --liftIO $ putStrLn $ "finished" 
         
         return imm
         
@@ -267,10 +271,10 @@ genBody' dag nid funm depm is =
     genNode thisNid a@(NWhile vars cond' body st) = 
       do 
      
-        -- declare variables.  
+        -- what types are needed for loop state
         t   <- mapM (typecheckNID dag) st 
      
-        -- liftIO$ putStrLn$ show t 
+        -- variables to hold loop state
         state_vars <-  liftVM$ concat `fmap` ( mapM typeToArBBLocalVar t )
      
         -- extend the environment.. 
@@ -278,7 +282,7 @@ genBody' dag nid funm depm is =
       
         (vt,notused) <- get   
         let newVT = Map.union vt (Map.fromList (zip vars t))
-        -- liftIO$ putStrLn $ show newVT
+        --liftIO$ putStrLn $ show newVT
         put (newVT,notused) -- huh ?
         -- t'  <- mapM (typecheckNID dag) body -- ensure locals exist in typemap
         -- t'' <- typecheckNID dag cond'
@@ -291,16 +295,19 @@ genBody' dag nid funm depm is =
         
         --TODO: Figure out what is so special about the loop variable 
         --      If anything.. (things break down here)
-        
+        --liftIO$ putStrLn "before while impl"
         alls <- getAllState 
         -- the actual loop 
-        liftVM$ VM.while_ (do [c] <- accmBody dag [cond'] newVT funm depm vis; return c ) 
+--        liftVM$ VM.while_ (do [c] <- accmBody dag [cond'] newVT funm depm vis; return c ) 
+        liftVM$ VM.while_ (do [c] <- accmBodyLocal dag [cond'] alls funm depm vis; return c ) 
            ( do 
+                --liftIO$ putStrLn "inside"
                 c1 <- accmBodyLocal dag body alls funm depm vis
                 copyAll state_vars c1 -- update state
            )
-        
+        --liftIO$ putStrLn "after" 
         addNode thisNid state_vars -- state_vars
+        --liftIO$ putStrLn "while loop done" 
         return state_vars
     ------------------------------------------------------------------- 
     -- TODO: This one should perform many checks.. 

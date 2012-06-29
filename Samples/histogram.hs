@@ -46,6 +46,9 @@ histImage input = fst $ while cond body (cvn,0)
       cvn = setRegularNesting2D cv n n
       m   = index0 (maxReduce input 0)
 
+histCombined :: Exp (DVector Dim2 Word8) -> Exp (DVector Dim2 Word8) 
+histCombined img = histImage (histogram img)
+
 
 -- a little less a hack..
 testHist =
@@ -73,10 +76,34 @@ testHist =
         
         liftIO$ saveRAW_Gray "hist.raw" img
 
+
+testHistCombined =
+  do  
+    withArBB $ 
+      do 
+        f <- capture histCombined
+      
+        tg <- capture toGray
+      
+        bmp <- liftIO$ loadBMP_RGB "cat.bmp" 
+             
+        v1 <- copyIn bmp
+        gray <- new (Z:.256:.256) 0 
+    
+        r <- new (Z:.256:.256) 0 
+      
+        execute tg v1 gray
+              
+        execute f gray r
+             
+        img <- copyOut r
+        
+        liftIO$ saveRAW_Gray "hist.raw" img
+
    
 
 scale :: Exp Word32 -> Exp Word32 -> Exp Word32 -> Exp USize
 scale w m x = toUsize $ ((toFloat w) / (toFloat m) * (toFloat x))
 
 
-main = testHist
+main = testHistCombined --testHist
