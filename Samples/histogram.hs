@@ -76,7 +76,7 @@ testHist =
         
         liftIO$ saveRAW_Gray "hist.raw" img
 
-
+-- Breaks something
 testHistCombined =
   do  
     withArBB $ 
@@ -106,4 +106,4 @@ scale :: Exp Word32 -> Exp Word32 -> Exp Word32 -> Exp USize
 scale w m x = toUsize $ ((toFloat w) / (toFloat m) * (toFloat x))
 
 
-main = testHistCombined --testHist
+main = testHist
