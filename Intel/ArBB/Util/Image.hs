@@ -5,6 +5,7 @@ module Intel.ArBB.Util.Image ( loadBMP_RGB
                              , loadRAW_RGB 
                              , loadRAW_Gray 
                              , saveBMP_Gray
+                             , saveBMP_RGB
                              , saveRAW_Gray 
                              , toGrayNaive 
                              , toGray ) where 
@@ -70,6 +71,7 @@ loadRAW_Gray fp w h =  withFile fp ReadMode $ \handle -> do
       free ptr 
       return $ DVector vec (fromDim (Dim [w,h])) 
 
+
 saveBMP_Gray :: FilePath -> DVector Dim2 Word8 -> IO () 
 saveBMP_Gray fp img = 
     writeBitmap fp image
@@ -79,6 +81,27 @@ saveBMP_Gray fp img =
         -- Is this the right order again?! 
         Dim [w,h] = toDim$ dVectorShape img
 
+
+combineImage :: Image Pixel8 
+             -> Image Pixel8 
+             -> Image Pixel8              
+             -> Image PixelRGB8
+combineImage img1 img2 img3 =
+    generateImage combiner (imageWidth img1) (imageHeight img1)
+        where combiner x y = PixelRGB8 (pixelAt img1 x y)
+                                       (pixelAt img2 x y)
+                                       (pixelAt img3 x y)
+
+saveBMP_RGB :: FilePath -> DVector Dim3 Word8 -> IO () 
+saveBMP_RGB fp img = 
+    writeBitmap fp image 
+        where 
+          Dim [p,r,c] = toDim (dVectorShape img) 
+          dat = dVectorData img 
+          n = r * c
+          image = combineImage (Image c r (V.slice 0 n dat)) 
+                               (Image c r (V.slice n n dat)) 
+                               (Image c r (V.slice (2*n) n dat))
 
 saveRAW_Gray :: FilePath -> DVector Dim2 Word8 -> IO () 
 saveRAW_Gray fp img = 

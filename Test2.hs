@@ -101,4 +101,12 @@ testToGray=
       liftIO$ saveBMP_Gray "out.bmp" r'
 --       liftIO$ putStrLn $ show r'
       liftIO$ putStrLn "Done!"
+
+
+testWriteBmp = 
+    do 
+      img <- loadBMP_RGB "image2.bmp"
+      saveBMP_RGB "image3.bmp" img
+
+
    
