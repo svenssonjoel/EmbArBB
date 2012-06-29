@@ -24,33 +24,40 @@ import Data.Maybe (fromJust)
 ---------------------------------------------------------------------------- 
 -- Typechecking state
 type VarType      = Map.Map Variable Type 
-
 type NodeIDType   = Map.Map NodeID Type 
+type FunType      = Map.Map Integer ([Type],[Type]) 
 
---TODO: Clear up
-type CheckState' m a = StateT (VarType,NodeIDType) m a 
-type TypeChecker m a = StateT (VarType,NodeIDType) m a
+data TCState = TCState { tcVarType :: VarType 
+                       , tcNodeIDType :: NodeIDType 
+                       , tcFunType    :: FunType }   
+
+emptyTCState = TCState Map.empty Map.empty Map.empty 
+
+
+-- type TypeChecker m a = StateT (VarType,NodeIDType) m a
+type TypeChecker m a = StateT TCState m a 
 
 runTypeChecker :: Monad m => TypeChecker m a -> VarType -> m a 
-runTypeChecker c vt = evalStateT c (vt,Map.empty)
+runTypeChecker c vt = evalStateT c  (TCState vt Map.empty Map.empty) --(vt,Map.empty)
 
-runTypeChecker' :: Monad m => TypeChecker m a -> (VarType,NodeIDType) -> m (a,(VarType,NodeIDType))
-runTypeChecker' c vt = runStateT c vt 
+runTypeChecker' :: Monad m => TypeChecker m a -> (VarType,NodeIDType) -> m (a,TCState) -- m (a,(VarType,NodeIDType))
+runTypeChecker' c vt = runStateT c (TCState (fst vt) (snd vt) Map.empty) 
 
-type CheckState a = CheckState' Identity a 
+
 
 varType :: Monad m => Variable -> TypeChecker m (Maybe Type)
 varType v = 
   do 
-    varsTypes <- liftM fst $ get 
+    varsTypes <- gets tcVarType 
     return $ Map.lookup v varsTypes 
   
 addNodeIDType :: Monad  m => NodeID -> Type -> TypeChecker m () 
 addNodeIDType n t = 
   do 
-    (v,nodts) <- get
+    -- TODO: CLEAN UP
+    (TCState v nodts fm) <- get
     let nodts' = Map.insert n t nodts 
-    put (v,nodts')
+    put (TCState v nodts' fm)
 
 ----------------------------------------------------------------------------
 -- Knowing the types at every node is required to generate the ArBB code. 

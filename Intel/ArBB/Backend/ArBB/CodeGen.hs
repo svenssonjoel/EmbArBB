@@ -44,12 +44,12 @@ runGen' g vt nidv =
     let m = runTypeChecker g vt 
     runStateT m nidv
     
-type AllState = ((VarType,NodeIDType),NodeIDVar)
+type AllState = (TCState,NodeIDVar)
 
 runGenAllState :: Gen a -> AllState -> VM.EmitArbb (a,AllState) 
-runGenAllState g (vt,nv) = 
+runGenAllState g (TCState vt nidt fm ,nv) = 
   do
-    let m = runTypeChecker' g vt 
+    let m = runTypeChecker' g (vt,nidt) 
     ((a,vt'),nt') <- runStateT m nv 
     return (a, (vt',nt'))
     
@@ -76,7 +76,7 @@ addNode nid v =
 getTypeOfNode :: NodeID {- -> NodeIDType -} -> Gen [VM.Type] 
 getTypeOfNode n = 
   do 
-    (_,nidt) <- get 
+    nidt <- gets tcNodeIDType 
     let t = fromJust$ Map.lookup n nidt 
     liftVM $ toArBBType t -- huh ? 
 
@@ -112,7 +112,7 @@ accmBody :: DAG
             -> (Map.Map Integer Integer) -- dependency id to function id 
             -> [(Variable, VM.Variable)] 
             -> VM.EmitArbb [VM.Variable]
-accmBody dag nids vt funm depm is = liftM fst $ doBody nids ((vt,Map.empty),Map.empty) 
+accmBody dag nids vt funm depm is = liftM fst $ doBody nids ((TCState vt Map.empty Map.empty),Map.empty) 
 
   where 
     doBody ::[NodeID] -> AllState -> VM.EmitArbb ([VM.Variable],AllState)
@@ -211,7 +211,7 @@ genBody' dag nid funm depm is =
         return [vs !! i]
     genNode thisNid (NIndex0 n) = 
       do 
-        (vt,nidt) <- get 
+        --(vt,nidt) <- get 
         --liftIO$ putStrLn $ "NIndex0 :" ++ show n
         -- liftIO$ putStrLn $ show nidt
         vs <- genBody' dag n  funm depm is 
@@ -254,7 +254,7 @@ genBody' dag nid funm depm is =
         imm <- liftVM$ typeToArBBLocalVar t 
       
         state  <- lift get -- use both states 
-        (vt,_) <- get 
+        vt <- gets tcVarType 
         liftVM$ VM.if_ cond 
           (do
               c1 <- fst `fmap` runGen' (genBody' dag n2 funm depm is) vt state
@@ -280,10 +280,10 @@ genBody' dag nid funm depm is =
         -- extend the environment.. 
         let vis = is ++ (zip vars state_vars) 
       
-        (vt,notused) <- get   
+        vt <- gets tcVarType   
         let newVT = Map.union vt (Map.fromList (zip vars t))
         --liftIO$ putStrLn $ show newVT
-        put (newVT,notused) -- huh ?
+        modify $ \ s -> s { tcVarType = newVT } --  (newVT,notused) -- huh ?
         -- t'  <- mapM (typecheckNID dag) body -- ensure locals exist in typemap
         -- t'' <- typecheckNID dag cond'
       
