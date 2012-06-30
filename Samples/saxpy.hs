@@ -4,8 +4,8 @@ import qualified Data.Vector.Storable as V
 import Prelude hiding (length)
 
 
-axpy :: Num a => Exp a -> Exp (DVector Dim1 a) -> Exp (DVector Dim1 a) -> Exp (DVector Dim1 a) 
-axpy s x y = (ss*x) + y 
+saxpy :: Num a => Exp a -> Exp (DVector Dim1 a) -> Exp (DVector Dim1 a) -> Exp (DVector Dim1 a) 
+saxpy s x y = (ss*x) + y 
     where 
       ss = constVector s (length x) 
 
@@ -13,7 +13,7 @@ axpy s x y = (ss*x) + y
 testSaxpy = 
   withArBB $ 
   do 
-     f <- capture axpy
+     f <- capture saxpy
      
      x <- copyIn $ mkDVector (V.fromList [1,3..10::Float]) (Z:.5) 
      y <- copyIn $ mkDVector (V.fromList [2,4..10::Float]) (Z:.5) 

@@ -25,7 +25,7 @@ blur image = vec2DToWord8 (res `div`  all16)
 testConv =  
     withArBB $ 
       do 
-        f <- capture conv 
+        f <- capture blur 
      
         img <- liftIO$  loadRAW_Gray "window.raw" 256 256 
    
