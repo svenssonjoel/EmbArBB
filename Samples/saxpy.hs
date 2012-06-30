@@ -10,13 +10,19 @@ saxpy s x y = (ss*x) + y
       ss = constVector s (length x) 
 
 
-testSaxpy = 
+
+
+
+main = 
   withArBB $ 
   do 
      f <- capture saxpy
      
-     x <- copyIn $ mkDVector (V.fromList [1,3..10::Float]) (Z:.5) 
-     y <- copyIn $ mkDVector (V.fromList [2,4..10::Float]) (Z:.5) 
+     let v1 = V.fromList [1,3..10::Float] 
+         v2 = V.fromList [2,4..10::Float] 
+          
+     x <- copyIn $ mkDVector v1 (Z:.5) 
+     y <- copyIn $ mkDVector v2 (Z:.5) 
      
      r1 <- new (Z:.5) 0    
            
@@ -27,5 +33,3 @@ testSaxpy =
      r <- copyOut r1
               
      liftIO$ putStrLn$ show r
-
-main = testSaxpy
