@@ -1,5 +1,6 @@
 import Intel.ArBB 
 import Intel.ArBB.Util.Image
+import qualified Intel.ArbbVM as VM
 
 import qualified Data.Vector.Storable as V 
 import qualified Prelude as P 
@@ -111,12 +112,13 @@ testSobel nIters infile outfile =
         execute convertF imgGray imgFloat 
                 
         execute test imgFloat (imgF1 :- imgF2) 
-        
+        finish
 
         t1 <- liftIO getClockTime        
         loop nIters $ 
              do 
                execute runMag (imgF1 :- imgF2) (imgFloat)
+               finish 
         t2 <- liftIO getClockTime      
 
 
@@ -126,17 +128,20 @@ testSobel nIters infile outfile =
         r <- copyOut imgGray
 
         liftIO $ saveBMP_Gray outfile r  
-        liftIO $ printf "%f\n"  (diffs (diffClockTimes t2 t1))  
+        liftIO $ printf "%f\n"  (diffms (diffClockTimes t2 t1))  
 
+mb a = 1024*1024*a
 main = 
     do 
+      VM.setHeapSize (mb 1024) (mb (8192*2)) 
+    
       args <- getArgs 
       case args of 
         [a,b] -> 
             let iters = read a :: Int 
             in
               do 
-                putStrLn $ "running " ++ show iters ++ " times"
+                -- putStrLn $ "running " ++ show iters ++ " times"
                 testSobel iters b "sobout.bmp" 
         _ -> error "incorrects args" 
 
@@ -146,16 +151,14 @@ loop n action =
       action 
       loop (n-1) action 
 
-
-diffs :: TimeDiff -> Float
-diffs diff | tdYear diff == 0 && 
+diffms :: TimeDiff -> Float
+diffms diff | tdYear diff == 0 && 
               tdMonth diff == 0 && 
               tdDay diff == 0 && 
-              tdHour diff == 0  =  (fromIntegral ps) * 1E-12  + 
-                                   (fromIntegral sec) + 
-                                   (fromIntegral min) * 60
-                                                    
+              tdMin diff == 0 && 
+              tdHour diff == 0  =  (fromIntegral ps) * 1E-9  + 
+                                   (fromIntegral sec) * 1000                
              where 
                ps  = tdPicosec diff 
                sec = tdSec diff
-               min = tdMin diff
+

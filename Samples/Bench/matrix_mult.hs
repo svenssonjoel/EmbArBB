@@ -65,26 +65,25 @@ testMatMul g size  =
 
            
      --liftIO $ putStrLn $ show  (diffUTCTime t2 t1)
-     liftIO $ printf "%f\t%f\n"  (diffs (diffClockTimes t2 t1))
-                                 (diffs (diffClockTimes tc2 tc1))
+     liftIO $ printf "%f\t%f\n"  (diffms (diffClockTimes t2 t1))
+                                 (diffms (diffClockTimes tc2 tc1))
 
     
 
 
 picoToMs p = (fromIntegral p) * 1E-9
 
-diffs :: TimeDiff -> Float
-diffs diff | tdYear diff == 0 && 
+diffms :: TimeDiff -> Float
+diffms diff | tdYear diff == 0 && 
               tdMonth diff == 0 && 
               tdDay diff == 0 && 
-              tdHour diff == 0  =  (fromIntegral ps) * 1E-12  + 
-                                   (fromIntegral sec) + 
-                                   (fromIntegral min) * 60
-                                                    
+              tdMin diff == 0 && 
+              tdHour diff == 0  =  (fromIntegral ps) * 1E-9  + 
+                                   (fromIntegral sec) * 1000                
              where 
                ps  = tdPicosec diff 
                sec = tdSec diff
-               min = tdMin diff
+
 
 main =
  do 
