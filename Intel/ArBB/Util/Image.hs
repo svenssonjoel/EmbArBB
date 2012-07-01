@@ -157,7 +157,7 @@ floatToGray :: Exp (DVector Dim2 Float) -> Exp (DVector Dim2 Word8)
 floatToGray v = (vec2DToWord8 fv)
     where 
       all255 = constVector2D 255 r c
-      fv = v * all255
+      fv = (Lang.map clamp v) * all255
       r = getNRows v
       c = getNCols v 
       

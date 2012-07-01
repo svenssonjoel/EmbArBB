@@ -53,6 +53,12 @@ runGenAllState g (TCState vt nidt fm ,nv) =
     ((a,vt'),nt') <- runStateT m nv 
     return (a, (vt',nt'))
     
+runGenTC :: Gen a -> AllState -> VM.EmitArbb (a,AllState) 
+runGenTC g (tc,nv) = 
+    do 
+      let m = runTypeCheckerTC g tc 
+      ((a,tc'),nt') <- runStateT m nv 
+      return (a,(tc',nt'))
     
     
 ---------------------------------------------------------------------------- 
@@ -90,19 +96,38 @@ getAllState =
     a <- get 
     b <- lift get
     return (a,b)
+---------------------------------------------------------------------------- 
+-- extract a funType map from a funMap
+
+
+--- TODO: This is getting very messy. There are too many maps here 
+--        I need to write down exactly what the perpose of each is and 
+--        see if some can be removed.. 
+extractFunType :: Map.Map Integer (VM.ConvFunction,[Type],[Type]) -> 
+                  Map.Map Integer Integer -> 
+                  Map.Map Integer ([Type],[Type]) 
+extractFunType funm depm = Map.fromAscList keyval'
+    
+    where 
+      keyval' = map conv keyval
+      keyval = Map.assocs depm
+      conv (key,val) = case Map.lookup val funm of 
+                         Nothing -> error$ "extractFunType " ++ show key ++ "\n" ++ show funm ++ "\n" ++ show depm
+                         (Just (_,t1,t2)) -> (key,(t1,t2)) 
+                  
     
 ----------------------------------------------------------------------------
 -- Wrapper 
     
-genBody :: DAG 
-           -> NodeID -- -> NodeIDType 
-           -> VarType 
-           -> (Map.Map Integer (VM.ConvFunction,[Type],[Type]))
-           -> (Map.Map Integer Integer) 
-           -> [(Variable, VM.Variable)] 
-           -> VM.EmitArbb [VM.Variable] 
+--genBody :: DAG 
+--           -> NodeID -- -> NodeIDType 
+--           -> VarType 
+--           -> (Map.Map Integer (VM.ConvFunction,[Type],[Type]))
+--           -> (Map.Map Integer Integer) 
+--           -> [(Variable, VM.Variable)] 
+--           -> VM.EmitArbb [VM.Variable] 
 -- genBody dag nid typem funm is = evalStateT (genBody' dag nid typem funm is) (Map.empty) 
-genBody dag nid  vt funm depm is = runGen (genBody' dag nid funm depm is) vt 
+--genBody dag nid  vt funm depm is = runGen (genBody' dag nid funm depm is) vt 
  
 accmBody :: DAG
             -> [NodeID] 
@@ -112,17 +137,20 @@ accmBody :: DAG
             -> (Map.Map Integer Integer) -- dependency id to function id 
             -> [(Variable, VM.Variable)] 
             -> VM.EmitArbb [VM.Variable]
-accmBody dag nids vt funm depm is = liftM fst $ doBody nids ((TCState vt Map.empty Map.empty),Map.empty) 
+accmBody dag nids vt funm depm is = 
+    let funType = extractFunType funm depm 
+    in liftM fst $ doBody nids ((TCState vt Map.empty funType),Map.empty) 
 
   where 
-    doBody ::[NodeID] -> AllState -> VM.EmitArbb ([VM.Variable],AllState)
+    doBody ::[NodeID] -> (TCState,NodeIDVar) {--AllState--} -> VM.EmitArbb ([VM.Variable],AllState)
     doBody [] m = return ([],m) 
     doBody (x:xs) m =
       do 
           -- liftIO$ putStrLn "doBody"
-          (vs,s) <- runGenAllState (genBody' dag x  funm depm is) m
-          (vss,s') <- doBody xs s
-          return (vs++vss,s')
+          --(vs,s) <- runGenAllState (genBody' dag x  funm depm is) m
+          (vs,as) <- runGenTC (genBody' dag x funm depm is) m 
+          (vss,(tc',s')) <- doBody xs as -- (vt,nidt)
+          return (vs++vss,(tc',s'))
 {-
     doBody ::[NodeID] -> (Map.Map NodeID [VM.Variable]) -> VM.EmitArbb ([VM.Variable],(Map.Map NodeID [VM.Variable]))
     doBody [] m = return ([],m) 

@@ -43,6 +43,8 @@ runTypeChecker c vt = evalStateT c  (TCState vt Map.empty Map.empty) --(vt,Map.e
 runTypeChecker' :: Monad m => TypeChecker m a -> (VarType,NodeIDType) -> m (a,TCState) -- m (a,(VarType,NodeIDType))
 runTypeChecker' c vt = runStateT c (TCState (fst vt) (snd vt) Map.empty) 
 
+runTypeCheckerTC :: Monad m => TypeChecker m a -> TCState -> m (a,TCState) -- m (a,(VarType,NodeIDType))
+runTypeCheckerTC c tc = runStateT c tc  
 
 
 varType :: Monad m => Variable -> TypeChecker m (Maybe Type)
@@ -114,12 +116,24 @@ typecheckNID d n =
     typecheckNode dag (NMap i ns) = -- error "typecheck a map node" 
       do 
         ts <- mapM (typecheckNID dag) ns
+        
+        ft <- gets tcFunType 
+
+        case Map.lookup i ft of 
+          Nothing -> error $ "TypecheckNode: function " ++ show i ++ " does not exist in fun-type map\n" ++ show ft 
+          Just (in_t,[Scalar out_t]) -> 
+              let (Dense d _) = head ts  
+              in return$ Just$ Dense d out_t
+          Just (in_t,out_t) -> 
+              error $ show in_t ++ " " ++ show out_t 
+              
+          
         -- Get typ of i. 
         -- TODO: need types of function here
         -- fm <- gets funMap
         -- For now, cheat 
-        -- let (Dense II _) = head ts
-        return $ Just $ Dense II ArBB.ArbbU32
+        -- 
+        --return $ Just $ Dense II ArBB.ArbbU32
           
     -- TODO: fix for 32-bit archs .. 
     typecheckLiteral (LitInt _)   = return$ Just$ Scalar ArBB.ArbbI64 -- FIX !   
