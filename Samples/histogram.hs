@@ -38,16 +38,19 @@ histImage input = fst $ while cond body (cvn,0)
           where 
             val = index1 input i 
             col = extractCol img i 
-            col' = fill col 255 n 256  
-            n = 256 - (scale 256 m val)  
+            col' = fill col black 0 n 
+            n = 255 - scale 255 m val  
                     
       n = length input 
-      cv = constVector 0 (n*n) 
+      cv = constVector white (n*n) 
       cvn = setRegularNesting2D cv n n
       m   = index0 (maxReduce input 0)
+      black = 0 
+      white = 255
 
 histCombined :: Exp (DVector Dim2 Word8) -> Exp (DVector Dim2 Word8) 
-histCombined img = histImage (histogram img)
+histCombined img = let a = histogram img
+                   in histImage a 
 
 
 -- a little less a hack..
@@ -73,8 +76,9 @@ testHist =
         execute g r1 r2
               
         img <- copyOut r2
-        
-        liftIO$ saveRAW_Gray "hist.raw" img
+        dbg <- copyOut r1
+        liftIO$ saveBMP_Gray "hist.bmp" img
+        liftIO$ putStrLn $ show dbg
 
 -- Breaks something
 testHistCombined =
@@ -98,12 +102,12 @@ testHistCombined =
              
         img <- copyOut r
         
-        liftIO$ saveRAW_Gray "hist.raw" img
+        liftIO$ saveBMP_Gray "hist.bmp" img
 
    
 
 scale :: Exp Word32 -> Exp Word32 -> Exp Word32 -> Exp USize
-scale w m x = toUsize $ ((toFloat w) / (toFloat m) * (toFloat x))
+scale n m x = toUsize $ ((toFloat n) / (toFloat m)) * (toFloat x)
 
 
 main = testHist

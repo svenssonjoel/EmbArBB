@@ -264,7 +264,7 @@ fill :: Exp (DVector Dim1 a)
 fill dst val start end = 
     replace1D dst start n 1 cv
     where 
-      n  = end - start
+      n  = end - start + 1 
       cv = constVector val n 
         
 

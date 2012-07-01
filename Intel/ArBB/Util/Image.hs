@@ -8,11 +8,13 @@ module Intel.ArBB.Util.Image ( loadBMP_RGB
                              , saveBMP_RGB
                              , saveRAW_Gray 
                              , toGrayNaive 
-                             , toGray ) where 
+                             , toGray
+                             , grayToFloat
+                             , floatToGray) where 
 
 
 import Intel.ArBB.Vector 
-import Intel.ArBB.Language
+import Intel.ArBB.Language as Lang
 import Intel.ArBB.Syntax
 import Intel.ArBB.Literal
 
@@ -70,7 +72,6 @@ loadRAW_Gray fp w h =  withFile fp ReadMode $ \handle -> do
       let vec = (V.fromList dat)
       free ptr 
       return $ DVector vec (fromDim (Dim [w,h])) 
-
 
 saveBMP_Gray :: FilePath -> DVector Dim2 Word8 -> IO () 
 saveBMP_Gray fp img = 
@@ -142,8 +143,31 @@ toGray v = vec2DToWord8 $ (redPlane * constVector2D wr w h) +
     wg = mkFloat 0.5870 
     wb = mkFloat 0.1140 
 
+
+-- convert grayscale 0 to 255 to float 0 to 1 
+grayToFloat :: Exp (DVector Dim2 Word8) -> Exp (DVector Dim2 Float) 
+grayToFloat v = fv / all255
+    where 
+      all255 = constVector2D 255 r c 
+      fv     = vec2DToFloat v
+      r = getNRows v 
+      c = getNCols v
+
+floatToGray :: Exp (DVector Dim2 Float) -> Exp (DVector Dim2 Word8) 
+floatToGray v = (vec2DToWord8 fv)
+    where 
+      all255 = constVector2D 255 r c
+      fv = v * all255
+      r = getNRows v
+      c = getNCols v 
+      
+      
+
 -- TODO: Improve on this. At least it definitely should not be defined here. 
 mkFloat :: Float -> Exp Float 
 mkFloat f = E $ Lit (LitFloat f ) 
 
 
+clamp :: Exp Float -> Exp Float
+-- Should be clamp, right ? 
+clamp x = max 0 (min x 1)  
