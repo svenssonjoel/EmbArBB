@@ -47,6 +47,7 @@ ScalarData(Float,ArbbF32,4)
 ScalarData(Double,ArbbF64,8)
 ScalarData(USize,ArbbUsize,(S.sizeOf (undefined :: Word)))
 ScalarData(ISize,ArbbIsize,(S.sizeOf (undefined :: Int)))
+ScalarData(Bool,ArbbBoolean,(S.sizeOf (undefined :: Int))) -- ensure size is right
 
 ----------------------------------------------------------------------------
 -- Data pairs 
