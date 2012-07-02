@@ -541,6 +541,4 @@ MKS(Int8,int8_)
 MKS(Int16,int16_)
 MKS(Int32,int32_)
 MKS(Int64,int64_)
-
-
-                         
+MKS(Bool,bool_) 
