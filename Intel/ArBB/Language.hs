@@ -672,15 +672,15 @@ minScanSeg :: Num a => Exp (NVector a) -> Exp (NVector a)
 minScanSeg (E v) = E $ Op MinScan [v,zero,zero]
     where (E zero) = 0 :: Exp USize
 
-andScanSeg :: Num a => Exp (NVector a) -> Exp (NVector a) 
+andScanSeg :: Exp (NVector Bool) -> Exp (NVector Bool) 
 andScanSeg (E v) = E $ Op AndScan [v,zero,zero]
     where (E zero) = 0 :: Exp USize
 
-iorScanSeg :: Num a => Exp (NVector a) -> Exp (NVector a) 
+iorScanSeg :: Exp (NVector Bool) -> Exp (NVector Bool) 
 iorScanSeg (E v) = E $ Op IorScan [v,zero,zero]
     where (E zero) = 0 :: Exp USize
 
-xorScanSeg :: Num a => Exp (NVector a) -> Exp (NVector a) 
+xorScanSeg :: Exp (NVector Bool) -> Exp (NVector Bool) 
 xorScanSeg (E v) = E $ Op XorScan [v,zero,zero]
     where (E zero) = 0 :: Exp USize
  
