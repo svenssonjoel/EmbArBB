@@ -44,8 +44,10 @@ testMatMul g size  =
      m2 <- copyIn $ mkDVector (V.fromList (take (size*size) (P.map double2Float rs2))) (Z:.size:.size) 
      r1 <- new  (Z:.size:.size) 0
   
+     -- warmup
      execute f (m1 :- m2)  r1      
-     
+     finish      
+
      t1 <- liftIO getClockTime 
      execute f (m1 :- m2)  r1      
      finish 

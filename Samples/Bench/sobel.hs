@@ -35,21 +35,34 @@ coeffs :: [Exp Float]
 coeffs = [-1,-2,-1,1,2,1] 
 
 
-gx :: Exp Float -> Exp Float  
-gx x = foldl (+) 0 
+gx' :: Exp Float -> Exp Float  
+gx' x = foldl (+) 0 
      $ P.zipWith (*) [getNeighbor2D x a b
                      | (a,b) <- s1] coeffs 
 
-gy :: Exp Float -> Exp Float 
-gy x = foldl (+) 0 
+gy' :: Exp Float -> Exp Float 
+gy' x = foldl (+) 0 
      $ P.zipWith (*) [getNeighbor2D x a b
                      | (a,b) <- s2] coeffs 
+
+
+gx :: Exp (DVector Dim2 Float) -> Exp (DVector Dim2 Float)  
+gx  = mapStencil (Stencil [-1,0,1
+                          ,-2,0,2
+                          ,-1,0,1] (Z:.3:.3)) 
+
+gy :: Exp (DVector Dim2 Float) -> Exp (DVector Dim2 Float) 
+gy = mapStencil (Stencil [ 1, 2, 1
+                         , 0, 0, 0
+                         ,-1,-2,-1] (Z:.3:.3))
+
+
 
 
 test :: Exp (DVector Dim2 Float) -> 
         (Exp (DVector Dim2 Float), Exp (DVector Dim2 Float))
         
-test v = (map gx v,map gy v)
+test v = (gx v,gy v)
 
 
 
@@ -110,16 +123,26 @@ testSobel nIters infile outfile =
 
         execute convertGray imgColor imgGray 
         execute convertF imgGray imgFloat 
-                
+        
+        -- warmup
         execute test imgFloat (imgF1 :- imgF2) 
         finish
 
         t1 <- liftIO getClockTime        
-        loop nIters $ 
-             do 
-               execute runMag (imgF1 :- imgF2) (imgFloat)
-               finish 
+        execute test imgFloat (imgF1 :- imgF2) 
+        finish
         t2 <- liftIO getClockTime      
+
+        -- Warmup
+        --execute runMag (imgF1 :- imgF2) (imgFloat)
+        --finish
+
+        --t1 <- liftIO getClockTime        
+        --loop nIters $ 
+        --    do 
+        execute runMag (imgF1 :- imgF2) (imgFloat)
+        --       finish 
+        --t2 <- liftIO getClockTime      
 
 
         execute convertG imgFloat imgGray

@@ -644,15 +644,15 @@ minReduceSeg:: Num a => Exp (NVector a) -> Exp (DVector Dim1 a)
 minReduceSeg (E v) = E $ Op MinReduce [v,zero]
     where (E zero) = 0 :: Exp USize
 
-andReduceSeg:: Num a => Exp (NVector a) -> Exp (DVector Dim1 a)
+andReduceSeg :: Exp (NVector Bool) -> Exp (DVector Dim1 Bool)
 andReduceSeg (E v) = E $ Op AndReduce [v,zero]
     where (E zero) = 0 :: Exp USize
 
-iorReduceSeg:: Num a => Exp (NVector a) -> Exp (DVector Dim1 a)
+iorReduceSeg :: Exp (NVector Bool) -> Exp (DVector Dim1 Bool)
 iorReduceSeg (E v) = E $ Op IorReduce [v,zero]
     where (E zero) = 0 :: Exp USize
 
-xorReduceSeg:: Num a => Exp (NVector a) -> Exp (DVector Dim1 a)
+xorReduceSeg :: Exp (NVector Bool) -> Exp (DVector Dim1 Bool)
 xorReduceSeg (E v) = E $ Op XorReduce [v,zero]
     where (E zero) = 0 :: Exp USize
 

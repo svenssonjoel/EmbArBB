@@ -109,4 +109,28 @@ testWriteBmp =
       saveBMP_RGB "image3.bmp" img
 
 
-   
+segPrefixSum :: Exp (DVector Dim1 Float) 
+              -> Exp (DVector Dim1 USize) 
+               -> Exp (DVector Dim1 Float)
+segPrefixSum v1 v2  = flattenSeg $ addScanSeg (applyNesting v1 v2 1)
+
+
+
+testSegPrefixSum =
+  withArBB $
+    do
+     f <- capture segPrefixSum
+
+     let v1 = V.fromList [1,3,5,7,9,11,13,15]
+         v2 = V.fromList [4,4]
+
+     v3 <- copyIn $ mkDVector v1 (Z :. 8)
+     v4 <- copyIn $ mkDVector v2 (Z :. 2)
+
+     r1 <- new (Z :. 8) 0
+
+     execute f (v3 :- v4) r1
+
+     r <- copyOut r1
+
+     liftIO$ putStrLn$ show r
