@@ -13,6 +13,7 @@ import qualified Intel.ArbbVM.Convenience as VM
 
 import Intel.ArBB.Vector
 import Intel.ArBB.Data.Int
+import Intel.ArBB.Data.Boolean
 
 
 import Intel.ArBB
@@ -134,3 +135,23 @@ testSegPrefixSum =
      r <- copyOut r1
 
      liftIO$ putStrLn$ show r
+
+
+testBool = 
+    withArBB $ 
+    do 
+      f <- capture bt
+
+      let v1 = V.fromList [B True,B True,B True,B True,B True,B True,B True,B True] 
+      
+      v <- copyIn $ mkDVector v1 (Z:.8) 
+      r1 <- new (Z:.8) (B False)
+      
+      execute f v r1 
+           
+      r <- copyOut r1
+
+      liftIO$ putStrLn$ show r 
+    where
+      bt :: Exp (DVector Dim1 Boolean) -> Exp (DVector Dim1 Boolean)
+      bt v = andScan v 0 0 

@@ -52,6 +52,7 @@ Library
                  , Intel.ArBB.Types
                  , Intel.ArBB.Data
                  , Intel.ArBB.Data.Int
+		 , Intel.ArBB.Data.Boolean
                  , Intel.ArBB.IsScalar
                  , Intel.ArBB
                  , Intel.ArBB.Backend.ArBB.CodeGen

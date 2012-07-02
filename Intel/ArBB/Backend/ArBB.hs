@@ -21,6 +21,7 @@ import           Intel.ArBB.Op
 
 import           Intel.ArBB.Data
 import           Intel.ArBB.Data.Int 
+import           Intel.ArBB.Data.Boolean
 import           Intel.ArBB.Vector
 import           Intel.ArBB.IsScalar
 import           Intel.ArBB.ReifyableType
@@ -541,4 +542,12 @@ MKS(Int8,int8_)
 MKS(Int16,int16_)
 MKS(Int32,int32_)
 MKS(Int64,int64_)
-MKS(Bool,bool_) 
+
+
+instance Scalar Boolean where 
+    mkScalar a = 
+        do 
+          v <- liftVM $ VM.bool_ (unBoolean a) 
+          u <- addVariable v 
+          return $ BEScalar u 
+

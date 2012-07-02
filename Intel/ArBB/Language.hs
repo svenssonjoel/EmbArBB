@@ -13,6 +13,7 @@ import Intel.ArBB.Literal
 import Intel.ArBB.Variable
 import Intel.ArBB.Op
 import Intel.ArBB.Data.Int 
+import Intel.ArBB.Data.Boolean
 import Intel.ArBB.Data
 
 -- import Intel.ArBB.Backend.ArBB
@@ -164,17 +165,17 @@ minReduce (E vec) (E lev) =
   E $ Op MinReduce [vec,lev]
 
 -- | reduce along a specified level 
-andReduce :: Exp (DVector (t:.Int) Bool) -> Exp USize -> Exp (DVector t Bool) 
+andReduce :: Exp (DVector (t:.Int) Boolean) -> Exp USize -> Exp (DVector t Boolean) 
 andReduce (E vec) (E lev) = 
   E $ Op AndReduce [vec,lev]
 
 -- | reduce along a specified level 
-iorReduce :: Exp (DVector (t:.Int) Bool) -> Exp USize -> Exp (DVector t Bool) 
+iorReduce :: Exp (DVector (t:.Int) Boolean) -> Exp USize -> Exp (DVector t Boolean) 
 iorReduce (E vec) (E lev) = 
   E $ Op IorReduce [vec,lev]
 
 -- | reduce along a specified level 
-xorReduce :: Exp (DVector (t:.Int) Bool) -> Exp USize -> Exp (DVector t Bool) 
+xorReduce :: Exp (DVector (t:.Int) Boolean) -> Exp USize -> Exp (DVector t Boolean) 
 xorReduce (E vec) (E lev) = 
   E $ Op XorReduce [vec,lev]
 
@@ -310,26 +311,26 @@ minScan (E vec) (E dir) (E lev) =
   
 
 -- | Scan across a specified level and direction over a dense container
-andScan :: (Exp (DVector t Bool)) 
+andScan :: (Exp (DVector t Boolean)) 
            -> Exp USize 
            -> Exp USize 
-           -> Exp (DVector t Bool)
+           -> Exp (DVector t Boolean)
 andScan (E vec) (E dir) (E lev) = 
   E $ Op AndScan [vec,dir,lev] 
   
 -- | Scan across a specified level and direction over a dense container
-iorScan ::  (Exp (DVector t Bool)) 
+iorScan ::  (Exp (DVector t Boolean)) 
            -> Exp USize 
            -> Exp USize 
-           -> Exp (DVector t Bool)
+           -> Exp (DVector t Boolean)
 iorScan (E vec) (E dir) (E lev) = 
   E $ Op IorScan [vec,dir,lev] 
   
 -- | Scan across a specified level and direction over a dense container
-xorScan ::  (Exp (DVector t Bool)) 
+xorScan ::  (Exp (DVector t Boolean)) 
            -> Exp USize 
            -> Exp USize 
-           -> Exp (DVector t Bool)
+           -> Exp (DVector t Boolean)
 xorScan (E vec) (E dir) (E lev) = 
   E $ Op XorScan [vec,dir,lev] 
 
@@ -432,13 +433,13 @@ scatter3D (E inp) (E pages) (E rows) (E cols) (E into)
 
 -- | compacts data in a container using a mask container. 
 --   Works for nested and dense containers.
-pack :: (IsVector v a, IsVector v Bool) 
-      => Exp (v a) -> Exp (v Bool) -> Exp (v a) 
+pack :: (IsVector v a, IsVector v Boolean) 
+      => Exp (v a) -> Exp (v Boolean) -> Exp (v a) 
 pack (E v) (E b) = E $ Op Pack [v,b]
 
 -- | unpack a vector. 
-unpack :: (IsVector v a, IsVector v Bool) 
-        => Exp (v a) -> Exp (v Bool) -> Exp a -> Exp (v a) 
+unpack :: (IsVector v a, IsVector v Boolean) 
+        => Exp (v a) -> Exp (v Boolean) -> Exp a -> Exp (v a) 
 unpack (E v) (E b) (E a) = E $ Op Unpack [v,b,a]
 
 -- | repeat elements of a container
@@ -644,15 +645,15 @@ minReduceSeg:: Num a => Exp (NVector a) -> Exp (DVector Dim1 a)
 minReduceSeg (E v) = E $ Op MinReduce [v,zero]
     where (E zero) = 0 :: Exp USize
 
-andReduceSeg :: Exp (NVector Bool) -> Exp (DVector Dim1 Bool)
+andReduceSeg :: Exp (NVector Boolean) -> Exp (DVector Dim1 Boolean)
 andReduceSeg (E v) = E $ Op AndReduce [v,zero]
     where (E zero) = 0 :: Exp USize
 
-iorReduceSeg :: Exp (NVector Bool) -> Exp (DVector Dim1 Bool)
+iorReduceSeg :: Exp (NVector Boolean) -> Exp (DVector Dim1 Boolean)
 iorReduceSeg (E v) = E $ Op IorReduce [v,zero]
     where (E zero) = 0 :: Exp USize
 
-xorReduceSeg :: Exp (NVector Bool) -> Exp (DVector Dim1 Bool)
+xorReduceSeg :: Exp (NVector Boolean) -> Exp (DVector Dim1 Boolean)
 xorReduceSeg (E v) = E $ Op XorReduce [v,zero]
     where (E zero) = 0 :: Exp USize
 
@@ -672,15 +673,15 @@ minScanSeg :: Num a => Exp (NVector a) -> Exp (NVector a)
 minScanSeg (E v) = E $ Op MinScan [v,zero,zero]
     where (E zero) = 0 :: Exp USize
 
-andScanSeg :: Exp (NVector Bool) -> Exp (NVector Bool) 
+andScanSeg :: Exp (NVector Boolean) -> Exp (NVector Boolean) 
 andScanSeg (E v) = E $ Op AndScan [v,zero,zero]
     where (E zero) = 0 :: Exp USize
 
-iorScanSeg :: Exp (NVector Bool) -> Exp (NVector Bool) 
+iorScanSeg :: Exp (NVector Boolean) -> Exp (NVector Boolean) 
 iorScanSeg (E v) = E $ Op IorScan [v,zero,zero]
     where (E zero) = 0 :: Exp USize
 
-xorScanSeg :: Exp (NVector Bool) -> Exp (NVector Bool) 
+xorScanSeg :: Exp (NVector Boolean) -> Exp (NVector Boolean) 
 xorScanSeg (E v) = E $ Op XorScan [v,zero,zero]
     where (E zero) = 0 :: Exp USize
  
@@ -849,14 +850,14 @@ getEltCoord () = (fst3 e, snd3 e, trd3 e)
 ----------------------------------------------------------------------------
 -- conditional 
 
-ifThenElse :: (Exp Bool) -> (Exp a) -> (Exp a) -> (Exp a)
+ifThenElse :: (Exp Boolean) -> (Exp a) -> (Exp a) -> (Exp a)
 ifThenElse (E b) (E e1) (E e2) = E $ If b e1 e2
 
 
 ----------------------------------------------------------------------------
 --  While Loops 
 while :: LoopState state 
-          => (state -> Exp Bool)    
+          => (state -> Exp Boolean)    
           -> (state -> state) 
           -> state 
           -> state 
@@ -872,7 +873,7 @@ while cond f state = loopFinalState loop
 --       Then [LExp] will not cut it anymore.
 class LoopState a where 
   loopState :: a -> [Expr]           -- TODO: Again. will structure be needed?
-  loopCond :: (a -> Exp Bool) -> [Expr] -> Expr
+  loopCond :: (a -> Exp Boolean) -> [Expr] -> Expr
   loopBody :: (a -> a) -> [Expr] -> [Expr] 
 --   loopVars :: a -> (a,[Variable])
   loopFinalState :: Exp s -> a 
@@ -1117,7 +1118,7 @@ instance (Num (Exp a), Bits a) => Bits (Exp a) where
 ---------------------------------------------------------------------------- 
 -- boolean ops 
 
-(<*) :: Ord a => Exp a -> Exp a -> Exp Bool
+(<*) :: Ord a => Exp a -> Exp a -> Exp Boolean
 (<*) (E a) (E b) = E $ Op Less [a,b]
 
 

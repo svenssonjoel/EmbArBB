@@ -12,6 +12,8 @@ import Intel.ArBB.Syntax
 import Intel.ArBB.Backend.Vector
 import Intel.ArBB.Backend.Scalar
 import Intel.ArBB.Vector 
+import Intel.ArBB.Data.Int
+import Intel.ArBB.Data.Boolean
 
 import Data.Word
 import Data.Int
@@ -63,6 +65,7 @@ ScalarOut(Word32)
 ScalarOut(Word64)
 ScalarOut(Float)
 ScalarOut(Double)
+ScalarOut(Boolean)
 
 type instance FunOut (a,b) = FunOut a :- FunOut b 
 type instance FunOut (a,b,c) = FunOut a :- FunOut b :- FunOut c 
@@ -92,6 +95,7 @@ ScalarIn(Word32,Exp b)
 ScalarIn(Word64,Exp b)
 ScalarIn(Float,Exp b)
 ScalarIn(Double,Exp b)
+ScalarIn(Boolean,Exp b)
 
 ScalarIn(Int,())
 ScalarIn(Int8,())
@@ -105,3 +109,4 @@ ScalarIn(Word32,())
 ScalarIn(Word64,())
 ScalarIn(Float,())
 ScalarIn(Double,())
+ScalarIn(Boolean,())

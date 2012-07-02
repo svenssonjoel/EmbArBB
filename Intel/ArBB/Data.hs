@@ -3,7 +3,7 @@
 {-# LANGUAGE CPP, 
              FlexibleInstances, 
              FlexibleContexts,
-             ScopedTypeVariables #-}
+             ScopedTypeVariables  #-}
 module Intel.ArBB.Data where 
 
 import Intel.ArBB.Types 
@@ -14,6 +14,7 @@ import qualified Intel.ArbbVM as VM
 import Data.Word 
 import Data.Int 
 import Intel.ArBB.Data.Int
+import Intel.ArBB.Data.Boolean
 
 import qualified Foreign.Storable as S 
 
@@ -25,7 +26,7 @@ class Data a where
 ----------------------------------------------------------------------------
 -- Base Data Types  
   
-  
+
 #define ScalarData(ht,arbbt,s)   \
   instance Data (ht) where    {  \
      typeOf _ = Scalar VM.arbbt; \
@@ -47,7 +48,7 @@ ScalarData(Float,ArbbF32,4)
 ScalarData(Double,ArbbF64,8)
 ScalarData(USize,ArbbUsize,(S.sizeOf (undefined :: Word)))
 ScalarData(ISize,ArbbIsize,(S.sizeOf (undefined :: Int)))
-ScalarData(Bool,ArbbBoolean,(S.sizeOf (undefined :: Int))) -- ensure size is right
+ScalarData(Boolean,ArbbBoolean,4) -- ensure size is right
 
 ----------------------------------------------------------------------------
 -- Data pairs 
