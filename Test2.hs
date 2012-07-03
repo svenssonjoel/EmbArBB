@@ -155,3 +155,25 @@ testBool =
     where
       bt :: Exp (DVector Dim1 Boolean) -> Exp (DVector Dim1 Boolean)
       bt v = andScan v 0 0 
+
+
+
+
+testSort =
+    withArBB $ 
+    do 
+      f <- capture s
+
+      let v1 = V.fromList [1,4,3,5,7,9,8,2,6] 
+      
+      v <- copyIn $ mkDVector v1 (Z:.8) 
+      r1 <- new (Z:.8) 0
+      
+      execute f v r1 
+           
+      r <- copyOut r1
+
+      liftIO$ putStrLn$ show r 
+    where
+      s :: Exp (DVector Dim1 Float) -> Exp (DVector Dim1 Float)
+      s v = sort v 0
