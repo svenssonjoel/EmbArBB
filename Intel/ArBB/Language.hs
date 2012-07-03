@@ -2,7 +2,9 @@
              FlexibleInstances, 
              FlexibleContexts, 
              UndecidableInstances,
-             ScopedTypeVariables #-} 
+             OverlappingInstances,
+             ScopedTypeVariables, 
+             CPP #-} 
 
 {- 2012 Joel Svensson -} 
 module Intel.ArBB.Language where 
@@ -44,7 +46,6 @@ constVector2D :: Exp a -> Exp USize -> Exp USize -> Exp (DVector Dim2 a)
 constVector2D a w h = ss'
     where ss = constVector a w 
           ss' = repeatRow ss h 
-    
 
 ----------------------------------------------------------------------------
 -- Specific casts
@@ -936,131 +937,52 @@ instance Show (Exp a) where
 instance Eq (Exp a) where 
   (==) = undefined -- compare labels here
 
-instance Num (Exp Int8) where 
-  (+) (E a) (E b) = E $ Op Add [a,b]
-  (*) (E a) (E b) = E $ Op Mul [a,b]
-  (-) (E a) (E b) = E $ Op Sub [a,b]
+#define NumScal(t,constr)                  \
+instance Num t where {                     \
+  (+) (E a) (E b) = E $ Op Add [a,b];      \
+  (*) (E a) (E b) = E $ Op Mul [a,b];      \
+  (-) (E a) (E b) = E $ Op Sub [a,b];      \
+  abs = undefined;                         \
+  signum = undefined;                      \
+  fromInteger a = E $ Lit $ constr $ fromInteger a }\
 
-  abs = undefined 
-  signum = undefined 
-  
-  fromInteger a = E $ Lit $ LitInt8 $ fromInteger a
+NumScal((Exp Int8),LitInt8)
+NumScal((Exp Int16),LitInt16)
+NumScal((Exp Int32),LitInt32)
+NumScal((Exp Int64),LitInt64)
 
-instance Num (Exp Int16) where 
-  (+) (E a) (E b) = E $ Op Add [a,b]
-  (*) (E a) (E b) = E $ Op Mul [a,b]
-  (-) (E a) (E b) = E $ Op Sub [a,b]
+NumScal((Exp Word8),LitWord8)
+NumScal((Exp Word16),LitWord16)
+NumScal((Exp Word32),LitWord32)
+NumScal((Exp Word64),LitWord64)
 
-  abs = undefined 
-  signum = undefined 
-  
-  fromInteger a = E $ Lit $ LitInt16 $ fromInteger a
+NumScal((Exp ISize),LitISize)
+NumScal((Exp USize),LitUSize)
 
-instance Num (Exp Int32) where 
-  (+) (E a) (E b) = E $ Op Add [a,b]
-  (*) (E a) (E b) = E $ Op Mul [a,b]
-  (-) (E a) (E b) = E $ Op Sub [a,b]
+NumScal((Exp Float),LitFloat) 
 
-  abs = undefined 
-  signum = undefined 
-  
-  fromInteger a = E $ Lit  $ LitInt32 $ fromInteger a
+NumScal((Exp Double),LitDouble)
 
-instance Num (Exp Int64) where 
-  (+) (E a) (E b) = E $ Op Add [a,b]
-  (*) (E a) (E b) = E $ Op Mul [a,b]
-  (-) (E a) (E b) = E $ Op Sub [a,b]
+----------------------------------------------------------------------------
+--  Integral 
 
-  abs = undefined 
-  signum = undefined 
-  
-  fromInteger a = E $ Lit $ LitInt64 $ fromInteger a
+instance (Real (Exp a), Enum (Exp a), Integral a) => Integral (Exp a) where 
+    div (E a) (E b) = E $ Op Div [a,b]
+    quot = error "quot: not yet implemented"  
+    rem = error "rem: not yet implemented"   
+    mod (E a) (E b) = E $ Op Mod [a,b] 
+    quotRem = error "quotrem: not yet implemented"  
+    divMod = error "divmod: not yet implemented"  
+    toInteger = error "toInteger: not yet implemented"  
 
-instance Num (Exp Word8) where 
-  (+) (E a) (E b) = E $ Op Add [a,b]
-  (*) (E a) (E b) = E $ Op Mul [a,b]
-  (-) (E a) (E b) = E $ Op Sub [a,b]
+--cheats 
+instance Enum a => Enum (Exp a) where 
+    toEnum = error "toEnum: NotImplemented" 
+    fromEnum = error "fromEnum: NotImplemented" 
+    
 
-  abs = undefined 
-  signum = undefined 
-  
-  fromInteger a = E $ Lit $ LitWord8 $ fromInteger a
-
-instance Num (Exp Word16) where 
-  (+) (E a) (E b) = E $ Op Add [a,b]
-  (*) (E a) (E b) = E $ Op Mul [a,b]
-  (-) (E a) (E b) = E $ Op Sub [a,b]
-
-  abs = undefined 
-  signum = undefined 
-  
-  fromInteger a = E $ Lit $ LitWord16 $ fromInteger a
-
-
-instance Num (Exp Word32) where 
-  (+) (E a) (E b) = E $ Op Add [a,b]
-  (*) (E a) (E b) = E $ Op Mul [a,b]
-  (-) (E a) (E b) = E $ Op Sub [a,b]
-
-  abs = undefined 
-  signum = undefined 
-  
-  fromInteger a = E $ Lit  $ LitWord32 $ fromInteger a
-  
-instance Num (Exp Word64) where 
-  (+) (E a) (E b) = E $ Op Add [a,b]
-  (*) (E a) (E b) = E $ Op Mul [a,b]
-  (-) (E a) (E b) = E $ Op Sub [a,b]
-
-  abs = undefined 
-  signum = undefined 
-  
-  fromInteger a = E $ Lit $ LitWord64 $ fromInteger a
-
-
-instance Num (Exp ISize) where 
-  (+) (E a) (E b) = E $ Op Add [a,b]
-  (*) (E a) (E b) = E $ Op Mul [a,b]
-  (-) (E a) (E b) = E $ Op Sub [a,b]
-
-  abs = undefined 
-  signum = undefined 
-  
-  fromInteger a = E $ Lit $ LitISize $ fromInteger a
-  
-  
-instance Num (Exp USize) where 
-  (+) (E a) (E b) = E $ Op Add [a,b]
-  (*) (E a) (E b) = E $ Op Mul [a,b]
-  (-) (E a) (E b) = E $ Op Sub [a,b]
-
-  abs = undefined 
-  signum = undefined 
-  
-  fromInteger a = E $ Lit $ LitUSize $ fromInteger a
-
-
-instance Num (Exp Float) where 
-  (+) (E a) (E b) = E $ Op Add [a,b]
-  (*) (E a) (E b) = E $ Op Mul [a,b]
-  (-) (E a) (E b) = E $ Op Sub [a,b]
-
-  abs = undefined 
-  signum = undefined 
-  
-  fromInteger a = E $ Lit $ LitFloat $ (fromInteger a :: Float)
-
-instance Num (Exp Double) where 
-  (+) (E a) (E b) = E $ Op Add [a,b]
-  (*) (E a) (E b) = E $ Op Mul [a,b]
-  (-) (E a) (E b) = E $ Op Sub [a,b]
-
-  abs = undefined 
-  signum = undefined 
-  
-  fromInteger a = E $ Lit $ LitDouble $ fromInteger a
-
-
+instance (Num (Exp a), Ord (Exp a)) =>  Real (Exp a) where 
+    toRational = error "toRational: Not Implemented" 
 ----------------------------------------------------------------------------
 -- 
 
@@ -1081,9 +1003,12 @@ instance Fractional a => Fractional (Exp (DVector t a)) where
     fromRational = undefined 
 
 
-instance Num a => Ord  (Exp (DVector t a)) -- Cheat
-instance Enum (Exp (DVector t a)) -- Cheat
-instance Num a => Real (Exp (DVector t a)) -- Cheat 
+instance Num a => Ord (Exp (DVector t a)) -- Cheat
+instance Enum (Exp (DVector t a)) where 
+    toEnum = error "toEnum: Not Implemented" 
+    fromEnum = error "fromEnum: Not Implemented" 
+instance Num a => Real (Exp (DVector t a)) where 
+    toRational = error "toRational: NotImplemented" 
     
 
 -- TODO: implement

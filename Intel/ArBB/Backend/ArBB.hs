@@ -215,7 +215,7 @@ execute (Function fid) a b =
           
           liftVM$ VM.execute_ f outs ins 
          
-          return ()
+          -- return ()
 
 
 
