@@ -626,12 +626,21 @@ setRegularNesting2D (E v) (E h) (E w) = E $ Op SetRegularNesting [v,h,w]
 setRegularNesting3D :: Exp (DVector Dim1 a) -> Exp USize -> Exp USize -> Exp USize -> Exp (DVector Dim3 a) 
 setRegularNesting3D (E v) (E h) (E w) (E p) = E $ Op SetRegularNesting [v,h,w,p] 
 
--- Will only support the USize nesting descriptors for now. 
-applyNesting :: Exp (DVector Dim1 a) -> Exp (DVector Dim1 USize) -> Exp USize -> Exp (NVector a)
-applyNesting (E v) (E u) (E nt) = E $ Op ApplyNesting [v,u,nt] 
+----------------------------------------------------------------------------
+data NestingDescriptorType = NDLengths
+                           | NDOffsets 
 
-getNesting :: Exp (NVector a) -> Exp USize -> Exp (DVector Dim1 USize) 
-getNesting (E v) (E n) = E $ Op GetNesting [v,n]
+ndToVal :: NestingDescriptorType -> Expr  
+ndToVal NDLengths = unE (1 :: Exp USize)  
+ndToVal NDOffsets = unE (2 :: Exp USize) 
+----------------------------------------------------------------------------
+
+-- Will only support the USize nesting descriptors for now. 
+applyNesting :: NestingDescriptorType -> Exp (DVector Dim1 a) -> Exp (DVector Dim1 USize) -> Exp (NVector a)
+applyNesting nd (E v) (E u) = E $ Op ApplyNesting [v,u,ndToVal nd] 
+
+getNesting :: NestingDescriptorType -> Exp (NVector a) -> Exp (DVector Dim1 USize) 
+getNesting nd (E v)  = E $ Op GetNesting [v,ndToVal nd]
 
 copyNesting :: Exp (DVector Dim1 a) -> Exp (NVector b) -> Exp (NVector a) 
 copyNesting (E v) (E n) = E $ Op CopyNesting [v,n]

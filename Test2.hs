@@ -197,3 +197,38 @@ testDistr =
     where
       d :: Exp (DVector Dim1 Float) -> Exp (DVector Dim1 USize) -> Exp (DVector Dim1 Float)
       d v0 v1  = distribute2 v0 v1
+
+smvm :: Exp (DVector Dim1 Float) 
+     -> Exp (DVector Dim1 USize) 
+     -> Exp (DVector Dim1 USize)
+     -> Exp (DVector Dim1 Float) 
+     -> Exp (DVector Dim1 Float)
+smvm mval cidx offsets vec = addReduceSeg nps
+  where
+    ps = mval * gather1D vec cidx 0
+    nps = applyNesting NDLengths ps offsets
+
+testDist2 =
+  withArBB $
+    do
+     f <- capture smvm
+
+     let mval = V.fromList [1..9]
+         cidx = V.fromList [1,0,2,3,1,4,1,4,2]
+         -- rowptr = V.fromList [0,1,4,6,8,9]
+         offsets = V.fromList [1,3,2,2,1]
+         vec = V.fromList [1..5]
+
+     mval1 <- copyIn $ mkDVector mval (Z :. 9)
+     cidx1 <- copyIn $ mkDVector cidx (Z :. 9)
+     -- rowptr1 <- copyIn $ mkDVector rowptr (Z :. 6)
+     offsets1 <- copyIn $ mkDVector offsets (Z :. 5)
+     vec1 <- copyIn $ mkDVector vec (Z :. 5)
+
+     r1 <- new (Z :. 5) 0
+
+     execute f (mval1 :- cidx1 :- offsets1 :- vec1) r1
+
+     r <- copyOut r1
+
+     liftIO$ putStrLn$ show r
