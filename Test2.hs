@@ -198,36 +198,38 @@ testDistr =
       d :: Exp (DVector Dim1 Float) -> Exp (DVector Dim1 USize) -> Exp (DVector Dim1 Float)
       d v0 v1  = distribute2 v0 v1
 
+
+-- smvm :: EV1 Int32 -> EV1 USize -> EV1 USize -> EV1 Int32 -> EV1 Int32
 smvm :: Exp (DVector Dim1 Float) 
      -> Exp (DVector Dim1 USize) 
      -> Exp (DVector Dim1 USize)
      -> Exp (DVector Dim1 Float) 
      -> Exp (DVector Dim1 Float)
-smvm mval cidx offsets vec = addReduceSeg nps
+smvm mval cidx os vec = addReduceSeg nps
   where
     ps = mval * gather1D vec cidx 0
-    nps = applyNesting NDLengths ps offsets
+    nps = applyNesting NDOffsets ps os
+
 
 testDist2 =
   withArBB $
     do
      f <- capture smvm
 
+     -- mval, cidx, rowptr is the 3-array compressed sparse row rep. (apparently)
      let mval = V.fromList [1..9]
          cidx = V.fromList [1,0,2,3,1,4,1,4,2]
-         -- rowptr = V.fromList [0,1,4,6,8,9]
-         offsets = V.fromList [1,3,2,2,1]
+         rowptr = V.fromList [0,1,4,6,8]
          vec = V.fromList [1..5]
 
      mval1 <- copyIn $ mkDVector mval (Z :. 9)
      cidx1 <- copyIn $ mkDVector cidx (Z :. 9)
-     -- rowptr1 <- copyIn $ mkDVector rowptr (Z :. 6)
-     offsets1 <- copyIn $ mkDVector offsets (Z :. 5)
+     rowptr1 <- copyIn $ mkDVector rowptr (Z :. 5)
      vec1 <- copyIn $ mkDVector vec (Z :. 5)
 
      r1 <- new (Z :. 5) 0
 
-     execute f (mval1 :- cidx1 :- offsets1 :- vec1) r1
+     execute f (mval1 :- cidx1 :- rowptr1 :- vec1) r1
 
      r <- copyOut r1
 
