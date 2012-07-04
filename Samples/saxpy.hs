@@ -7,7 +7,7 @@ import Prelude hiding (length)
 saxpy :: Num a => Exp a -> Exp (DVector Dim1 a) -> Exp (DVector Dim1 a) -> Exp (DVector Dim1 a) 
 saxpy s x y = (ss*x) + y 
     where 
-      ss = constVector s (length x) 
+      ss = constVector (length x) s 
 
 
 

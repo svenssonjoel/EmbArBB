@@ -118,20 +118,20 @@ saveRAW_Gray fp img =
 -- EmbArBB image manip. functions
 
 toGrayNaive :: Exp (DVector Dim3 Word8) -> Exp (DVector Dim2 Word8)  
-toGrayNaive v = (addReduce v 2)  `div` ss'
+toGrayNaive v = (addReduce pages v)  `div` ss'
     where 
       h = getNRows v
       w = getNCols v 
-      ss = constVector 3 w 
+      ss = constVector w 3
       ss' = repeatRow ss h 
       
 
 -- Converts to grayscale and corrects for perception 
 -- of intensities of different color components 
 toGray :: Exp (DVector Dim3 Word8) -> Exp (DVector Dim2 Word8) 
-toGray v = vec2DToWord8 $ (redPlane * constVector2D wr w h) + 
-                          (greenPlane * constVector2D wg w h) + 
-                          (bluePlane * constVector2D wb w h) 
+toGray v = vec2DToWord8 $ (redPlane * constVector2D w h wr) + 
+                          (greenPlane * constVector2D w h wg) + 
+                          (bluePlane * constVector2D w h wb) 
   where
     w = getNRows v
     h = getNCols v
@@ -148,7 +148,7 @@ toGray v = vec2DToWord8 $ (redPlane * constVector2D wr w h) +
 grayToFloat :: Exp (DVector Dim2 Word8) -> Exp (DVector Dim2 Float) 
 grayToFloat v = fv / all255
     where 
-      all255 = constVector2D 255 r c 
+      all255 = constVector2D r c 255
       fv     = vec2DToFloat v
       r = getNRows v 
       c = getNCols v
@@ -156,7 +156,7 @@ grayToFloat v = fv / all255
 floatToGray :: Exp (DVector Dim2 Float) -> Exp (DVector Dim2 Word8) 
 floatToGray v = (vec2DToWord8 fv)
     where 
-      all255 = constVector2D 255 r c
+      all255 = constVector2D r c 255
       fv = (Lang.map clamp v) * all255
       r = getNRows v
       c = getNCols v 

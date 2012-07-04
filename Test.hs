@@ -38,7 +38,7 @@ import Prelude as P
 addconst :: Exp Word32 -> Exp (DVector Dim1 Word32) -> Exp (DVector Dim1 Word32) 
 addconst s v = v + ss 
     where 
-      ss = constVector s (Lang.length v) 
+      ss = constVector (Lang.length v) s
 
 
 plus75 :: Exp Word32 -> Exp Word32 

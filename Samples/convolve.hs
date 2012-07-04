@@ -16,7 +16,7 @@ blur :: Exp (DVector Dim2 Word8)
         -> Exp (DVector Dim2 Word8) 
 blur image = vec2DToWord8 (res `div`  all16) 
   where 
-    all16 = constVector2D 16 (getNRows image) (getNCols image)
+    all16 = constVector2D (getNRows image) (getNCols image) 16
     res = mapStencil (Stencil [1,2,1
                               ,2,4,2   
                               ,1,2,1] (Z:.3:.3)) image'      

@@ -22,7 +22,7 @@ matmul a b = fst $ while cond body (a,0)
     cond (c,i) = i <* n
     body (c,i) = 
       let mult = a * repeatRow (extractCol b i) m 
-          col  = addReduce0 mult 
+          col  = addReduce rows mult 
       in (replaceCol c i col, i+1) 
 
 

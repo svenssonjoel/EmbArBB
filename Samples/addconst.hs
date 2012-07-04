@@ -8,7 +8,7 @@ import Prelude hiding (length)
 addconst :: Num a => Exp a -> Exp (DVector Dim1 a) -> Exp (DVector Dim1 a) 
 addconst s v = v + ss 
     where 
-      ss = constVector s (length v) 
+      ss = constVector (length v) s
 
 main = 
   withArBB $ 

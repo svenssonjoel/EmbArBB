@@ -12,13 +12,13 @@ sgemm :: Exp (DVector Dim2 Float)
         -> Exp (DVector Dim2 Float) 
 sgemm a b c alpha beta = fst $ while cond body (c,0)
   where 
-    valpha = constVector alpha m 
-    vbeta  = constVector beta n 
+    valpha = constVector m alpha 
+    vbeta  = constVector n beta 
     m = getNRows a
     n = getNCols b 
     cond (c,i) = i <* n
     body (c,i) = let mult = a * repeatRow (extractCol b i) m 
-                     col  = valpha * addReduce0 mult + vbeta * (extractCol c i)
+                     col  = valpha * addReduce rows mult + vbeta * (extractCol c i)
                  in (replaceCol c i col, i+1) 
 
 testSgemm = 

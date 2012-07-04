@@ -154,7 +154,7 @@ testBool =
       liftIO$ putStrLn$ show r 
     where
       bt :: Exp (DVector Dim1 Boolean) -> Exp (DVector Dim1 Boolean)
-      bt v = andScan v 0 0 
+      bt v = andScan 0 0 v
 
 
 
@@ -176,7 +176,7 @@ testSort =
       liftIO$ putStrLn$ show r 
     where
       s :: Exp (DVector Dim1 Float) -> Exp (DVector Dim1 Float)
-      s v = sort v 0
+      s v = sort 0 v
 
 testDistr =
     withArBB $ 

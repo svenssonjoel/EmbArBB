@@ -37,14 +37,14 @@ import Data.Bits
 ----------------------------------------------------------------------------
 -- Create vectors
 
-constVector :: Exp a -> Exp USize -> Exp (DVector Dim1 a) 
-constVector (E a) (E s) = 
+constVector :: Exp USize -> Exp a -> Exp (DVector Dim1 a) 
+constVector (E s) (E a) = 
   E $ Op ConstVector [a,s]
 
 -- TODO: Really make up mind about a specific order of W and H
-constVector2D :: Exp a -> Exp USize -> Exp USize -> Exp (DVector Dim2 a) 
-constVector2D a w h = ss'
-    where ss = constVector a w 
+constVector2D :: Exp USize -> Exp USize -> Exp a -> Exp (DVector Dim2 a) 
+constVector2D w h a = ss'
+    where ss = constVector w a  
           ss' = repeatRow ss h 
 
 ----------------------------------------------------------------------------
@@ -133,61 +133,66 @@ convWord64 (E a) =
 ---------------------------------------------------------------------------- 
 -- Reductions 
 
--- | Reduce along level 0 
-addReduce0 :: Num a => Exp (DVector (t:.Int) a) -> Exp (DVector t a) 
-addReduce0 (E vec) = 
-  E $ Op AddReduce [vec,zero] 
-  where (E zero) = 0 :: Exp USize
+-- -- | Reduce along level 0 
+--addReduce0 :: Num a => Exp (DVector (t:.Int) a) -> Exp (DVector t a) 
+--addReduce0 (E vec) = 
+--  E $ Op AddReduce [vec,zero] 
+--  where (E zero) = 0 :: Exp USize
 
--- | Reduce along level 0 
-mulReduce0 :: Num a => Exp (DVector (t:.Int) a) -> Exp (DVector t a) 
-mulReduce0 (E vec) = 
-  E $ Op MulReduce [vec,zero]
-  where (E zero) = 0 :: Exp USize
+-- -- | Reduce along level 0 
+-- mulReduce0 :: Num a => Exp (DVector (t:.Int) a) -> Exp (DVector t a) 
+-- mulReduce0 (E vec) = 
+--  E $ Op MulReduce [vec,zero]
+--  where (E zero) = 0 :: Exp USize
+
+rows, cols, pages :: Exp USize 
+rows  = 0 
+cols  = 1 
+pages = 2
                                                                              
 -- | reduce along a specified level 
-addReduce :: Num a => Exp (DVector (t:.Int) a) -> Exp USize -> Exp (DVector t a) 
-addReduce (E vec) (E lev) = 
+addReduce :: Num a => Exp USize -> Exp (DVector (t:.Int) a) -> Exp (DVector t a) 
+addReduce (E lev) (E vec) = 
   E $ Op AddReduce [vec,lev]
 
 -- | reduce along a specified level 
-mulReduce :: Num a => Exp (DVector (t:.Int) a) -> Exp USize -> Exp (DVector t a) 
-mulReduce (E vec) (E lev) = 
+mulReduce :: Num a => Exp USize -> Exp (DVector (t:.Int) a) -> Exp (DVector t a) 
+mulReduce (E lev) (E vec) = 
   E $ Op MulReduce [vec,lev]
 
 -- | reduce along a specified level 
-maxReduce :: Ord a => Exp (DVector (t:.Int) a) -> Exp USize -> Exp (DVector t a) 
-maxReduce (E vec) (E lev) = 
+maxReduce :: Ord a => Exp USize ->Exp (DVector (t:.Int) a) -> Exp (DVector t a) 
+maxReduce (E lev) (E vec) = 
   E $ Op MaxReduce [vec,lev]
 
 -- | reduce along a specified level 
-minReduce :: Ord a => Exp (DVector (t:.Int) a) -> Exp USize -> Exp (DVector t a) 
-minReduce (E vec) (E lev) = 
+minReduce :: Ord a => Exp USize -> Exp (DVector (t:.Int) a) -> Exp (DVector t a) 
+minReduce (E lev) (E vec) = 
   E $ Op MinReduce [vec,lev]
 
 -- | reduce along a specified level 
-andReduce :: Exp (DVector (t:.Int) Boolean) -> Exp USize -> Exp (DVector t Boolean) 
-andReduce (E vec) (E lev) = 
+andReduce ::  Exp USize -> Exp (DVector (t:.Int) Boolean) -> Exp (DVector t Boolean) 
+andReduce (E lev) (E vec) = 
   E $ Op AndReduce [vec,lev]
 
 -- | reduce along a specified level 
-iorReduce :: Exp (DVector (t:.Int) Boolean) -> Exp USize -> Exp (DVector t Boolean) 
-iorReduce (E vec) (E lev) = 
+iorReduce :: Exp USize -> Exp (DVector (t:.Int) Boolean) -> Exp (DVector t Boolean) 
+iorReduce (E lev) (E vec) = 
   E $ Op IorReduce [vec,lev]
 
 -- | reduce along a specified level 
-xorReduce :: Exp (DVector (t:.Int) Boolean) -> Exp USize -> Exp (DVector t Boolean) 
-xorReduce (E vec) (E lev) = 
+xorReduce ::  Exp USize -> Exp (DVector (t:.Int) Boolean) -> Exp (DVector t Boolean) 
+xorReduce (E lev) (E vec) = 
   E $ Op XorReduce [vec,lev]
 
 -- | maxReduceLoc computes maximas as well as their locations in the source Vector.
-maxReduceLoc :: Ord a => Exp (DVector (t:.Int) a) -> Exp USize -> (Exp (DVector t a), Exp (DVector t USize)) 
-maxReduceLoc (E vec) (E lev) = (fstPair res, sndPair res) 
+maxReduceLoc :: Ord a =>  Exp USize -> Exp (DVector (t:.Int) a) -> (Exp (DVector t a), Exp (DVector t USize)) 
+maxReduceLoc (E lev) (E vec) = (fstPair res, sndPair res) 
     where 
       res = E $ Op MaxReduceLoc [vec,lev]
 -- | minReduceLoc computes minimas as well as their locations in the source Vector.
-minReduceLoc :: Ord a => Exp (DVector (t:.Int) a) -> Exp USize -> (Exp (DVector t a), Exp (DVector t USize)) 
-minReduceLoc (E vec) (E lev) = (fstPair res, sndPair res) 
+minReduceLoc :: Ord a =>  Exp USize -> Exp (DVector (t:.Int) a) -> (Exp (DVector t a), Exp (DVector t USize)) 
+minReduceLoc (E lev) (E vec) = (fstPair res, sndPair res) 
     where 
       res = E $ Op MinReduceLoc [vec,lev]
 
@@ -267,70 +272,74 @@ fill dst val start end =
     replace1D dst start n 1 cv
     where 
       n  = end - start + 1 
-      cv = constVector val n 
+      cv = constVector n val 
         
 
 ---------------------------------------------------------------------------- 
 -- Scans 
 
+forward, backward :: Exp USize 
+forward = 0
+backward = 1 
+
 -- | Scan across a specified level and direction over a dense container
 addScan :: Num a 
-           => (Exp (DVector t a)) 
-           -> Exp USize 
+           => Exp USize 
            -> Exp USize 
            -> Exp (DVector t a)
-addScan (E vec) (E dir) (E lev) = 
+           -> Exp (DVector t a)
+addScan  (E dir) (E lev) (E vec) = 
   E $ Op AddScan [vec,dir,lev] 
 
 
 -- | Scan across a specified level and direction over a dense container
 mulScan :: Num a 
-           => (Exp (DVector t a)) 
+           =>  Exp USize 
            -> Exp USize 
-           -> Exp USize 
+           -> Exp (DVector t a) 
            -> Exp (DVector t a)
-mulScan (E vec) (E dir) (E lev) = 
+mulScan (E dir) (E lev) (E vec) = 
   E $ Op MulScan [vec,dir,lev] 
 
 -- | Scan across a specified level and direction over a dense container
 maxScan :: Num a 
-           => (Exp (DVector t a)) 
-           -> Exp USize 
+           => Exp USize 
            -> Exp USize 
            -> Exp (DVector t a)
-maxScan (E vec) (E dir) (E lev) = 
+           -> Exp (DVector t a)
+maxScan (E dir) (E lev) (E vec) = 
   E $ Op MaxScan [vec,dir,lev] 
   
 -- | Scan across a specified level and direction over a dense container
 minScan :: Num a 
-           => (Exp (DVector t a)) 
-           -> Exp USize 
+           => Exp USize 
            -> Exp USize 
            -> Exp (DVector t a)
-minScan (E vec) (E dir) (E lev) = 
+           -> Exp (DVector t a)
+minScan (E dir) (E lev) (E vec) = 
   E $ Op MinScan [vec,dir,lev] 
   
 
 -- | Scan across a specified level and direction over a dense container
-andScan :: (Exp (DVector t Boolean)) 
-           -> Exp USize 
+andScan :: Exp USize 
            -> Exp USize 
            -> Exp (DVector t Boolean)
-andScan (E vec) (E dir) (E lev) = 
+           -> Exp (DVector t Boolean)
+andScan (E dir) (E lev) (E vec) = 
   E $ Op AndScan [vec,dir,lev] 
   
 -- | Scan across a specified level and direction over a dense container
-iorScan ::  (Exp (DVector t Boolean)) 
+iorScan :: Exp USize 
            -> Exp USize 
-           -> Exp USize 
+           -> Exp (DVector t Boolean)
            -> Exp (DVector t Boolean)
 iorScan (E vec) (E dir) (E lev) = 
   E $ Op IorScan [vec,dir,lev] 
   
 -- | Scan across a specified level and direction over a dense container
-xorScan ::  (Exp (DVector t Boolean)) 
+xorScan :: Exp USize 
            -> Exp USize 
-           -> Exp USize 
+           -> Exp (DVector t Boolean) 
            -> Exp (DVector t Boolean)
 xorScan (E vec) (E dir) (E lev) = 
   E $ Op XorScan [vec,dir,lev] 
@@ -360,17 +369,17 @@ transpose (E vec) = E $ Op Transpose [vec]
 
 -- | Sort the contents of a dense 1D container. Also returns 
 -- a dense container of indices describing from where elements where moved
-sortRank :: Exp (Vector a) -> Exp USize -> (Exp (Vector a), Exp (Vector USize)) 
-sortRank (E vec) (E us)  = (fstPair s, sndPair s)
+sortRank ::  Exp USize -> Exp (Vector a) -> (Exp (Vector a), Exp (Vector USize)) 
+sortRank (E us) (E vec)   = (fstPair s, sndPair s)
   where s = E $ Op SortRank [vec,us]
 
-sortRank' :: Exp (Vector a) -> Exp USize -> (Exp (Vector a, Vector USize)) 
-sortRank' (E vec) (E us) = 
+sortRank' :: Exp USize -> Exp (Vector a) -> (Exp (Vector a, Vector USize)) 
+sortRank' (E us) (E vec) = 
   E $ Op SortRank [vec,us]
 
 -- | Sort the contents of a dense 1D container. 
-sort :: Exp (Vector a) -> Exp USize -> Exp (Vector a) 
-sort (E vec) (E us) = 
+sort ::  Exp USize -> Exp (Vector a) -> Exp (Vector a) 
+sort  (E us) (E vec) = 
   E $ Op Sort [vec,us] 
 
 -- | interleave elements from different dense containers

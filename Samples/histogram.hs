@@ -24,7 +24,7 @@ histogram :: Exp (DVector Dim2 Word8)  -> Exp (Vector Word32)
 histogram input = addMerge cv (vecToUSize flat) 256
     where
       flat = flatten input
-      cv = constVector 1 (r * c) 
+      cv = constVector (r * c) 1 
       r  = getNRows input 
       c  = getNCols input
       
@@ -42,9 +42,9 @@ histImage input = fst $ while cond body (cvn,0)
             n = 255 - scale 255 m val  
                     
       n = length input 
-      cv = constVector white (n*n) 
+      cv = constVector (n*n) white  
       cvn = setRegularNesting2D cv n n
-      m   = index0 (maxReduce input 0)
+      m   = index0 (maxReduce 0 input)
       black = 0 
       white = 255
 
