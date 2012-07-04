@@ -569,7 +569,8 @@ isOpDynamic Unpack = False
 isOpDynamic Shuffle = False 
 isOpDynamic Unshuffle = False 
 isOpDynamic Repeat = False   
-isOpDynamic Distribute = True
+
+isOpDynamic Distribute = False -- True
 isOpDynamic RepeatRow = False   
 isOpDynamic RepeatCol = False  
 isOpDynamic RepeatPage = False

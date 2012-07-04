@@ -109,7 +109,7 @@ testWriteBmp =
       img <- loadBMP_RGB "image2.bmp"
       saveBMP_RGB "image3.bmp" img
 
-
+{- 
 segPrefixSum :: Exp (DVector Dim1 Float) 
               -> Exp (DVector Dim1 USize) 
                -> Exp (DVector Dim1 Float)
@@ -135,7 +135,7 @@ testSegPrefixSum =
      r <- copyOut r1
 
      liftIO$ putStrLn$ show r
-
+-} 
 
 testBool = 
     withArBB $ 
@@ -177,3 +177,23 @@ testSort =
     where
       s :: Exp (DVector Dim1 Float) -> Exp (DVector Dim1 Float)
       s v = sort v 0
+
+testDistr =
+    withArBB $ 
+    do 
+      f <- capture d
+
+      let v1 = V.fromList [1,4,3,5,7,9,8,2,6] 
+      let v2 = V.fromList [2,2,2,2,2,2,2,2,2::USize]
+      va <- copyIn $ mkDVector v1 (Z:.8) 
+      vb <- copyIn $ mkDVector v2 (Z:.8)
+      r1 <- new (Z:.16) 0
+      
+      execute f (va :- vb)  r1 
+           
+      r <- copyOut r1
+
+      liftIO$ putStrLn$ show r 
+    where
+      d :: Exp (DVector Dim1 Float) -> Exp (DVector Dim1 USize) -> Exp (DVector Dim1 Float)
+      d v0 v1  = distribute2 v0 v1
