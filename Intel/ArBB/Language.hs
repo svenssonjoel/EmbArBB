@@ -45,7 +45,7 @@ constVector (E s) (E a) =
 constVector2D :: Exp USize -> Exp USize -> Exp a -> Exp (DVector Dim2 a) 
 constVector2D w h a = ss'
     where ss = constVector w a  
-          ss' = repeatRow ss h 
+          ss' = repeatRow h ss 
 
 ----------------------------------------------------------------------------
 -- Specific casts
@@ -210,66 +210,71 @@ index0 :: Exp (DVector Z a) -> Exp a
 index0 (E vec) = E $ Index0  vec 
 
 -- | Index into a 1D vector
-index1 :: Exp (DVector Dim1 a) -> Exp USize -> Exp a 
-index1 (E vec) (E ix) = 
+index1D :: Exp USize -> Exp (DVector Dim1 a) ->  Exp a 
+index1D (E ix) (E vec) = 
   E $ Op Extract [vec,ix] 
 
 -- | Index into a 2D vector
-index2 :: Exp (DVector Dim2 a) -> Exp USize -> Exp USize -> Exp a 
-index2 (E vec) (E ix1) (E ix2)  = 
+index2D :: Exp USize -> Exp USize -> Exp (DVector Dim2 a) -> Exp a 
+index2D (E ix1) (E ix2) (E vec) = 
   E $ Op Extract [vec,ix1,ix2]  
 
 -- | Index into a 3D vector 
-index3 :: Exp (DVector Dim2 a) -> Exp USize -> Exp USize -> Exp USize -> Exp a 
-index3 (E vec) (E ix1) (E ix2) (E ix3) = 
+index3D :: Exp USize -> Exp USize -> Exp USize -> Exp (DVector Dim2 a) -> Exp a 
+index3D (E ix1) (E ix2) (E ix3) (E vec) = 
   E $ Op Extract [vec,ix1,ix2,ix3] 
 
+----------------------------------------------------------------------------
+(!) = flip index1D
+---------------------------------------------------------------------------- 
+
+
 -- | Extract a row from a 2D vector 
-extractRow :: Exp (DVector Dim2 a) -> Exp USize -> Exp (Vector a) 
-extractRow (E vec) (E row) = E $ Op ExtractRow [vec,row]
+extractRow :: Exp USize -> Exp (DVector Dim2 a) -> Exp (Vector a) 
+extractRow (E row) (E vec) = E $ Op ExtractRow [vec,row]
 
 -- | Extract a column from a 2D vector 
-extractCol :: Exp (DVector Dim2 a) -> Exp USize -> Exp (Vector a) 
-extractCol (E vec) (E col) = E $ Op ExtractCol [vec,col]
+extractCol :: Exp USize -> Exp (DVector Dim2 a) ->  Exp (Vector a) 
+extractCol (E col) (E vec) = E $ Op ExtractCol [vec,col]
 
 -- | Extract a page from a 3D vector 
-extractPage :: Exp (DVector Dim3 a) -> Exp USize -> Exp (DVector Dim2 a) 
-extractPage (E vec) (E page) = E $ Op ExtractPage [vec,page]
+extractPage :: Exp USize -> Exp (DVector Dim3 a) -> Exp (DVector Dim2 a) 
+extractPage (E page) (E vec) = E $ Op ExtractPage [vec,page]
 
 ----------------------------------------------------------------------------
 -- Repeat, Replace
 
-repeatRow :: Exp (DVector Dim1 a) -> Exp USize -> Exp (DVector Dim2 a) 
-repeatRow (E vec) (E u) = E $ Op RepeatRow [vec,u]
+repeatRow :: Exp USize -> Exp (DVector Dim1 a) -> Exp (DVector Dim2 a) 
+repeatRow (E u) (E vec) = E $ Op RepeatRow [vec,u]
 
-replaceCol :: Exp (DVector Dim2 a) -> Exp USize -> Exp (DVector Dim1 a) -> Exp (DVector Dim2 a) 
-replaceCol (E m) (E u) (E v) = 
+replaceCol :: Exp USize -> Exp (DVector Dim1 a) -> Exp (DVector Dim2 a) -> Exp (DVector Dim2 a) 
+replaceCol (E u) (E v) (E m) = 
   E $ Op ReplaceCol [m,u,v]
 
-replaceRow :: Exp (DVector Dim2 a) -> Exp USize -> Exp (DVector Dim1 a) -> Exp (DVector Dim2 a) 
-replaceRow (E m) (E u) (E v) = 
+replaceRow :: Exp USize -> Exp (DVector Dim1 a) -> Exp (DVector Dim2 a) -> Exp (DVector Dim2 a) 
+replaceRow (E u) (E v) (E m) = 
   E $ Op ReplaceRow [m,u,v]
 
-replacePage :: Exp (DVector Dim3 a) -> Exp USize -> Exp (DVector Dim2 a) -> Exp (DVector Dim3 a) 
-replacePage (E m) (E u) (E v) = 
+replacePage :: Exp USize -> Exp (DVector Dim2 a) -> Exp (DVector Dim3 a) -> Exp (DVector Dim3 a) 
+replacePage (E u) (E v) (E m) = 
   E $ Op ReplacePage [m,u,v]
 
-replace1D :: Exp (DVector Dim1 a) 
-          -> Exp USize 
+replace1D :: Exp USize 
           -> Exp USize 
           -> Exp USize 
           -> Exp (DVector Dim1 a) 
           -> Exp (DVector Dim1 a) 
-replace1D (E dst) (E first) (E n) (E stride) (E src) =
+          -> Exp (DVector Dim1 a) 
+replace1D (E first) (E n) (E stride) (E src) (E dst) =
     E $ Op Replace [dst,first,n,stride,src] 
 
-fill :: Exp (DVector Dim1 a) 
-     -> Exp a -- fill value 
+fill :: Exp a -- fill value 
      -> Exp USize -- start 
      -> Exp USize -- end 
+     -> Exp (DVector Dim1 a) -- dst
      -> Exp (DVector Dim1 a) 
-fill dst val start end = 
-    replace1D dst start n 1 cv
+fill val start end dst = 
+    replace1D start n 1 cv dst
     where 
       n  = end - start + 1 
       cv = constVector n val 

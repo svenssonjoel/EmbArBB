@@ -21,9 +21,9 @@ matmul a b = fst $ while cond body (a,0)
     n = getNCols b 
     cond (c,i) = i <* n
     body (c,i) = 
-      let mult = a * repeatRow (extractCol b i) m 
+      let mult = a * repeatRow m (extractCol b i)
           col  = addReduce rows mult 
-      in (replaceCol c i col, i+1) 
+      in (replaceCol i col c, i+1) 
 
 
 

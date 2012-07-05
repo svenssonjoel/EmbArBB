@@ -6,7 +6,7 @@ import qualified Data.Vector.Storable as V
 
 matVec :: Exp (DVector Dim2 Float) -> Exp (DVector Dim1 Float) -> Exp (DVector Dim1 Float) 
 matVec m v = addReduce rows 
-             $ m * (repeatRow v (getNRows m))
+             $ m * (repeatRow (getNRows m) v)
 
 
 

@@ -34,17 +34,17 @@ histImage :: Exp (Vector Word32) -> Exp (DVector Dim2 Word8)
 histImage input = fst $ while cond body (cvn,0)    
     where 
       cond (img,i) = i <* n 
-      body (img,i) = (replaceCol img i col',i+1) 
+      body (img,i) = (replaceCol i col' img,i+1) 
           where 
-            val = index1 input i 
-            col = extractCol img i 
-            col' = fill col black 0 n 
+            val = input ! i 
+            col = extractCol i img
+            col' = fill black 0 n col
             n = 255 - scale 255 m val  
                     
       n = length input 
       cv = constVector (n*n) white  
       cvn = setRegularNesting2D cv n n
-      m   = index0 (maxReduce 0 input)
+      m   = index0 (maxReduce rows input)
       black = 0 
       white = 255
 

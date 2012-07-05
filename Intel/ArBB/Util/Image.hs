@@ -123,7 +123,7 @@ toGrayNaive v = (addReduce pages v)  `div` ss'
       h = getNRows v
       w = getNCols v 
       ss = constVector w 3
-      ss' = repeatRow ss h 
+      ss' = repeatRow h ss
       
 
 -- Converts to grayscale and corrects for perception 
@@ -136,9 +136,9 @@ toGray v = vec2DToWord8 $ (redPlane * constVector2D w h wr) +
     w = getNRows v
     h = getNCols v
     fv = vec3DToFloat v
-    redPlane   = (extractPage fv 0) 
-    greenPlane = (extractPage fv 1) 
-    bluePlane  = (extractPage fv 2) 
+    redPlane   = (extractPage 0 fv) 
+    greenPlane = (extractPage 1 fv) 
+    bluePlane  = (extractPage 2 fv) 
     wr = mkFloat 0.2989 
     wg = mkFloat 0.5870 
     wb = mkFloat 0.1140 

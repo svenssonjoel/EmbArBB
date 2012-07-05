@@ -17,9 +17,9 @@ sgemm a b c alpha beta = fst $ while cond body (c,0)
     m = getNRows a
     n = getNCols b 
     cond (c,i) = i <* n
-    body (c,i) = let mult = a * repeatRow (extractCol b i) m 
-                     col  = valpha * addReduce rows mult + vbeta * (extractCol c i)
-                 in (replaceCol c i col, i+1) 
+    body (c,i) = let mult = a * repeatRow m (extractCol i b) 
+                     col  = valpha * addReduce rows mult + vbeta * (extractCol i c)
+                 in (replaceCol i col c, i+1) 
 
 testSgemm = 
   withArBB $ 
