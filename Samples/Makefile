@@ -10,7 +10,8 @@ all:
 	ghc --make simplemap.hs -i../
 	ghc --make sobel.hs -i../ 
 	ghc --make blur.hs -i../
-#	ghc --make dotprod.hs -i../
+	ghc --make smvm.hs -i../
+
 
 
 clean: 
@@ -21,6 +22,6 @@ clean:
 	rm sgemm
 	rm sobel
 	rm blur
-#	rm dotprod 
+	rm smvm
 	rm *.o
 	rm *.hi

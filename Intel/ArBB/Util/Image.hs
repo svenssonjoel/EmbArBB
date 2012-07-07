@@ -10,13 +10,19 @@ module Intel.ArBB.Util.Image ( loadBMP_RGB
                              , toGrayNaive 
                              , toGray
                              , grayToFloat
-                             , floatToGray) where 
+                             , floatToGray
+                             , image3DToWord8
+                             , image3DToDouble) where 
 
 
 import Intel.ArBB.Vector 
 import Intel.ArBB.Language as Lang
 import Intel.ArBB.Syntax
 import Intel.ArBB.Literal
+import Intel.ArBB.Op
+import Intel.ArBB.Data
+import Intel.ArBB.Types
+import qualified Intel.ArbbVM as VM
 
 import Codec.Picture 
 import Codec.Picture.Types
@@ -143,6 +149,12 @@ toGray v = vec2DToWord8 $ (redPlane * constVector2D w h wr) +
     wg = mkFloat 0.5870 
     wb = mkFloat 0.1140 
 
+
+image3DToDouble :: Exp (DVector Dim3 a) -> Exp (DVector Dim3 Double)
+image3DToDouble (E v) = E $ Op (Cast (Dense III (VM.ArbbF64))) [v]
+   
+image3DToWord8 :: Exp (DVector Dim3 a) -> Exp (DVector Dim3 Word8)
+image3DToWord8 (E v) = E $ Op (Cast (Dense III (VM.ArbbU8))) [v]
 
 -- convert grayscale 0 to 255 to float 0 to 1 
 grayToFloat :: Exp (DVector Dim2 Word8) -> Exp (DVector Dim2 Float) 

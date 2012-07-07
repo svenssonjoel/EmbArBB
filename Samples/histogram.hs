@@ -21,7 +21,7 @@ import Foreign hiding (new)
 
 
 histogram :: Exp (DVector Dim2 Word8)  -> Exp (Vector Word32)
-histogram input = addMerge cv (vecToUSize flat) 256
+histogram input = addMerge (vecToUSize flat) 256 cv
     where
       flat = flatten input
       cv = constVector (r * c) 1 
@@ -43,7 +43,7 @@ histImage input = fst $ while cond body (cvn,0)
                     
       n = length input 
       cv = constVector (n*n) white  
-      cvn = setRegularNesting2D cv n n
+      cvn = setRegularNesting2D n n cv
       m   = index0 (maxReduce rows input)
       black = 0 
       white = 255

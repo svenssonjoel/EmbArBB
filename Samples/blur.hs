@@ -10,8 +10,6 @@ import System.IO
 import Foreign hiding (new)
 
 
--- TODO: Remember that there is cheating going on in 
---       the code generation parts to make this work (typecheck)
 blur :: Exp (DVector Dim2 Word8) 
         -> Exp (DVector Dim2 Word8) 
 blur image = vec2DToWord8 (res `div`  all16) 

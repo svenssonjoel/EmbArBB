@@ -18,7 +18,7 @@ import Intel.ArBB.Data.Boolean
 import Data.Word
 import Data.Int
 
-type FuncID = Integer
+type FuncID = Integer    
 
 data Function i o = Function FuncID 
    deriving Show    

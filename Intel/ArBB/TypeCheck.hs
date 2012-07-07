@@ -214,8 +214,8 @@ typecheckNID d n =
     typeOfOp Repeat [t1,t2,t3] = Just t1
     typeOfOp Distribute (t:ts) = Just t
     typeOfOp RepeatRow [Dense _ t,t2] = Just $ Dense II t -- Just t1
-    typeOfOp RepeatCol [t1,t2] = Just t1
-    typeOfOp RepeatPage [t1,t2] = Just t1
+    typeOfOp RepeatCol [Dense _ t,t2] = Just $ Dense II t 
+    typeOfOp RepeatPage [Dense _ t,t2] = Just $ Dense III t 
     typeOfOp Transpose [t] = Just t
     typeOfOp SwapCol [t1,t2,t3] = Just t1
     typeOfOp SwapRow [t1,t2,t3] = Just t1
@@ -260,16 +260,16 @@ typecheckNID d n =
     typeOfOp SortRank [v,d] = Just$ Tuple [v,Dense I ArBB.ArbbUsize] -- DVector Dim1 a -> (DVector Dim1 a, DVector Dim1 USize)
     typeOfOp Replace (t:ts) = Just t
     typeOfOp SetRegularNesting [Dense I t,t2,t3] = Just $ Dense II t
-    typeOfOp SetRegularNesting [Dense II t,t2,t3,t4,t5] = Just $ Dense III t
+    typeOfOp SetRegularNesting [Dense I t,t2,t3,t4] = Just $ Dense III t
     typeOfOp ReplaceRow [t1,t2,t3] = Just t1
     typeOfOp ReplaceCol [t1,t2,t3] = Just t1 
     typeOfOp ReplacePage [t1,t2,t3] = Just t1
     typeOfOp GetNRows xs = Just $ Scalar ArBB.ArbbUsize 
     typeOfOp GetNCols xs = Just $ Scalar ArBB.ArbbUsize 
     typeOfOp GetNPages xs = Just $ Scalar ArBB.ArbbUsize 
-    typeOfOp ExtractRow [t1,t2] = decrRank t1
-    typeOfOp ExtractCol  [t1,t2] = decrRank t1
-    typeOfOp ExtractPage [t1,t2] = decrRank t1 
+    typeOfOp ExtractRow [Dense II t1,t2] = Just $ Dense I t1 -- decrRank t1
+    typeOfOp ExtractCol  [Dense II t1,t2] = Just $ Dense I t1 -- decrRank t1
+    typeOfOp ExtractPage [Dense III t1,t2] = Just $ Dense II t1 -- decrRank t1 
     -- Section exists in 3 different versions
     -- Taking 4, 7 and 10 inputs. 
     -- The result type is always the same as the type of the first input though.. 
@@ -329,3 +329,4 @@ typecheckNID d n =
     typeOfOp XorScan [v,d,l] = Just v --Vec, USize, USize  
     typeOfOp AddMerge [t1,t2,t3] = Just t1
     typeOfOp AddMergeScalar [Scalar a, b, c] = Just $ Dense I a 
+    typeOfOp op ls = error $ show op ++ " " ++ show ls 

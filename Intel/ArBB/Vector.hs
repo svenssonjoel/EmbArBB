@@ -70,10 +70,8 @@ type Vector3D = DVector Dim3
 ----------------------------------------------------------------------------
 -- Nested Vectors 
 data NVector a = NVector { nVectorData     :: V.Vector a
-                         , nVectorNesting  :: V.Vector USize
-                         , nVectorSize     :: Int
-                         , nVectorSegs     :: Int}
-
+                         , nVectorNesting  :: V.Vector USize } 
+ 
 
 ----------------------------------------------------------------------------
 -- Data Instances.. 

@@ -47,6 +47,13 @@ constVector2D w h a = ss'
     where ss = constVector w a  
           ss' = repeatRow h ss 
 
+constVector3D :: Exp USize -> Exp USize -> Exp USize -> Exp a -> Exp (DVector Dim3 a) 
+constVector3D w h p a = ss''
+    where 
+      ss = constVector w a 
+      ss' = repeatRow h ss 
+      ss'' = repeatPage p ss' 
+
 ----------------------------------------------------------------------------
 -- Specific casts
 
@@ -133,22 +140,11 @@ convWord64 (E a) =
 ---------------------------------------------------------------------------- 
 -- Reductions 
 
--- -- | Reduce along level 0 
---addReduce0 :: Num a => Exp (DVector (t:.Int) a) -> Exp (DVector t a) 
---addReduce0 (E vec) = 
---  E $ Op AddReduce [vec,zero] 
---  where (E zero) = 0 :: Exp USize
-
--- -- | Reduce along level 0 
--- mulReduce0 :: Num a => Exp (DVector (t:.Int) a) -> Exp (DVector t a) 
--- mulReduce0 (E vec) = 
---  E $ Op MulReduce [vec,zero]
---  where (E zero) = 0 :: Exp USize
-
 rows, cols, pages :: Exp USize 
-rows  = 0 
-cols  = 1 
-pages = 2
+rows = 0 
+cols = 1 
+pages = 2 
+
                                                                              
 -- | reduce along a specified level 
 addReduce :: Num a => Exp USize -> Exp (DVector (t:.Int) a) -> Exp (DVector t a) 
@@ -161,7 +157,7 @@ mulReduce (E lev) (E vec) =
   E $ Op MulReduce [vec,lev]
 
 -- | reduce along a specified level 
-maxReduce :: Ord a => Exp USize ->Exp (DVector (t:.Int) a) -> Exp (DVector t a) 
+maxReduce :: Ord a => Exp USize -> Exp (DVector (t:.Int) a) -> Exp (DVector t a) 
 maxReduce (E lev) (E vec) = 
   E $ Op MaxReduce [vec,lev]
 
@@ -176,22 +172,22 @@ andReduce (E lev) (E vec) =
   E $ Op AndReduce [vec,lev]
 
 -- | reduce along a specified level 
-iorReduce :: Exp USize -> Exp (DVector (t:.Int) Boolean) -> Exp (DVector t Boolean) 
+iorReduce :: Exp USize-> Exp (DVector (t:.Int) Boolean) -> Exp (DVector t Boolean) 
 iorReduce (E lev) (E vec) = 
   E $ Op IorReduce [vec,lev]
 
 -- | reduce along a specified level 
-xorReduce ::  Exp USize -> Exp (DVector (t:.Int) Boolean) -> Exp (DVector t Boolean) 
+xorReduce :: Exp USize -> Exp (DVector (t:.Int) Boolean) -> Exp (DVector t Boolean) 
 xorReduce (E lev) (E vec) = 
   E $ Op XorReduce [vec,lev]
 
 -- | maxReduceLoc computes maximas as well as their locations in the source Vector.
-maxReduceLoc :: Ord a =>  Exp USize -> Exp (DVector (t:.Int) a) -> (Exp (DVector t a), Exp (DVector t USize)) 
+maxReduceLoc :: Ord a => Exp USize -> Exp (DVector (t:.Int) a) -> (Exp (DVector t a), Exp (DVector t USize)) 
 maxReduceLoc (E lev) (E vec) = (fstPair res, sndPair res) 
     where 
       res = E $ Op MaxReduceLoc [vec,lev]
 -- | minReduceLoc computes minimas as well as their locations in the source Vector.
-minReduceLoc :: Ord a =>  Exp USize -> Exp (DVector (t:.Int) a) -> (Exp (DVector t a), Exp (DVector t USize)) 
+minReduceLoc :: Ord a => Exp USize -> Exp (DVector (t:.Int) a) -> (Exp (DVector t a), Exp (DVector t USize)) 
 minReduceLoc (E lev) (E vec) = (fstPair res, sndPair res) 
     where 
       res = E $ Op MinReduceLoc [vec,lev]
@@ -199,9 +195,9 @@ minReduceLoc (E lev) (E vec) = (fstPair res, sndPair res)
 ---------------------------------------------------------------------------- 
 -- Add Merge
 -- | Add merge..  
-addMerge :: Exp (DVector (t:.Int) a) -> Exp (DVector (t:.Int) USize) -> Exp USize -> Exp (DVector (t:.Int) a) 
-addMerge (E b) (E v) (E u) = 
-  E $ Op AddMerge [b,v,u]
+addMerge :: Exp (DVector (t:.Int) USize) -> Exp USize -> Exp (DVector (t:.Int) a) -> Exp (DVector (t:.Int) a) 
+addMerge (E b) (E u) (E v) = 
+  E $ Op AddMerge [v,b,u]
 
 ----------------------------------------------------------------------------
 
@@ -234,7 +230,7 @@ extractRow :: Exp USize -> Exp (DVector Dim2 a) -> Exp (Vector a)
 extractRow (E row) (E vec) = E $ Op ExtractRow [vec,row]
 
 -- | Extract a column from a 2D vector 
-extractCol :: Exp USize -> Exp (DVector Dim2 a) ->  Exp (Vector a) 
+extractCol :: Exp USize -> Exp (DVector Dim2 a) -> Exp (Vector a) 
 extractCol (E col) (E vec) = E $ Op ExtractCol [vec,col]
 
 -- | Extract a page from a 3D vector 
@@ -246,6 +242,9 @@ extractPage (E page) (E vec) = E $ Op ExtractPage [vec,page]
 
 repeatRow :: Exp USize -> Exp (DVector Dim1 a) -> Exp (DVector Dim2 a) 
 repeatRow (E u) (E vec) = E $ Op RepeatRow [vec,u]
+
+repeatPage :: Exp USize -> Exp (DVector Dim2 a) -> Exp (DVector Dim3 a) 
+repeatPage (E u) (E vec) = E $ Op RepeatPage [vec,u]
 
 replaceCol :: Exp USize -> Exp (DVector Dim1 a) -> Exp (DVector Dim2 a) -> Exp (DVector Dim2 a) 
 replaceCol (E u) (E v) (E m) = 
@@ -282,14 +281,9 @@ fill val start end dst =
 
 ---------------------------------------------------------------------------- 
 -- Scans 
-
-forward, backward :: Exp USize 
-forward = 0
-backward = 1 
-
 -- | Scan across a specified level and direction over a dense container
 addScan :: Num a 
-           => Exp USize 
+           => Exp USize
            -> Exp USize 
            -> Exp (DVector t a)
            -> Exp (DVector t a)
@@ -404,24 +398,27 @@ unshuffle (E v) (E u) = E $ Op Unshuffle [v,u,zero]
 -- two output vectors..
 
 -- | Gather 
-gather1D :: Exp (DVector Dim1 a) -> Exp (DVector Dim1 USize) -> Exp a -> Exp (DVector Dim1 a) 
-gather1D (E v) (E cols) (E a) = E $ Op Gather [v,cols,a] 
+gather1D :: Exp (DVector Dim1 USize) 
+          -> Exp a 
+          -> Exp (DVector Dim1 a) 
+          -> Exp (DVector Dim1 a) 
+gather1D (E cols) (E a) (E v) = E $ Op Gather [v,cols,a] 
 
-gather2D :: Exp (DVector Dim2 a) 
-          -> Exp (DVector Dim2 USize) 
+gather2D :: Exp (DVector Dim2 USize) 
           -> Exp (DVector Dim2 USize) 
           -> Exp a 
           -> Exp (DVector Dim2 a) 
-gather2D (E v) (E rows) (E cols) (E a) = E $ Op Gather [v,rows,cols,a] 
+          -> Exp (DVector Dim2 a) 
+gather2D (E rows) (E cols) (E a) (E v) = E $ Op Gather [v,rows,cols,a] 
 
 
-gather3D :: Exp (DVector Dim3 a) 
-          -> Exp (DVector Dim3 USize) 
+gather3D :: Exp (DVector Dim3 USize) 
           -> Exp (DVector Dim3 USize) 
           -> Exp (DVector Dim3 USize) 
           -> Exp a 
           -> Exp (DVector Dim3 a) 
-gather3D (E v) (E pages) (E rows) (E cols) (E a) = E $ Op Gather [v,pages,rows,cols,a] 
+          -> Exp (DVector Dim3 a) 
+gather3D (E pages) (E rows) (E cols) (E a) (E v) = E $ Op Gather [v,pages,rows,cols,a] 
 
 -- | Scatter
 scatter1D :: Exp (DVector Dim1 a) 
@@ -458,72 +455,73 @@ unpack :: (IsVector v a, IsVector v Boolean)
 unpack (E v) (E b) (E a) = E $ Op Unpack [v,b,a]
 
 -- | repeat elements of a container
-distribute :: Exp (DVector (t:.Int) a) -> Exp USize -> Exp (DVector (t:.Int) a) 
-distribute (E v) (E u) = E $ Op Distribute [v,u,zero] 
+stretch :: Exp (DVector (t:.Int) a) -> Exp USize -> Exp (DVector (t:.Int) a) 
+stretch (E v) (E u) = E $ Op Distribute [v,u,zero] 
     where (E zero) = 0 :: Exp USize         
 
 -- TODO: rename this once you figure out what it does. 
-distribute2 :: Exp (DVector (t:.Int) a) 
+stretchBy :: Exp (DVector (t:.Int) a) 
              -> Exp (DVector (t:.Int) USize) 
              -> Exp (DVector (t:.Int) a) 
-distribute2 (E v) (E us) = E $ Op Distribute [v,us,zero] 
+stretchBy (E v) (E us) = E $ Op Distribute [v,us,zero] 
     where (E zero) = 0 :: Exp USize                           
              
 
-swapRow :: Exp (DVector (t:.Int:.Int) a) 
-         -> Exp USize 
-         -> Exp USize 
-         -> Exp (DVector (t:.Int:.Int) a)
-swapRow (E v) (E i) (E j) = E $ Op SwapRow [v,i,j]
-
-swapCol :: Exp (DVector (t:.Int:.Int) a) 
-         -> Exp USize 
+swapRow :: Exp USize 
          -> Exp USize 
          -> Exp (DVector (t:.Int:.Int) a) 
-swapCol (E v) (E i) (E j) = E $ Op SwapCol [v,i,j]
+         -> Exp (DVector (t:.Int:.Int) a)
+swapRow (E i) (E j) (E v) = E $ Op SwapRow [v,i,j]
 
-swapPage :: Exp (DVector Dim3 a) 
-          -> Exp USize 
+swapCol ::  Exp USize 
+         -> Exp USize 
+         -> Exp (DVector (t:.Int:.Int) a) 
+         -> Exp (DVector (t:.Int:.Int) a) 
+swapCol (E i) (E j) (E v) = E $ Op SwapCol [v,i,j]
+
+swapPage :: Exp USize 
           -> Exp USize 
           -> Exp (DVector Dim3 a) 
-swapPage (E v) (E i) (E j) = E $ Op SwapPage [v,i,j]
+          -> Exp (DVector Dim3 a) 
+swapPage (E i) (E j) (E v) = E $ Op SwapPage [v,i,j]
 
-shift1D :: Exp (DVector Dim1 a) -> Exp ISize -> Exp (DVector Dim1 a) 
-shift1D (E v) (E i) = E $ Op ShiftConst [v,i]
+shift1D :: Exp ISize -> Exp (DVector Dim1 a) ->  Exp (DVector Dim1 a) 
+shift1D (E i) (E v)  = E $ Op ShiftConst [v,i]
 
-shift2D :: Exp (DVector Dim2 a) -> Exp ISize -> Exp ISize -> Exp (DVector Dim2 a) 
-shift2D (E v) (E i) (E j)  = E $ Op ShiftConst [v,i,j]
+shift2D :: Exp ISize -> Exp ISize -> Exp (DVector Dim2 a) -> Exp (DVector Dim2 a) 
+shift2D (E i) (E j) (E v) = E $ Op ShiftConst [v,i,j]
 
-shift3D :: Exp (DVector Dim3 a) -> Exp ISize -> Exp ISize -> Exp ISize -> Exp (DVector Dim3 a) 
-shift3D (E v) (E i) (E j) (E k)  = E $ Op ShiftConst [v,i,j,k]
+shift3D :: Exp ISize -> Exp ISize -> Exp ISize -> Exp (DVector Dim3 a) -> Exp (DVector Dim3 a) 
+shift3D  (E i) (E j) (E k) (E v) = E $ Op ShiftConst [v,i,j,k]
 
-shiftRev1D :: Exp (DVector Dim1 a) -> Exp ISize -> Exp (DVector Dim1 a) 
-shiftRev1D (E v) (E i) = E $ Op ShiftConstRev [v,i]
+shiftRev1D :: Exp ISize -> Exp (DVector Dim1 a) -> Exp (DVector Dim1 a) 
+shiftRev1D (E i) (E v) = E $ Op ShiftConstRev [v,i]
 
-shiftRev2D :: Exp (DVector Dim2 a) -> Exp ISize -> Exp ISize -> Exp (DVector Dim2 a) 
-shiftRev2D (E v) (E i) (E j)  = E $ Op ShiftConstRev [v,i,j]
+shiftRev2D :: Exp ISize -> Exp ISize -> Exp (DVector Dim2 a) -> Exp (DVector Dim2 a) 
+shiftRev2D (E i) (E j) (E v) = E $ Op ShiftConstRev [v,i,j]
 
-shiftRev3D :: Exp (DVector Dim3 a) -> Exp ISize -> Exp ISize -> Exp ISize -> Exp (DVector Dim3 a) 
-shiftRev3D (E v) (E i) (E j) (E k)  = E $ Op ShiftConstRev [v,i,j,k]
+shiftRev3D :: Exp ISize -> Exp ISize -> Exp ISize -> Exp (DVector Dim3 a) -> Exp (DVector Dim3 a) 
+shiftRev3D (E i) (E j) (E k) (E v) = E $ Op ShiftConstRev [v,i,j,k]
 
 shiftClamp1D :: Exp (DVector Dim1 a) -> Exp ISize -> Exp (DVector Dim1 a) 
-shiftClamp1D (E v) (E i) = E $ Op ShiftClamp [v,i]
+shiftClamp1D (E i) (E v) = E $ Op ShiftClamp [v,i]
 
-shiftClamp2D :: Exp (DVector Dim2 a) -> Exp ISize -> Exp ISize -> Exp (DVector Dim2 a) 
-shiftClamp2D (E v) (E i) (E j)  = E $ Op ShiftClamp [v,i,j]
+shiftClamp2D :: Exp ISize -> Exp ISize -> Exp (DVector Dim2 a) -> Exp (DVector Dim2 a) 
+shiftClamp2D (E i) (E j) (E v) = E $ Op ShiftClamp [v,i,j]
 
-shiftClamp3D :: Exp (DVector Dim3 a) -> Exp ISize -> Exp ISize -> Exp ISize -> Exp (DVector Dim3 a) 
-shiftClamp3D (E v) (E i) (E j) (E k)  = E $ Op ShiftClamp [v,i,j,k]
+shiftClamp3D :: Exp ISize -> Exp ISize -> Exp ISize -> Exp (DVector Dim3 a) ->  Exp (DVector Dim3 a) 
+shiftClamp3D (E i) (E j) (E k) (E v) = E $ Op ShiftClamp [v,i,j,k]
 
-shiftClampRev1D :: Exp (DVector Dim1 a) -> Exp ISize -> Exp (DVector Dim1 a) 
-shiftClampRev1D (E v) (E i) = E $ Op ShiftClampRev [v,i]
+shiftClampRev1D :: Exp ISize -> Exp (DVector Dim1 a) ->  Exp (DVector Dim1 a) 
+shiftClampRev1D (E i) (E v) = E $ Op ShiftClampRev [v,i]
 
-shiftClampRev2D :: Exp (DVector Dim2 a) -> Exp ISize -> Exp ISize -> Exp (DVector Dim2 a) 
-shiftClampRev2D (E v) (E i) (E j)  = E $ Op ShiftClampRev [v,i,j]
+shiftClampRev2D :: Exp ISize -> Exp ISize -> Exp (DVector Dim2 a) -> Exp (DVector Dim2 a) 
+shiftClampRev2D (E i) (E j) (E v) = E $ Op ShiftClampRev [v,i,j]
 
-shiftClampRev3D :: Exp (DVector Dim3 a) -> Exp ISize -> Exp ISize -> Exp ISize -> Exp (DVector Dim3 a) 
-shiftClampRev3D (E v) (E i) (E j) (E k)  = E $ Op ShiftClampRev [v,i,j,k]
+shiftClampRev3D :: Exp ISize -> Exp ISize -> Exp ISize -> Exp (DVector Dim3 a) -> Exp (DVector Dim3 a) 
+shiftClampRev3D (E i) (E j) (E k) (E v) = E $ Op ShiftClampRev [v,i,j,k]
 
+-- Clarify this. It only works for 1D Dense or nested! 
 cat :: IsVector t a => Exp (t a) -> Exp (t a) -> Exp (t a) 
 cat (E v1) (E v2) = E $ Op Cat [v1,v2] 
 
@@ -625,27 +623,26 @@ unshuffleSeg (E n) (E u) = E $ Op Unshuffle [n,u,zero]
 -- TODO: Something may be broken when it comes to setRegularNesting. 
 --       Figure out what and where.. 
 -- | apply regular nesting to a container 
-setRegularNesting2D :: Exp (DVector Dim1 a) -> Exp USize -> Exp USize -> Exp (DVector Dim2 a)
-setRegularNesting2D (E v) (E h) (E w) = E $ Op SetRegularNesting [v,h,w]
+setRegularNesting2D :: Exp USize -> Exp USize -> Exp (DVector Dim1 a) ->  Exp (DVector Dim2 a)
+setRegularNesting2D (E h) (E w) (E v) = E $ Op SetRegularNesting [v,h,w]
 
-setRegularNesting3D :: Exp (DVector Dim1 a) -> Exp USize -> Exp USize -> Exp USize -> Exp (DVector Dim3 a) 
-setRegularNesting3D (E v) (E h) (E w) (E p) = E $ Op SetRegularNesting [v,h,w,p] 
+setRegularNesting3D :: Exp USize -> Exp USize -> Exp USize -> Exp (DVector Dim1 a) ->  Exp (DVector Dim3 a) 
+setRegularNesting3D (E h) (E w) (E p) (E v) = E $ Op SetRegularNesting [v,h,w,p] 
 
 ----------------------------------------------------------------------------
-data NestingDescriptorType = NDLengths
-                           | NDOffsets 
-
-ndToVal :: NestingDescriptorType -> Expr  
-ndToVal NDLengths = unE (1 :: Exp USize)  
-ndToVal NDOffsets = unE (2 :: Exp USize) 
+lengths = 1 :: Exp USize  
+offsets = 2 :: Exp USize
 ----------------------------------------------------------------------------
 
 -- Will only support the USize nesting descriptors for now. 
-applyNesting :: NestingDescriptorType -> Exp (DVector Dim1 a) -> Exp (DVector Dim1 USize) -> Exp (NVector a)
-applyNesting nd (E v) (E u) = E $ Op ApplyNesting [v,u,ndToVal nd] 
+applyNesting :: Exp USize
+              -> Exp (DVector Dim1 USize) 
+              -> Exp (DVector Dim1 a) 
+              -> Exp (NVector a)
+applyNesting (E nd) (E u) (E v) = E $ Op ApplyNesting [v,u,nd] 
 
-getNesting :: NestingDescriptorType -> Exp (NVector a) -> Exp (DVector Dim1 USize) 
-getNesting nd (E v)  = E $ Op GetNesting [v,ndToVal nd]
+getNesting :: Exp USize -> Exp (NVector a) -> Exp (DVector Dim1 USize) 
+getNesting (E nd) (E v)  = E $ Op GetNesting [v,nd]
 
 copyNesting :: Exp (DVector Dim1 a) -> Exp (NVector b) -> Exp (NVector a) 
 copyNesting (E v) (E n) = E $ Op CopyNesting [v,n]
