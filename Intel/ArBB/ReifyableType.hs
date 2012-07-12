@@ -83,6 +83,13 @@ instance (Data a, Data b, Data c)
     reifyFunType f = typeOf (undefined :: a) :-> 
                      Tuple [typeOf (undefined :: b), typeOf (undefined :: c)]
 
+instance (Data a, Data b, Data c, Data d)
+   => ReifyableFunType (Exp a) (Exp b,Exp c, Exp d) where 
+    reifyFunType f = typeOf (undefined :: a) :-> 
+                     Tuple [typeOf (undefined :: b), 
+                            typeOf (undefined :: c),
+                            typeOf (undefined :: d)]
+
 
 instance (ReifyableType (Exp a), ReifyableFunType b c) 
    => ReifyableFunType (Exp a) (b -> c) where 
