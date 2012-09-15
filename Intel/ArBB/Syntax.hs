@@ -53,6 +53,8 @@ data Expr = Lit Literal
           | ResIndex Expr Int 
             
           -- Function Call and Map.
+          -- Should also work with a ([Expr] -> Expr) function
+          -- (test in a branch. Talk to Josef if trouble)   
           | Call (R GenRecord) [Expr]  
           | Map  (R GenRecord) [Expr]   
           
