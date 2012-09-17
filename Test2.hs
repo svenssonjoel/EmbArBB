@@ -208,7 +208,7 @@ smvm :: Exp (DVector Dim1 Float)
 smvm mval cidx os vec = addReduceSeg nps
   where
     ps = mval * gather1D cidx 0 vec
-    nps = applyNesting NDOffsets os ps 
+    nps = applyNesting offsets os ps 
 
 
 testDist2 =
