@@ -52,9 +52,7 @@ data Expr = Lit Literal
             -- ArBB Functions may compute several results 
           | ResIndex Expr Int 
             
-          -- Function Call and Map.
-          -- Should also work with a ([Expr] -> Expr) function
-          -- (test in a branch. Talk to Josef if trouble)   
+            -- Function Call and Map.
           | Call (R GenRecord) [Expr]  
           | Map  (R GenRecord) [Expr]   
           

@@ -97,7 +97,6 @@ insertNode e node =
       let d' = Map.insert nid node d 
       modify $ \(RState sh uniq gr) -> RState sh uniq (gr { genRecordDag = d'})
       
-      
       modify $ \(RState sh uniq gr) -> RState sh uniq (gr {genRecordNids = [nid]})
       gets genRecord
 ----------------------------------------------------------------------------
@@ -153,89 +152,81 @@ reifyLocally e =
 ---------------------------------------------------------------------------- 
 -- 
 instance Reify Expr where 
-    reify e@(Var v) = insertNode e (NVar v) 
-    reify e@(Lit l) = insertNode e (NLit l)
-    reify e@(Index0 exp) = 
-        do
-          [exp'] <- reifySimple exp 
-          insertNode e (NIndex0 exp')
+  reify e@(Var v) = insertNode e (NVar v) 
+  reify e@(Lit l) = insertNode e (NLit l)
+  reify e@(Index0 exp) = 
+    do
+      [exp'] <- reifySimple exp 
+      insertNode e (NIndex0 exp')
 
-    reify e@(ResIndex exp i) = 
-        do 
-          [exp'] <- reifySimple exp 
-          insertNode e (NResIndex exp' i) 
+  reify e@(ResIndex exp i) = 
+    do 
+      [exp'] <- reifySimple exp 
+      insertNode e (NResIndex exp' i) 
 
     -- DONE: CALL and MAP needs to change a lot (future work)    
-    reify e@(Call cap exprs) = 
-        do
-          -- This part is messed up!
-          imm <- mapM reify exprs
-          let exprs' = map genRecordNids imm
-          -- -----------------------
-          
-          
-          depend <- lift $ runR cap
-          uniq <- newUnique 
-          
-          depends <- gets (genRecordDepends . genRecord) 
-          let depends' = Map.insert uniq depend depends
-          modify $ \(RState sh un gr) -> RState sh un (gr { genRecordDepends = depends' }) 
-          insertNode e (NMap uniq (concat exprs'))
-           
-          --fid <- lift (runR cap) 
-          --exprs' <- mapM reify exprs 
-          --insertNode e (NCall fid (concat exprs'))  --Concat... make sure this is as it shall
 
-    reify e@(Map cap exprs) = 
-        do
+  reify e@(Call cap exprs) = 
+    do
+      -- This part is messed up!
+      imm <- mapM reify exprs
+      let exprs' = map genRecordNids imm
+      -- -----------------------
+                 
+                 
+      depend <- lift $ runR cap
+      uniq <- newUnique 
+                 
+      depends <- gets (genRecordDepends . genRecord) 
+      let depends' = Map.insert uniq depend depends
+      modify $ \(RState sh un gr) -> RState sh un (gr { genRecordDepends = depends' }) 
+      insertNode e (NMap uniq (concat exprs'))
+                 
+  reify e@(Map cap exprs) = 
+    do
+      -- This part is messed up!
+      -- In whay way ? 
+      imm <- mapM reify exprs
+      let exprs' = map genRecordNids imm
+      -- -----------------------
           
-          -- This part is messed up!
-          imm <- mapM reify exprs
-          let exprs' = map genRecordNids imm
-          -- -----------------------
+      --  
+      depend <- lift $ runR cap
+      uniq <- newUnique 
           
-          -- TODO: 
-          depend <- lift $ runR cap
-          uniq <- newUnique 
-          
-          depends <- gets (genRecordDepends . genRecord) 
-          let depends' = Map.insert uniq depend depends
-          modify $ \(RState sh un gr) -> RState sh un (gr { genRecordDepends = depends' }) 
-          insertNode e (NMap uniq (concat exprs'))
+      depends <- gets (genRecordDepends . genRecord) 
+      let depends' = Map.insert uniq depend depends
+      modify $ \(RState sh un gr) -> RState sh un (gr { genRecordDepends = depends' }) 
+      insertNode e (NMap uniq (concat exprs'))
                     
-          --fid  <- lift ( runR cap )
-          --liftIO$ putStrLn $ "generated map fun has id: " ++ show fid
-          --exprs' <- mapM reify exprs 
-          --insertNode e (NMap fid (concat exprs'))
-                    
-    reify e@(If e1 e2 e3) = 
-        do
-          [e1'] <- reifySimple e1
-          [e2'] <- reifySimple e2
-          [e3'] <- reifySimple e3
-          insertNode e (NIf e1' e2' e3')
+  reify e@(If e1 e2 e3) = 
+    do
+      [e1'] <- reifySimple e1
+      [e2'] <- reifySimple e2
+      [e3'] <- reifySimple e3
+      insertNode e (NIf e1' e2' e3')
 
-    ----------------------------------------------------
-    -- While Loop 
-    ----------------------------------------------------
-    reify e@(While cond body state) = 
-        do 
-          variables <- createVariables state 
+  ----------------------------------------------------
+  -- While Loop 
+  ----------------------------------------------------
+  reify e@(While cond body state) = 
+    do 
+      variables <- createVariables state 
           
-          let vexps = map Var variables 
-              cond' = cond vexps 
-              body' = body vexps 
-          i' <- mapM reifySimple state
+      let vexps = map Var variables 
+          cond' = cond vexps 
+          body' = body vexps 
+      i' <- mapM reifySimple state
    
-          -- TODO: I am very unsure here. Is this right ? 
-          [c'] <- reifyLocally cond'
-          b'   <- mapM reifyLocally body'
-          insertNode e (NWhile variables c' (concat b') (concat i')) 
+      -- TODO: I am very unsure here. Is this right ? 
+      [c'] <- reifyLocally cond'
+      b'   <- mapM reifyLocally body'
+      insertNode e (NWhile variables c' (concat b') (concat i')) 
 
-    reify e@(Op op exprs) = 
-        do
-          exprs' <- mapM reifySimple exprs 
-          insertNode e (NOp op (concat exprs')) 
+  reify e@(Op op exprs) = 
+    do
+      exprs' <- mapM reifySimple exprs 
+      insertNode e (NOp op (concat exprs')) 
 
 ----------------------------------------------------------------------------
 -- 
@@ -243,76 +234,76 @@ instance Reify Expr where
 createVariables :: [Expr] -> R [Variable]
 createVariables [] = return []
 createVariables (x:xs) = 
-    do 
-      uniq <- newUnique 
-      let v = Variable ("l"++show uniq)
-      vs <- createVariables xs
-      return (v:vs)
+  do 
+    uniq <- newUnique 
+    let v = Variable ("l"++show uniq)
+    vs <- createVariables xs
+    return (v:vs)
 
 ---------------------------------------------------------------------------- 
 -- 
       
 instance Reify (Exp a) where 
-    reify = reify . unE 
+  reify = reify . unE 
 
  
 instance (ReifyableFunType a b, ReifyableFun a b) => Reify (a -> b) where 
-    reify f = 
-        do
-          exprs <- reifyFun f
-          nids <- mapM reifySimple exprs
-          modify $ \(RState sh un gr) -> RState sh un ( gr {genRecordNids = (concat nids)})
-          modify $ \(RState sh un gr) -> RState sh un ( gr {genRecordFunType = reifyFunType f})
+  reify f = 
+    do
+      exprs <- reifyFun f
+      nids <- mapM reifySimple exprs
+      modify $ \(RState sh un gr) -> RState sh un ( gr {genRecordNids = (concat nids)})
+      modify $ \(RState sh un gr) -> RState sh un ( gr {genRecordFunType = reifyFunType f})
 
-          dag <- gets (genRecordDag . genRecord) 
+      dag <- gets (genRecordDag . genRecord) 
           
-          let h = hash dag 
+      let h = hash dag 
           
-          modify $ \(RState sh un gr) -> RState sh un ( gr {genRecordHash = h}) 
+      modify $ \(RState sh un gr) -> RState sh un ( gr {genRecordHash = h}) 
 
-          gets genRecord
+      gets genRecord
 
 ----------------------------------------------------------------------------
 -- 
 class ReifyableFun a b where 
-    reifyFun :: (a -> b) -> R [Expr]
+  reifyFun :: (a -> b) -> R [Expr]
 
 
 instance Data a => ReifyableFun (Exp a) (Exp b) where 
-    reifyFun f = 
-        do 
-          v <- newVar 
-          let t = typeOf (undefined :: a) 
-          addVarType v t 
-          let e = f $ E (Var v)  
+  reifyFun f = 
+    do 
+      v <- newVar 
+      let t = typeOf (undefined :: a) 
+      addVarType v t 
+      let e = f $ E (Var v)  
                      
-          return [unE e]
+      return [unE e]
 
 instance Data a => ReifyableFun (Exp a) (Exp b,Exp c) where 
-    reifyFun f = 
-        do 
-          v <- newVar 
-          let t = typeOf (undefined :: a) 
-          addVarType v t 
-          let (e1,e2) = f $ E (Var v)  
+  reifyFun f = 
+    do 
+      v <- newVar 
+      let t = typeOf (undefined :: a) 
+      addVarType v t 
+      let (e1,e2) = f $ E (Var v)  
                      
-          return [unE e1,unE e2]
+      return [unE e1,unE e2]
 
 instance Data a => ReifyableFun (Exp a) (Exp b,Exp c, Exp d) where 
-    reifyFun f = 
-        do 
-          v <- newVar 
-          let t = typeOf (undefined :: a) 
-          addVarType v t 
-          let (e1,e2,e3) = f $ E (Var v)  
+  reifyFun f = 
+    do 
+      v <- newVar 
+      let t = typeOf (undefined :: a) 
+      addVarType v t 
+      let (e1,e2,e3) = f $ E (Var v)  
                      
-          return [unE e1,unE e2,unE e3]
+      return [unE e1,unE e2,unE e3]
 
 
 instance (Data a, ReifyableFun b c ) => ReifyableFun (Exp a)  (b -> c) where 
-    reifyFun f = 
-        do 
-          v <- newVar 
-          let t = typeOf (undefined :: a)
-          addVarType v t 
-          reifyFun $ f (E (Var v))
+  reifyFun f = 
+    do 
+      v <- newVar 
+      let t = typeOf (undefined :: a)
+      addVarType v t 
+      reifyFun $ f (E (Var v))

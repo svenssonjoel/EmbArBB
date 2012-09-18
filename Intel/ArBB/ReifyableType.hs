@@ -97,4 +97,3 @@ instance (ReifyableType (Exp a), ReifyableFunType b c)
                         reifyFunType (f undefined)    -- Will f undefined work here ?? 
                                                       -- what problems might it cause.
 
-                

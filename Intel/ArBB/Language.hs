@@ -723,11 +723,12 @@ transposeSeg (E v) = E $ Op Transpose [v]
 ----------------------------------------------------------------------------
 -- | Map an ArBB Function 
 map :: (Data a, Data b) => (Exp a -> Exp b) -> Exp (DVector t a) -> Exp (DVector t b)
-map f (E v) = E $ Map (reify f) [v] 
+map f (E v) = E $ Map (reify f) [v]
+
 
 -- | Call an ArBB Function 
 call :: (Data a, Data b) => (Exp a -> Exp b) -> Exp a -> Exp b 
-call f (E a) = E $ Call (reify f) [a] 
+call f (E a) = E $ Call (reify f) [a]
 
 -- | zipWith
 zipWith :: (Data a, Data b, Data c) 
@@ -790,7 +791,7 @@ zipWith7 :: (Data a, Data b, Data c, Data d, Data e, Data f, Data g, Data h)
 zipWith7 f (E v1) (E v2) (E v3) (E v4) (E v5) (E v6) (E v7) 
     = E $ Map (reify f) [v1,v2,v3,v4,v5,v6,v7] 
 
-
+ 
 
 ----------------------------------------------------------------------------
 -- Stencil operations. 
@@ -798,7 +799,8 @@ zipWith7 f (E v1) (E v2) (E v3) (E v4) (E v5) (E v6) (E v7)
 data Stencil a d =  Stencil [a] d 
 
 ---------------------------------------------------------------------------- 
--- Experimental. 
+-- Experimental.
+{- 
 mapStencil :: (Num (Exp a), Data a, Dimensions t ) 
             => Stencil (Exp a) t 
              -> Exp (DVector t a) 
@@ -817,7 +819,7 @@ mapStencil (Stencil ls d)  (E v) = E $ Map (reify f) [v]
                                     (fromIntegral c) 
                                     (fromIntegral r)  | (p,c,r) <- pos] 
                                       coeff
-                    
+-}                     
 coordsFromDim (Dim xs) = coordsFromDim' xs
     where
       coordsFromDim' [] = []
