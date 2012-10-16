@@ -106,7 +106,7 @@ getAllState =
 extractFunType :: Map.Map Integer (VM.ConvFunction,[Type],[Type]) -> 
                   Map.Map Integer Integer -> 
                   Map.Map Integer ([Type],[Type]) 
-extractFunType funm depm = error $ Map.fromAscList keyval'
+extractFunType funm depm = Map.fromAscList keyval'
     
     where 
       keyval' = map conv keyval

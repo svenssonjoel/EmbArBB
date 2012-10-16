@@ -50,6 +50,9 @@ type family FunOut b
 type instance FunOut (Exp (DVector t a)) = BEDVector t a 
 type instance FunOut (Exp (NVector a))   = BENVector a 
 
+-- titta på Associerad typ i class (lösning på NVector input och output)
+-- Om konstigt prata mer med Josef! 
+
 #define ScalarOut(scal)                             \
   type instance FunOut (Exp (scal)) = BEScalar (scal)
   

@@ -548,6 +548,7 @@ MKS(Int64,int64_)
 MKS(USize,usize_)
 MKS(ISize,isize_)
 
+
 instance Scalar Boolean where 
     mkScalar a = 
         do 

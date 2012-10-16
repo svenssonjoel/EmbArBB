@@ -53,8 +53,14 @@ data Expr = Lit Literal
           | ResIndex Expr Int 
             
           -- Function Call and Map.
-          | Call (R GenRecord) [Expr]  
-          | Map  (R GenRecord) [Expr]   
+          -- Should also work with a ([Expr] -> Expr) function
+          -- (test in a branch. Talk to Josef if trouble)
+          -- Maybe needs to be generlised some ?   
+          | Map (R GenRecord) [Expr]  
+          | Call (R GenRecord) [Expr]
+
+          -- | Call (R GenRecord) [Expr]  
+          -- | Map  (R GenRecord) [Expr]   
           
           -- Hoas for the while loop.. 
           -- Todo: Structure instead of [Expr] (Allow tuples etc) 
