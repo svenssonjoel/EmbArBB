@@ -53,6 +53,7 @@ instance IsScalar Word where
                n -> error "scalarType: <Word> Strage size"
   scalarSize a = S.sizeOf a 
 
+-- Should this be Boolean ? 
 instance IsScalar Bool where 
   scalarType a = 
     Scalar VM.ArbbBoolean

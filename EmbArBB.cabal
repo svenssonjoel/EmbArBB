@@ -31,7 +31,7 @@ Library
                , mtl 
                , containers
                , vector
-               , arbb-vm >= 0.1.1.14
+               , arbb-vm >= 0.1.1.20
 	       , JuicyPixels >= 1.3
 
 

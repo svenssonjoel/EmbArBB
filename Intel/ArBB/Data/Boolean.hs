@@ -14,7 +14,11 @@ import Intel.ArBB.Types
 import qualified Intel.ArbbVM as VM
 
 newtype Boolean = B {unBoolean :: Bool}
-    deriving (Eq, Ord, Show) 
+    deriving (Eq, Ord)
+
+instance Show Boolean where
+  show (B True) = "T"
+  show (B False) = "F"
 
 instance Storable Boolean where
    sizeOf _          = sizeOf (undefined::Int8)

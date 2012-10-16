@@ -284,8 +284,9 @@ copyIn dvec =
    liftVM$ VM.opDynamicImm_ VM.ArbbOpAlloc [v] ss
 
 
-   -- get a ptr to the data in the VM and copy Haskell vector into it. 
-   arbbdat <- liftVM$ VM.mapToHost_ v (map fromIntegral dims') VM.ArbbWriteOnlyRange
+   -- get a ptr to the data in the VM and copy Haskell vector into it.
+   -- TODO: make use of the pitches
+   (arbbdat,pitches) <- liftVM$ VM.mapToHost_ v VM.ArbbWriteOnlyRange
    liftIO$  copyBytes (castPtr arbbdat) 
                       ptr
                       ((foldl (*) 1 dims') * sizeOf elem) 
@@ -323,7 +324,8 @@ new t a =
    liftVM$ VM.opDynamicImm_ VM.ArbbOpAlloc [v] ss
 
    -- DONE : Fill the vector!
-   arbbdat <- liftVM$ VM.mapToHost_ v (map fromIntegral (dimList dims)) VM.ArbbWriteOnlyRange 
+   -- TODO : Make use of the info in pitches.
+   (arbbdat,pitches) <- liftVM$ VM.mapToHost_ v  VM.ArbbWriteOnlyRange 
    liftIO$ pokeArray (castPtr arbbdat) (replicate (foldl (*) 1 (dimList dims)) a)
 
    (ArBBState mf mv i) <- S.get 
@@ -359,7 +361,8 @@ copyOut dv =
    (ArBBState  _ mv _) <- S.get                    
   
    let (Just v) = Map.lookup (beDVectorID dv) mv
-   arbbdat <- liftVM$ VM.mapToHost_ v (map fromIntegral dims') VM.ArbbReadOnlyRange
+   -- TODO: Make use of the pitches
+   (arbbdat,pitches) <- liftVM$ VM.mapToHost_ v  VM.ArbbReadOnlyRange
    liftIO$  copyBytes ptr
                       (castPtr arbbdat) 
                       ((foldl (*) 1 dims') * (sizeOf (undefined :: a)) ) 
@@ -542,7 +545,8 @@ MKS(Int8,int8_)
 MKS(Int16,int16_)
 MKS(Int32,int32_)
 MKS(Int64,int64_)
-
+MKS(USize,usize_)
+MKS(ISize,isize_)
 
 instance Scalar Boolean where 
     mkScalar a = 

@@ -106,7 +106,7 @@ getAllState =
 extractFunType :: Map.Map Integer (VM.ConvFunction,[Type],[Type]) -> 
                   Map.Map Integer Integer -> 
                   Map.Map Integer ([Type],[Type]) 
-extractFunType funm depm = Map.fromAscList keyval'
+extractFunType funm depm = error $ Map.fromAscList keyval'
     
     where 
       keyval' = map conv keyval
@@ -161,6 +161,8 @@ accmBody dag nids vt funm depm is =
           return (vs++vss,m'')
 -}
 
+--TODO: Needs to extract the funType map here as well, right ?
+--      Cleaning is needed here . 
 accmBodyLocal :: DAG
             -> [NodeID] 
         --    -> NodeIDType 
@@ -180,7 +182,7 @@ accmBodyLocal dag nids allstate funm depm is = liftM fst $ doBody nids allstate 
           (vss,s') <- doBody xs s
           return (vs++vss,s')
 
-
+ 
 ----------------------------------------------------------------------------
 -- The real worker
 
@@ -593,7 +595,7 @@ isOpDynamic (Cast t) = False
 isOpDynamic Extract = True 
 isOpDynamic Split = False  
 isOpDynamic Unsplit = False  
-isOpDynamic Index = False  
+isOpDynamic Index = True
 isOpDynamic Mask = False  
 isOpDynamic CopyNesting = False  
 isOpDynamic Flatten = False  

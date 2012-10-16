@@ -200,11 +200,13 @@ instance Reify Expr where
           
           depends <- gets (genRecordDepends . genRecord) 
           let depends' = Map.insert uniq depend depends
+          liftIO$ putStrLn $ "generated map fun has id: " ++ show uniq
+          liftIO$ putStrLn $ show depends'
           modify $ \(RState sh un gr) -> RState sh un (gr { genRecordDepends = depends' }) 
           insertNode e (NMap uniq (concat exprs'))
                     
           --fid  <- lift ( runR cap )
-          --liftIO$ putStrLn $ "generated map fun has id: " ++ show fid
+          
           --exprs' <- mapM reify exprs 
           --insertNode e (NMap fid (concat exprs'))
                     
@@ -226,8 +228,10 @@ instance Reify Expr where
               cond' = cond vexps 
               body' = body vexps 
           i' <- mapM reifySimple state
-   
-          -- TODO: I am very unsure here. Is this right ? 
+
+          -- TODO: I am very unsure here. Is this right ?
+          --  Does reifyLocally prevent dependencies to be added to the
+          --  dependency list ?
           [c'] <- reifyLocally cond'
           b'   <- mapM reifyLocally body'
           insertNode e (NWhile variables c' (concat b') (concat i')) 

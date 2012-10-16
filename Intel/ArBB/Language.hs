@@ -61,6 +61,10 @@ vecToUSize :: Exp (Vector a) -> Exp (Vector USize)
 vecToUSize (E a) = 
   E $ Op (Cast (Dense I VM.ArbbUsize)) [a]
 
+vecToBool :: Exp (Vector a) -> Exp (Vector Boolean)
+vecToBool (E a) = 
+  E $ Op (Cast (Dense I VM.ArbbBoolean)) [a] 
+
 toUsize :: Exp a -> Exp USize 
 toUsize (E a) = 
   E $ Op (Cast (Scalar VM.ArbbUsize)) [a] 
@@ -218,7 +222,16 @@ index2D (E ix1) (E ix2) (E vec) =
 -- | Index into a 3D vector 
 index3D :: Exp USize -> Exp USize -> Exp USize -> Exp (DVector Dim2 a) -> Exp a 
 index3D (E ix1) (E ix2) (E ix3) (E vec) = 
-  E $ Op Extract [vec,ix1,ix2,ix3] 
+  E $ Op Extract [vec,ix1,ix2,ix3]
+  
+----------------------------------------------------------------------------
+-- generate arrays of indices. 
+----------------------------------------------------------------------------
+-- generalise to other types 
+indices :: Exp Int32 -> Exp USize -> Exp Int32 -> Exp (DVector Dim1 Int32)
+indices (E start) (E num) (E stride) =
+  E $ Op Index [start,num,stride]
+
 
 ----------------------------------------------------------------------------
 (!) = flip index1D
@@ -1066,7 +1079,8 @@ instance (Num (Exp a), Bits a) => Bits (Exp a) where
 (<*) :: Ord a => Exp a -> Exp a -> Exp Boolean
 (<*) (E a) (E b) = E $ Op Less [a,b]
 
-
+(==*) :: Eq a => Exp a -> Exp a -> Exp Boolean
+(==*) (E a) (E b) = E $ Op Equal [a,b]
 
 ----------------------------------------------------------------------------
 -- Floating stuff
