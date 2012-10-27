@@ -162,7 +162,8 @@ accmBody dag nids vt funm depm is =
 -}
 
 --TODO: Needs to extract the funType map here as well, right ?
---      Cleaning is needed here . 
+--      Cleaning is needed here .
+{-           
 accmBodyLocal :: DAG
             -> [NodeID] 
         --    -> NodeIDType 
@@ -179,6 +180,25 @@ accmBodyLocal dag nids allstate funm depm is = liftM fst $ doBody nids allstate 
     doBody (x:xs) m =
       do 
           (vs,s) <- runGenAllState (genBody' dag x funm depm is) m
+          (vss,s') <- doBody xs s
+          return (vs++vss,s')
+-}           
+accmBodyLocal :: DAG
+            -> [NodeID] 
+        --    -> NodeIDType 
+            -> AllState
+            -> (Map.Map Integer (VM.ConvFunction,[Type],[Type]))
+            -> (Map.Map Integer Integer)
+            -> [(Variable, VM.Variable)] 
+            -> VM.EmitArbb [VM.Variable]
+accmBodyLocal dag nids allstate funm depm is = liftM fst $ doBody nids allstate -- ((vt,Map.empty),Map.empty) 
+
+  where 
+    doBody ::[NodeID] -> AllState -> VM.EmitArbb ([VM.Variable],AllState)
+    doBody [] m = return ([],m) 
+    doBody (x:xs) m =
+      do 
+          (vs,s) <- runGenTC (genBody' dag x funm depm is) m
           (vss,s') <- doBody xs s
           return (vs++vss,s')
 

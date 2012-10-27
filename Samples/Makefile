@@ -2,6 +2,7 @@
 
 all: 
 	ghc --make histogram.hs -i../
+	ghc --make dotprod.hs -i../
 	ghc --make saxpy.hs -i../
 	ghc --make matrix_mult.hs -i../
 	ghc --make matrix_vector.hs -i../
@@ -16,6 +17,7 @@ all:
 
 clean: 
 	rm histogram
+	rm dotprod
 	rm saxpy
 	rm matrix_mult
 	rm matrix_vector
