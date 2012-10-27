@@ -25,10 +25,15 @@ import qualified Data.List as L
 import Data.Maybe 
 
 import Control.Monad.State
----------------------------------------------------------------------------- 
--- 
+---------------------------------------------------------------------------
+-- Code generation monad 
+--------------------------------------------------------------------------- 
 
 type Gen a = TypeChecker (StateT (Map.Map NodeID [VM.Variable]) VM.EmitArbb) a 
+
+type NodeIDVar = Map.Map NodeID [VM.Variable]
+
+type AllState = (TCState,NodeIDVar)
 
 liftVM = (lift.lift)
 
@@ -36,22 +41,27 @@ liftVM = (lift.lift)
 runGen :: Gen a -> VarType -> VM.EmitArbb a 
 runGen g vt = fst `fmap` (runGen' g vt (Map.empty))
 
-type NodeIDVar = Map.Map NodeID [VM.Variable]
+--runGen' :: Gen a -> VarType -> NodeIDVar -> VM.EmitArbb (a,NodeIDVar) 
+--runGen' g vt nidv = 
+--  do 
+--    let m = runTypeChecker g vt 
+--    runStateT m nidv
 
 runGen' :: Gen a -> VarType -> NodeIDVar -> VM.EmitArbb (a,NodeIDVar) 
-runGen' g vt nidv = 
-  do 
-    let m = runTypeChecker g vt 
-    runStateT m nidv
-    
-type AllState = (TCState,NodeIDVar)
-
-runGenAllState :: Gen a -> AllState -> VM.EmitArbb (a,AllState) 
-runGenAllState g (TCState vt nidt fm ,nv) = 
+runGen' g vt nv = 
   do
-    let m = runTypeChecker' g (vt,nidt) 
-    ((a,vt'),nt') <- runStateT m nv 
-    return (a, (vt',nt'))
+    let tc = TCState vt Map.empty Map.empty
+        m = runTypeCheckerTC g tc
+    ((a,tc'),nv') <- runStateT m nv
+    return (a,nv')
+
+
+--runGenAllState :: Gen a -> AllState -> VM.EmitArbb (a,AllState) 
+--runGenAllState g (TCState vt nidt fm ,nv) = 
+--  do
+--    let m = runTypeChecker' g (vt,nidt) 
+--    ((a,vt'),nt') <- runStateT m nv 
+--    return (a, (vt',nt'))
     
 runGenTC :: Gen a -> AllState -> VM.EmitArbb (a,AllState) 
 runGenTC g (tc,nv) = 
@@ -96,10 +106,10 @@ getAllState =
     a <- get 
     b <- lift get
     return (a,b)
----------------------------------------------------------------------------- 
--- extract a funType map from a funMap
 
-
+---------------------------------------------------------------------------
+-- Extract a funID -> Type map from a function map and a dependency map
+--------------------------------------------------------------------------- 
 --- TODO: This is getting very messy. There are too many maps here 
 --        I need to write down exactly what the perpose of each is and 
 --        see if some can be removed.. 

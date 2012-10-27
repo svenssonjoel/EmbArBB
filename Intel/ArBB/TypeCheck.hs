@@ -37,11 +37,11 @@ emptyTCState = TCState Map.empty Map.empty Map.empty
 -- type TypeChecker m a = StateT (VarType,NodeIDType) m a
 type TypeChecker m a = StateT TCState m a 
 
-runTypeChecker :: Monad m => TypeChecker m a -> VarType -> m a 
-runTypeChecker c vt = evalStateT c  (TCState vt Map.empty Map.empty) --(vt,Map.empty)
+--runTypeChecker :: Monad m => TypeChecker m a -> VarType -> m a 
+--runTypeChecker c vt = evalStateT c  (TCState vt Map.empty Map.empty) --(vt,Map.empty)
 
-runTypeChecker' :: Monad m => TypeChecker m a -> (VarType,NodeIDType) -> m (a,TCState) -- m (a,(VarType,NodeIDType))
-runTypeChecker' c vt = runStateT c (TCState (fst vt) (snd vt) Map.empty) 
+--runTypeChecker' :: Monad m => TypeChecker m a -> (VarType,NodeIDType) -> m (a,TCState) -- m (a,(VarType,NodeIDType))
+--runTypeChecker' c vt = runStateT c (TCState (fst vt) (snd vt) Map.empty) 
 
 runTypeCheckerTC :: Monad m => TypeChecker m a -> TCState -> m (a,TCState) -- m (a,(VarType,NodeIDType))
 runTypeCheckerTC c tc = runStateT c tc  
