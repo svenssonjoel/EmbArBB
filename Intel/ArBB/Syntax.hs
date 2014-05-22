@@ -41,8 +41,21 @@ instance (Struct a , Struct b) => Struct (a,b) where
     destruct (StructTuple [a,b]) = (destruct a, destruct b) 
 
 
+data Fun = Lam Variable Fun
+         | Body Expr
+
+newtype Reif a = Reif (StateT Writer Fun a) 
+
+class RFun f where
+  toFun :: f -> Fun
+
+instance RFun Expr where
+  toFun e = Body e
+
+instance RFun (Expr -> Expr) where 
+  
 ----------------------------------------------------------------------------
---  Expression type. 
+--  Expression type.
 --   Will try to discover the sharing using the 
 --   StableName method. (System.Mem.StableName)
 data Expr = Lit Literal
@@ -56,8 +69,8 @@ data Expr = Lit Literal
           -- Should also work with a ([Expr] -> Expr) function
           -- (test in a branch. Talk to Josef if trouble)
           -- Maybe needs to be generlised some ?   
-          | Map (R GenRecord) [Expr]  
-          | Call (R GenRecord) [Expr]
+          | Map (Reif Fun) [Expr]  -- Instead some Reified function here. R Fun.
+          | Call (Reif Fun) [Expr]
 
           -- | Call (R GenRecord) [Expr]  
           -- | Map  (R GenRecord) [Expr]   

@@ -2,14 +2,21 @@
 
 module Intel.ArBB.Types where 
 
-import qualified Intel.ArbbVM as VM
-import qualified Intel.ArbbVM.Convenience as VM 
+--import qualified Intel.ArbbVM as VM
+--import qualified Intel.ArbbVM.Convenience as VM 
 
 ---------------------------------------------------------------------------- 
--- What types can we have ? 
-data Type = Scalar VM.ScalarType 
-          | Dense Dimensionality VM.ScalarType 
-          | Nested VM.ScalarType
+--
+data ScalarType = I8 | I16 | I32 | I64
+                | U8 | U16 | U32 | U64
+                | F32 | F64
+                | Boolean
+                | USize
+                | ISize 
+
+data Type = Scalar ScalarType 
+          | Dense Dimensionality ScalarType 
+          | Nested ScalarType
                         
           -- Tuple types 
           | Tuple [Type] 
@@ -20,6 +27,23 @@ infixr :->
 
 data Dimensionality = I | II | III 
                     deriving (Eq, Show)
+---------------------------------------------------------------------------
+-- Size in bytes of an element of a given type.
+size :: ScalarType -> Int
+size I8  = 1
+size I16 = 2 
+size I32 = 4
+size I64 = 8 
+size U8  = 1 
+size U16 = 2 
+size U32 = 4 
+size U64 = 8
+size F32 = 4
+size F64 = 8 
+size Boolean = 4 
+size USize = 4  
+size USize = 4  
+
 
 ---------------------------------------------------------------------------- 
 --  Type  helpers
@@ -61,3 +85,4 @@ getOutputType (a :-> b) = getOutputType' b
       getOutputType' (a :-> b) = getOutputType' b
       getOutputType' b         = b 
 getOutputType _         = error "getOutputTypes: not a function type" 
+
