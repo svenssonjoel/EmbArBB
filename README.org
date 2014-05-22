@@ -1,60 +1,16 @@
 * EmbArBB
-  + Embedded language for data parallel programming targetting Intel ArBB. 
-  + Uses the Haskell/ArBB bindings (svenssonjoel/arbb-vm.git on github)
-
-* Help Wanted 
-  + If you are interested in Haskell EDSLs and data parallelism 
-    and want to help improve this library, please let me know. There 
-    is a lot to improve upon here. 
-
-* Status
-  + The samples and benchmarks run again
-
-* TODOs:  
-  + Think up some new execute interface. 
- 
-  + print function for DAGs
+  + Start repurposing EmbArBB for other code generators.  
+    + Sequential C (Start here, proof of concept) 
+    + Parallelism libraries 
+    + OpenAcc 
+    + OpenCL 
    
-  + Things like mkScalar needs to be separated from the specific backend. 
-
-  + The make_ref_countable family of functions in the arbb-vm needs to be understood. 
-    Currently things stored on the ArBB heap are not freed. Manual freeing 
-    of vectors does not sound very attractive so figuring out some way to automate this 
-    is important. 
-
-  + 'copyIn', 'copyOut' and 'new' functions for NVectors. 
-    
-  + See if there is a point to having some set of "immediate functions" that can 
-    be executed directly in an withArBB session. 
-
-  + Array of Tuple to Tuple of Array compilation step
-
-  + Support more general looping states. 
-
-  + Keep track of what functions have been captured. If a function uses "Call"  on 
-    the same other function many times, each of these calls will lead to a captured 
-    instance of that function. Some map of "functionHash -> functionID" is needed. 
-    A way to get unique identifiers from a GenRecord could do as the hash.
-    
-    
-  + Code generation is messed up for certain uses of Map. 
-    For example see. breaks.hs. Partial applicaiton of the mapee function 
-    may cause variables to leak out of scope. 
-    
-  + For some functions the system crashes during capture with a 
-    "terminate called after throwing an instance of 'ExceptionImpl*'" error message. 
-    This message comes from the ArBB library. Right now the cause of it is unknown
-    to me. 
-    
-* NOTES: 
-  + An ArBB function cannot "Call" itself. That is, ArBB functions 
-    cannot be recursive. To upweigh this there are many forms of loops, 
-    Do, While, For. 
-  + The nested vector capabilities feel a bit wing-clipped from the 
-    missing recursion. Finding a few example apps that use the nested 
-    vectors might cast some light.
-
- 
-
-
-
+* TODOs 
+  + Function reification needs improvement. 
+  + Sharing detection, DAG conversion, Look over these. 
+    + If keep: needs much change and improvement. 
+    + If scrap: needs replacement by something. 
+  + Map and Call were always broken (Environments are needed, Or
+    free variables has to be captured at some point. Compile once 
+    or compile many times...)
+      
