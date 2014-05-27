@@ -1,9 +1,15 @@
-{-# LANGUAGE TypeOperators, 
-             FlexibleInstances,
-             DeriveDataTypeable, 
-             TypeSynonymInstances #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE FlexibleInstances #-} 
+{-# LANGUAGE DeriveDataTypeable #-} 
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 {- 2012 Joel Svensson -} 
+
+{- Notes:
+
+   Changes 2014 
+-} 
 
 module Intel.ArBB.Syntax where 
 
@@ -12,17 +18,20 @@ import Intel.ArBB.Literal
 import Intel.ArBB.Variable
 import Intel.ArBB.Op
 
-import Intel.ArBB.MonadReify
-import Intel.ArBB.GenRecord
+-- import Intel.ArBB.MonadReify
+-- import Intel.ArBB.GenRecord
 
 import Data.Typeable
+import Data.Supply 
 
+import Control.Monad.State
+import Control.Monad.Writer
 ----------------------------------------------------------------------------
 -- Structure 
 
 data Structure = StructSingle Expr 
                | StructTuple [Structure] 
-                 deriving Show 
+                 deriving (Show) 
 
 class Struct a where 
     struct   :: a -> Structure 
@@ -43,16 +52,27 @@ instance (Struct a , Struct b) => Struct (a,b) where
 
 data Fun = Lam Variable Fun
          | Body Expr
-
-newtype Reif a = Reif (StateT Writer Fun a) 
+         deriving (Show) 
 
 class RFun f where
-  toFun :: f -> Fun
+  toFun :: Supply Int -> f -> Fun
 
 instance RFun Expr where
-  toFun e = Body e
+  toFun s e = Body e
 
 instance RFun (Expr -> Expr) where 
+  toFun s f = let i = supplyValue s
+                  v = Variable$ "fun_local_v"++show v
+                  body = f (Var v) 
+              in Lam v (Body body)
+                 
+instance RFun b => RFun (Expr -> b) where
+  toFun s f = let (s1,s2) = split2 s
+                  i = supplyValue s1
+                  v = Variable$ "fun_local_v"++show v
+                  rest = toFun s2 $ f (Var v) 
+              in Lam v rest
+
   
 ----------------------------------------------------------------------------
 --  Expression type.
@@ -69,8 +89,8 @@ data Expr = Lit Literal
           -- Should also work with a ([Expr] -> Expr) function
           -- (test in a branch. Talk to Josef if trouble)
           -- Maybe needs to be generlised some ?   
-          | Map (Reif Fun) [Expr]  -- Instead some Reified function here. R Fun.
-          | Call (Reif Fun) [Expr]
+          | Map Fun [Expr] 
+          | Call Fun [Expr]
 
           -- | Call (R GenRecord) [Expr]  
           -- | Map  (R GenRecord) [Expr]   
@@ -96,8 +116,6 @@ data Expr = Lit Literal
 
             deriving (Show,Typeable)
 
-instance Show (R a) where 
-    show a = "REIFY" 
 instance Show (a -> b) where 
     show a = "FUNC" 
 

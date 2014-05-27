@@ -44,4 +44,4 @@ data Op = Add | Sub  | Mul | Div
         | AddScan | MulScan | MaxScan | MinScan | AndScan 
         | IorScan | XorScan 
         | AddMerge | AddMergeScalar
-          deriving (Eq, Show) 
+          deriving (Eq, Show, Read, Ord) 

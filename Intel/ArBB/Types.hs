@@ -12,7 +12,8 @@ data ScalarType = I8 | I16 | I32 | I64
                 | F32 | F64
                 | Boolean
                 | USize
-                | ISize 
+                | ISize
+                 deriving (Eq,Show,Read,Ord)
 
 data Type = Scalar ScalarType 
           | Dense Dimensionality ScalarType 
@@ -22,11 +23,11 @@ data Type = Scalar ScalarType
           | Tuple [Type] 
 -- EXPERIMENTAL function types
           | Type :-> Type
-          deriving (Eq,Show)                  
+          deriving (Eq,Show,Read,Ord)                  
 infixr :-> 
 
 data Dimensionality = I | II | III 
-                    deriving (Eq, Show)
+                    deriving (Eq, Show, Read, Ord)
 ---------------------------------------------------------------------------
 -- Size in bytes of an element of a given type.
 size :: ScalarType -> Int
@@ -42,7 +43,7 @@ size F32 = 4
 size F64 = 8 
 size Boolean = 4 
 size USize = 4  
-size USize = 4  
+size ISize = 4  
 
 
 ---------------------------------------------------------------------------- 
@@ -66,7 +67,7 @@ decrRank (Dense II a) = Just$ Dense I a
 decrRank (Dense I a) = Just$ Scalar a 
 decrRank a = error $ "decrRank on :" ++ show a  -- Nothing 
 
-container :: Type -> (VM.ScalarType -> Type) 
+container :: Type -> (ScalarType -> Type) 
 container (Dense t a) b = Dense t b 
 container _ _ = error "container: not a container" 
 

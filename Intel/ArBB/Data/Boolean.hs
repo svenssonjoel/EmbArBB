@@ -11,7 +11,7 @@ import Data.Int
 
 import Intel.ArBB.IsScalar 
 import Intel.ArBB.Types 
-import qualified Intel.ArbbVM as VM
+-- import qualified Intel.ArbbVM as VM
 
 newtype Boolean = B {unBoolean :: Bool}
     deriving (Eq, Ord)
@@ -29,6 +29,6 @@ instance Storable Boolean where
 
 
 instance IsScalar Boolean where 
-    scalarType _ = Scalar VM.ArbbBoolean 
+    scalarType _ = Scalar Boolean 
     scalarSize _ = scalarSize (undefined :: Int8) 
 
