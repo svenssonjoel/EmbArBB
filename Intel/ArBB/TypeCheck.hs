@@ -13,7 +13,7 @@ import Intel.ArBB.Variable
 import Intel.ArBB.Op 
 
 
-import qualified Intel.ArbbVM as ArBB
+-- import qualified Intel.ArbbVM as ArBB
 
 import Control.Monad.State
 import Control.Monad.Identity
@@ -136,21 +136,21 @@ typecheckNID d n =
         --return $ Just $ Dense II ArBB.ArbbU32
           
     -- TODO: fix for 32-bit archs .. 
-    typecheckLiteral (LitInt _)   = return$ Just$ Scalar ArBB.ArbbI64 -- FIX !   
-    typecheckLiteral (LitInt8 _)   = return$ Just$ Scalar ArBB.ArbbI8
-    typecheckLiteral (LitInt16 _)  = return$ Just$ Scalar ArBB.ArbbI16
-    typecheckLiteral (LitInt32 _)  = return$ Just$ Scalar ArBB.ArbbI32
-    typecheckLiteral (LitInt64 _)  = return$ Just$ Scalar ArBB.ArbbI64
-    typecheckLiteral (LitWord _) = return$ Just$ Scalar ArBB.ArbbU64 -- FIX ! 
-    typecheckLiteral (LitWord8 _) = return$ Just$ Scalar ArBB.ArbbU8
-    typecheckLiteral (LitWord16 _) = return$ Just$ Scalar ArBB.ArbbU16
-    typecheckLiteral (LitWord32 _) = return$ Just$ Scalar ArBB.ArbbU32
-    typecheckLiteral (LitWord64 _) = return$ Just$ Scalar ArBB.ArbbU64
-    typecheckLiteral (LitFloat _) = return$ Just$ Scalar ArBB.ArbbF32
-    typecheckLiteral (LitDouble _) = return$ Just$ Scalar ArBB.ArbbF64
-    typecheckLiteral (LitISize _)  = return$ Just$ Scalar ArBB.ArbbIsize 
-    typecheckLiteral (LitUSize _)  = return$ Just$ Scalar ArBB.ArbbUsize 
-    typecheckLiteral (LitBool _)   = return$ Just$ Scalar ArBB.ArbbBoolean
+    typecheckLiteral (LitInt _)   = return$ Just$ Scalar I64 -- FIX !   
+    typecheckLiteral (LitInt8 _)   = return$ Just$ Scalar I8
+    typecheckLiteral (LitInt16 _)  = return$ Just$ Scalar I16
+    typecheckLiteral (LitInt32 _)  = return$ Just$ Scalar I32
+    typecheckLiteral (LitInt64 _)  = return$ Just$ Scalar I64
+    typecheckLiteral (LitWord _) = return$ Just$ Scalar U64 -- FIX ! 
+    typecheckLiteral (LitWord8 _) = return$ Just$ Scalar U8
+    typecheckLiteral (LitWord16 _) = return$ Just$ Scalar U16
+    typecheckLiteral (LitWord32 _) = return$ Just$ Scalar U32
+    typecheckLiteral (LitWord64 _) = return$ Just$ Scalar U64
+    typecheckLiteral (LitFloat _) = return$ Just$ Scalar F32
+    typecheckLiteral (LitDouble _) = return$ Just$ Scalar F64
+    typecheckLiteral (LitISize _)  = return$ Just$ Scalar ISize 
+    typecheckLiteral (LitUSize _)  = return$ Just$ Scalar USize 
+    typecheckLiteral (LitBool _)   = return$ Just$ Scalar Boolean
     
     same t1 t2 = if t1 == t2 then Just t1 else Nothing 
     
@@ -192,16 +192,16 @@ typecheckNID d n =
     typeOfOp Bit_or  [t1,t2] = same t1 t2           
     typeOfOp Bit_xor [t1,t2] = same t1 t2
     typeOfOp Atan2 [t1,t2] = same t1 t2   
-    typeOfOp Compare [t1,t2] = Just $ Scalar ArBB.ArbbIsize 
-    typeOfOp Equal    _ = Just $ Scalar ArBB.ArbbBoolean
-    typeOfOp Geq      _ = Just $ Scalar ArBB.ArbbBoolean
-    typeOfOp Leq      _ = Just $ Scalar ArBB.ArbbBoolean
-    typeOfOp Less [a,b] = Just $ Scalar ArBB.ArbbBoolean
+    typeOfOp Compare [t1,t2] = Just $ Scalar ISize 
+    typeOfOp Equal    _ = Just $ Scalar Boolean
+    typeOfOp Geq      _ = Just $ Scalar Boolean
+    typeOfOp Leq      _ = Just $ Scalar Boolean
+    typeOfOp Less [a,b] = Just $ Scalar Boolean
     typeOfOp Log_and [t1,t2] = same t1 t2 -- Bool -> Bool -> Bool  
     typeOfOp Log_or  [t1,t2] = same t1 t2 -- Bool -> Bool -> Bool  
     typeOfOp Lsh [t1,t2] = Just t1  
     typeOfOp Mod [t1,t2] = Just t1 
-    typeOfOp Neq [t1,t2] = Just $ Scalar ArBB.ArbbBoolean
+    typeOfOp Neq [t1,t2] = Just $ Scalar Boolean
     typeOfOp Pow [t1,t2] = same t1 t2 
     typeOfOp Rsh [t1,t2] = Just t1 
     typeOfOp Select [t1,t2,t3] = same t2 t3
@@ -227,7 +227,7 @@ typecheckNID d n =
     typeOfOp Rotate [v,d] = Just v 
     typeOfOp RotateRev [v,d] = Just v
     typeOfOp Reverse [v] = Just v 
-    typeOfOp Length  [v] = Just $ Scalar ArBB.ArbbUsize
+    typeOfOp Length  [v] = Just $ Scalar USize
 
     -- Creates a nested
     typeOfOp ApplyNesting (Dense _ t:xs) = Just $ Nested t
@@ -237,7 +237,7 @@ typecheckNID d n =
     -- on input data! (If this OP is needed at both types then 
     -- the EmbArBB Op datatype should have two different constructors for them) 
     -- Only the USize instance is implemented here 
-    typeOfOp GetNesting xs = Just $ Dense I ArBB.ArbbUsize 
+    typeOfOp GetNesting xs = Just $ Dense I USize 
     typeOfOp Cat [t1,t2] = same t1 t2 
 
     -- Cast to type t.. 
@@ -252,21 +252,21 @@ typecheckNID d n =
     typeOfOp Unsplit [n,d] = Just $ n -- nested to nested..
     typeOfOp Index [Scalar t, Scalar _, Scalar _] = Just $ Dense I t 
     typeOfOp Index [Scalar t, Scalar _, Scalar _, Scalar _, Scalar _] = Just $ Dense II t 
-    typeOfOp Mask xs = Just $ Dense I ArBB.ArbbBoolean
+    typeOfOp Mask xs = Just $ Dense I Boolean
     typeOfOp Flatten [Dense _ a] = Just $ Dense I a 
     typeOfOp Flatten [Nested a]  = Just $ Dense I a 
     typeOfOp ConstVector [Scalar t,_] = Just$ Dense I t  
     typeOfOp Sort [v,d] = Just v
-    typeOfOp SortRank [v,d] = Just$ Tuple [v,Dense I ArBB.ArbbUsize] -- DVector Dim1 a -> (DVector Dim1 a, DVector Dim1 USize)
+    typeOfOp SortRank [v,d] = Just$ Tuple [v,Dense I USize] -- DVector Dim1 a -> (DVector Dim1 a, DVector Dim1 USize)
     typeOfOp Replace (t:ts) = Just t
     typeOfOp SetRegularNesting [Dense I t,t2,t3] = Just $ Dense II t
     typeOfOp SetRegularNesting [Dense I t,t2,t3,t4] = Just $ Dense III t
     typeOfOp ReplaceRow [t1,t2,t3] = Just t1
     typeOfOp ReplaceCol [t1,t2,t3] = Just t1 
     typeOfOp ReplacePage [t1,t2,t3] = Just t1
-    typeOfOp GetNRows xs = Just $ Scalar ArBB.ArbbUsize 
-    typeOfOp GetNCols xs = Just $ Scalar ArBB.ArbbUsize 
-    typeOfOp GetNPages xs = Just $ Scalar ArBB.ArbbUsize 
+    typeOfOp GetNRows xs = Just $ Scalar USize 
+    typeOfOp GetNCols xs = Just $ Scalar USize 
+    typeOfOp GetNPages xs = Just $ Scalar USize 
     typeOfOp ExtractRow [Dense II t1,t2] = Just $ Dense I t1 -- decrRank t1
     typeOfOp ExtractCol  [Dense II t1,t2] = Just $ Dense I t1 -- decrRank t1
     typeOfOp ExtractPage [Dense III t1,t2] = Just $ Dense II t1 -- decrRank t1 
@@ -280,9 +280,9 @@ typecheckNID d n =
     -- Only as part of the Haskell - ArBB interface. 
     typeOfOp Alloc xs = error "typeOfOp: Alloc used in function code" 
     typeOfOp ReplaceElem (t:ts) = Just t
-    typeOfOp GetEltCoord [] = Just $ Tuple [Scalar ArBB.ArbbUsize, 
-                                            Scalar ArBB.ArbbUsize, 
-                                            Scalar ArBB.ArbbUsize]
+    typeOfOp GetEltCoord [] = Just $ Tuple [Scalar USize, 
+                                            Scalar USize, 
+                                            Scalar USize]
     typeOfOp (BitwiseCast t) xs = Just t 
     typeOfOp GetNeighbor [t,t2,t3,t4] = Just $ t
     typeOfOp ExpectSize xs = error "typeOfOp: ExpectSize is not implemented" 
@@ -303,12 +303,12 @@ typecheckNID d n =
     -- the Loc versions have 2 outputs. 
     typeOfOp MaxReduceLoc [v,l] = 
         Just $ Tuple [ fromJust $ decrRank v
-                     , fromJust $ decrRank (container v ArBB.ArbbUsize)]
+                     , fromJust $ decrRank (container v USize)]
                     -- TODO: this is not pretty
 
     typeOfOp MinReduceLoc [v,l] = 
         Just $ Tuple [ fromJust $ decrRank v
-                     , fromJust $ decrRank (container v ArBB.ArbbUsize)]
+                     , fromJust $ decrRank (container v USize)]
 
     typeOfOp AndReduce [Nested t, l] = Just $ Dense I t 
     typeOfOp AndReduce [v,l] = decrRank v 

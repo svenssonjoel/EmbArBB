@@ -61,16 +61,16 @@ class RFun f where
 instance RFun Expr where
   toFun s e = Body e
 
-instance RFun (Expr -> Expr) where 
-  toFun s f = let i = supplyValue s
-                  v = Variable$ "fun_local_v"++show v
-                  body = f (Var v) 
-              in Lam v (Body body)
+-- instance RFun (Expr -> Expr) where 
+--   toFun s f = let i = supplyValue s
+--                   v = Variable$ "fun_local_v"++show v
+--                   body = f (Var v) 
+--               in Lam v (Body body)
                  
 instance RFun b => RFun (Expr -> b) where
   toFun s f = let (s1,s2) = split2 s
                   i = supplyValue s1
-                  v = Variable$ "fun_local_v"++show v
+                  v = Variable$ "fun_local_v"++show i
                   rest = toFun s2 $ f (Var v) 
               in Lam v rest
 ----------------------------------------------------------------------------

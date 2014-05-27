@@ -45,9 +45,10 @@ type DAG = Map.Map NodeID Node
 
 -- Probably horrible!
 instance Hashable Node where 
-    hash n = hash $ pack $ show n
+    -- hash n = hash $ pack $ show n
     hashWithSalt i n = hashWithSalt i (pack (show n)) 
 
 
 instance Hashable (Map.Map NodeID Node)  where 
-    hash dag = P.foldl hashWithSalt 0 (Map.toList dag)
+   --  hash dag = P.foldl hashWithSalt 0 (Map.toList dag) 
+    hashWithSalt i dag = P.foldl hashWithSalt i (Map.toList dag)

@@ -1,14 +1,15 @@
 
 
-{-# LANGUAGE CPP, 
-             FlexibleInstances, 
-             FlexibleContexts,
-             ScopedTypeVariables  #-}
+{-# LANGUAGE CPP #-}  
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
+
 module Intel.ArBB.Data where 
 
-import Intel.ArBB.Types 
+import Intel.ArBB.Types as T
 import Intel.ArBB.Syntax
-import qualified Intel.ArbbVM as VM
+-- import qualified Intel.ArbbVM as VM
 
 -- The basic data types supported
 import Data.Word 
@@ -29,26 +30,26 @@ class Data a where
 
 #define ScalarData(ht,arbbt,s)   \
   instance Data (ht) where    {  \
-     typeOf _ = Scalar VM.arbbt; \
+     typeOf _ = Scalar arbbt; \
      sizeOf _ = s}
 
 
 
-ScalarData(Int,ArbbI64,4)
-ScalarData(Int8,ArbbI8,1) 
-ScalarData(Int16,ArbbI16,2) 
-ScalarData(Int32,ArbbI32,4) 
-ScalarData(Int64,ArbbI64,8) 
-ScalarData(Word,ArbbU64,8);
-ScalarData(Word8,ArbbU8,1) 
-ScalarData(Word16,ArbbU16,2) 
-ScalarData(Word32,ArbbU32,4) 
-ScalarData(Word64,ArbbU64,8)
-ScalarData(Float,ArbbF32,4)
-ScalarData(Double,ArbbF64,8)
-ScalarData(USize,ArbbUsize,(S.sizeOf (undefined :: Word)))
-ScalarData(ISize,ArbbIsize,(S.sizeOf (undefined :: Int)))
-ScalarData(Boolean,ArbbBoolean,4) -- ensure size is right
+ScalarData(Int,I64,4)
+ScalarData(Int8,I8,1) 
+ScalarData(Int16,I16,2) 
+ScalarData(Int32,I32,4) 
+ScalarData(Int64,I64,8) 
+ScalarData(Word,U64,8);
+ScalarData(Word8,U8,1) 
+ScalarData(Word16,U16,2) 
+ScalarData(Word32,U32,4) 
+ScalarData(Word64,U64,8)
+ScalarData(Float,F32,4)
+ScalarData(Double,F64,8)
+ScalarData(USize,T.USize,(S.sizeOf (undefined :: Word)))
+ScalarData(ISize,T.ISize,(S.sizeOf (undefined :: Int)))
+ScalarData(Boolean,Boolean,4) -- ensure size is right
 
 ----------------------------------------------------------------------------
 -- Data pairs 

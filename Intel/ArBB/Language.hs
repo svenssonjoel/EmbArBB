@@ -19,13 +19,13 @@ import Intel.ArBB.Data.Boolean
 import Intel.ArBB.Data
 
 -- import Intel.ArBB.Backend.ArBB
-import Intel.ArBB.Reify
-import Intel.ArBB.ReifyableType
+--import Intel.ArBB.Reify
+--import Intel.ArBB.ReifyableType
 
-import qualified Intel.ArbbVM as VM
+-- import qualified Intel.ArbbVM as VM
 
 -- Type info needed in cast ops
-import Intel.ArBB.Types
+import Intel.ArBB.Types as T
 
 import Prelude as P 
 
@@ -59,85 +59,85 @@ constVector3D w h p a = ss''
 
 vecToUSize :: Exp (Vector a) -> Exp (Vector USize) 
 vecToUSize (E a) = 
-  E $ Op (Cast (Dense I VM.ArbbUsize)) [a]
+  E $ Op (Cast (Dense I T.USize)) [a]
 
 vecToBool :: Exp (Vector a) -> Exp (Vector Boolean)
 vecToBool (E a) = 
-  E $ Op (Cast (Dense I VM.ArbbBoolean)) [a] 
+  E $ Op (Cast (Dense I Boolean)) [a] 
 
 toUsize :: Exp a -> Exp USize 
 toUsize (E a) = 
-  E $ Op (Cast (Scalar VM.ArbbUsize)) [a] 
+  E $ Op (Cast (Scalar T.USize)) [a] 
 
 vecToFloat :: Exp (Vector a) -> Exp (Vector Float) 
 vecToFloat (E a) = 
-  E $ Op (Cast (Dense I VM.ArbbF32)) [a]
+  E $ Op (Cast (Dense I F32)) [a]
 
 vec2DToFloat :: Exp (DVector Dim2 a) -> Exp (DVector Dim2 Float) 
 vec2DToFloat (E a) = 
-  E $ Op (Cast (Dense II VM.ArbbF32)) [a]
+  E $ Op (Cast (Dense II F32)) [a]
 
 vec3DToFloat :: Exp (DVector Dim3 a) -> Exp (DVector Dim3 Float) 
 vec3DToFloat (E a) = 
-  E $ Op (Cast (Dense III VM.ArbbF32)) [a]
+  E $ Op (Cast (Dense III F32)) [a]
 
 
 toFloat :: Exp a -> Exp Float 
 toFloat (E a) = 
-  E $ Op (Cast (Scalar VM.ArbbF32)) [a] 
+  E $ Op (Cast (Scalar F32)) [a] 
 
 vecToDouble :: Exp (Vector a) -> Exp (Vector Double) 
 vecToDouble (E a) = 
-  E $ Op (Cast (Dense I VM.ArbbF64)) [a]
+  E $ Op (Cast (Dense I F64)) [a]
 
 toDouble :: Exp a -> Exp Double
 toDouble (E a) = 
-  E $ Op (Cast (Scalar VM.ArbbF64)) [a] 
+  E $ Op (Cast (Scalar F64)) [a] 
 
 vecToWord8 :: Exp (Vector a) -> Exp (Vector Word8) 
 vecToWord8 (E a) = 
-  E $ Op (Cast (Dense I VM.ArbbU8)) [a]
+  E $ Op (Cast (Dense I U8)) [a]
 
 vec2DToWord8 :: Exp (DVector Dim2 a) -> Exp (DVector Dim2 Word8) 
 vec2DToWord8 (E a) = 
-  E $ Op (Cast (Dense II VM.ArbbU8)) [a]
+  E $ Op (Cast (Dense II U8)) [a]
 
 vec2DToWord32 :: Exp (DVector Dim2 a) -> Exp (DVector Dim2 Word32) 
 vec2DToWord32 (E a) = 
-  E $ Op (Cast (Dense II VM.ArbbU32)) [a]
+  E $ Op (Cast (Dense II U32)) [a]
 
 
 toWord8 :: Exp a -> Exp Word8 
 toWord8 (E a) = 
-  E $ Op (Cast (Scalar VM.ArbbU8)) [a] 
+  E $ Op (Cast (Scalar U8)) [a] 
 
 toWord16 :: Exp a -> Exp Word16
 toWord16 (E a) = 
-  E $ Op (Cast (Scalar VM.ArbbU16)) [a] 
+  E $ Op (Cast (Scalar U16)) [a] 
 
 toWord32 :: Exp a -> Exp Word32 
 toWord32 (E a) = 
-  E $ Op (Cast (Scalar VM.ArbbU32)) [a] 
+  E $ Op (Cast (Scalar U32)) [a] 
 
 toWord64 :: Exp a -> Exp Word64 
 toWord64 (E a) = 
-  E $ Op (Cast (Scalar VM.ArbbU64)) [a] 
+  E $ Op (Cast (Scalar U64)) [a] 
 
 convWord8 :: Exp a -> Exp Word8
 convWord8 (E a) = 
-    E $ Op (BitwiseCast (Scalar VM.ArbbU8)) [a] 
+    E $ Op (BitwiseCast (Scalar U8)) [a] 
 
 convWord16 :: Exp a -> Exp Word16
 convWord16 (E a) = 
-    E $ Op (BitwiseCast (Scalar VM.ArbbU16)) [a] 
+    E $ Op (BitwiseCast (Scalar U16)) [a] 
 
 convWord32 :: Exp a -> Exp Word32
 convWord32 (E a) = 
-    E $ Op (BitwiseCast (Scalar VM.ArbbU32)) [a] 
+    E $ Op (BitwiseCast (Scalar U32)) [a] 
 
 convWord64 :: Exp a -> Exp Word64
 convWord64 (E a) = 
-    E $ Op (BitwiseCast (Scalar VM.ArbbU64)) [a] 
+    E $ Op (BitwiseCast (Scalar U64)) [a] 
 
 
 
@@ -734,7 +734,8 @@ transposeSeg (E v) = E $ Op Transpose [v]
 
 
 ----------------------------------------------------------------------------
--- | Map an ArBB Function 
+-- | Map an ArBB Function
+{- 
 map :: (Data a, Data b) => (Exp a -> Exp b) -> Exp (DVector t a) -> Exp (DVector t b)
 map f (E v) = E $ Map (reify f) [v] 
 
@@ -803,7 +804,7 @@ zipWith7 :: (Data a, Data b, Data c, Data d, Data e, Data f, Data g, Data h)
 zipWith7 f (E v1) (E v2) (E v3) (E v4) (E v5) (E v6) (E v7) 
     = E $ Map (reify f) [v1,v2,v3,v4,v5,v6,v7] 
 
-
+-} 
 
 ----------------------------------------------------------------------------
 -- Stencil operations. 
@@ -811,7 +812,8 @@ zipWith7 f (E v1) (E v2) (E v3) (E v4) (E v5) (E v6) (E v7)
 data Stencil a d =  Stencil [a] d 
 
 ---------------------------------------------------------------------------- 
--- Experimental. 
+-- Experimental.
+{- 
 mapStencil :: (Num (Exp a), Data a, Dimensions t ) 
             => Stencil (Exp a) t 
              -> Exp (DVector t a) 
@@ -830,7 +832,7 @@ mapStencil (Stencil ls d)  (E v) = E $ Map (reify f) [v]
                                     (fromIntegral c) 
                                     (fromIntegral r)  | (p,c,r) <- pos] 
                                       coeff
-                    
+-}                     
 coordsFromDim (Dim xs) = coordsFromDim' xs
     where
       coordsFromDim' [] = []
