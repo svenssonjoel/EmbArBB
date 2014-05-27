@@ -23,6 +23,7 @@ import Intel.ArBB.Op
 
 import Data.Typeable
 import Data.Supply 
+import qualified Data.Set as S
 
 import Control.Monad.State
 import Control.Monad.Writer
@@ -72,6 +73,25 @@ instance RFun b => RFun (Expr -> b) where
                   v = Variable$ "fun_local_v"++show v
                   rest = toFun s2 $ f (Var v) 
               in Lam v rest
+----------------------------------------------------------------------------
+-- Free Variables
+
+freeVarsFun :: Fun -> S.Set Variable
+freeVarsFun (Body e) = freeVarsExp e
+freeVarsFun (Lam v f) =  v `S.delete` freeVarsFun f
+
+freeVarsExp (Var v) = S.singleton v
+freeVarsExp (Index0 e) = freeVarsExp e
+freeVarsExp (ResIndex e i) = freeVarsExp e
+freeVarsExp (Map f es) = S.unions (map freeVarsExp es) `S.union` freeVarsFun f
+freeVarsExp (Call f es) = S.unions (map freeVarsExp es) `S.union` freeVarsFun f
+freeVarsExp (While c b s) = S.empty -- Fix this, surely not empty.
+freeVarsExp (While2 c b s) = S.empty
+freeVarsExp (If e1 e2 e3) = freeVarsExp e1 `S.union`
+                            freeVarsExp e2 `S.union`
+                            freeVarsExp e3
+freeVarsExp (Op _ es) = S.unions (map freeVarsExp es) 
+
 
   
 ----------------------------------------------------------------------------
@@ -96,7 +116,8 @@ data Expr = Lit Literal
           -- | Map  (R GenRecord) [Expr]   
           
           -- Hoas for the while loop.. 
-          -- Todo: Structure instead of [Expr] (Allow tuples etc) 
+          -- Todo: Structure instead of [Expr] (Allow tuples etc)
+          -- Could use Fun representations as well... 
           | While ([Expr] -> Expr)  ([Expr] -> [Expr])  [Expr] 
 
           -- Sketch. TODO: Implement in the backend. 
