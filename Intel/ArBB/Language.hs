@@ -14,8 +14,6 @@ import Intel.ArBB.Syntax
 import Intel.ArBB.Literal
 import Intel.ArBB.Variable
 import Intel.ArBB.Op
-import Intel.ArBB.Data.Int 
-import Intel.ArBB.Data.Boolean
 import Intel.ArBB.Data
 
 -- import Intel.ArBB.Backend.ArBB
@@ -37,17 +35,17 @@ import Data.Bits
 ----------------------------------------------------------------------------
 -- Create vectors
 
-constVector :: Exp USize -> Exp a -> Exp (DVector Dim1 a) 
+constVector :: Exp Word32 -> Exp a -> Exp (DVector Dim1 a) 
 constVector (E s) (E a) = 
   E $ Op ConstVector [a,s]
 
 -- TODO: Really make up mind about a specific order of W and H
-constVector2D :: Exp USize -> Exp USize -> Exp a -> Exp (DVector Dim2 a) 
+constVector2D :: Exp Word32 -> Exp Word32 -> Exp a -> Exp (DVector Dim2 a) 
 constVector2D w h a = ss'
     where ss = constVector w a  
           ss' = repeatRow h ss 
 
-constVector3D :: Exp USize -> Exp USize -> Exp USize -> Exp a -> Exp (DVector Dim3 a) 
+constVector3D :: Exp Word32 -> Exp Word32 -> Exp Word32 -> Exp a -> Exp (DVector Dim3 a) 
 constVector3D w h p a = ss''
     where 
       ss = constVector w a 
@@ -57,17 +55,17 @@ constVector3D w h p a = ss''
 ----------------------------------------------------------------------------
 -- Specific casts
 
-vecToUSize :: Exp (Vector a) -> Exp (Vector USize) 
-vecToUSize (E a) = 
-  E $ Op (Cast (Dense I T.USize)) [a]
+vecToWord32 :: Exp (Vector a) -> Exp (Vector Word32) 
+vecToWord32 (E a) = 
+  E $ Op (Cast (Dense I T.U32)) [a]
 
-vecToBool :: Exp (Vector a) -> Exp (Vector Boolean)
+vecToBool :: Exp (Vector a) -> Exp (Vector Bool)
 vecToBool (E a) = 
-  E $ Op (Cast (Dense I Boolean)) [a] 
+  E $ Op (Cast (Dense I T.Boolean)) [a] 
 
-toUsize :: Exp a -> Exp USize 
+toUsize :: Exp a -> Exp Word32 
 toUsize (E a) = 
-  E $ Op (Cast (Scalar T.USize)) [a] 
+  E $ Op (Cast (Scalar T.U32)) [a] 
 
 vecToFloat :: Exp (Vector a) -> Exp (Vector Float) 
 vecToFloat (E a) = 
@@ -144,54 +142,54 @@ convWord64 (E a) =
 ---------------------------------------------------------------------------- 
 -- Reductions 
 
-rows, cols, pages :: Exp USize 
+rows, cols, pages :: Exp Word32 
 rows = 0 
 cols = 1 
 pages = 2 
 
                                                                              
 -- | reduce along a specified level 
-addReduce :: Num a => Exp USize -> Exp (DVector (t:.Int) a) -> Exp (DVector t a) 
+addReduce :: Num a => Exp Word32 -> Exp (DVector (t:.Int) a) -> Exp (DVector t a) 
 addReduce (E lev) (E vec) = 
   E $ Op AddReduce [vec,lev]
 
 -- | reduce along a specified level 
-mulReduce :: Num a => Exp USize -> Exp (DVector (t:.Int) a) -> Exp (DVector t a) 
+mulReduce :: Num a => Exp Word32 -> Exp (DVector (t:.Int) a) -> Exp (DVector t a) 
 mulReduce (E lev) (E vec) = 
   E $ Op MulReduce [vec,lev]
 
 -- | reduce along a specified level 
-maxReduce :: Ord a => Exp USize -> Exp (DVector (t:.Int) a) -> Exp (DVector t a) 
+maxReduce :: Ord a => Exp Word32 -> Exp (DVector (t:.Int) a) -> Exp (DVector t a) 
 maxReduce (E lev) (E vec) = 
   E $ Op MaxReduce [vec,lev]
 
 -- | reduce along a specified level 
-minReduce :: Ord a => Exp USize -> Exp (DVector (t:.Int) a) -> Exp (DVector t a) 
+minReduce :: Ord a => Exp Word32 -> Exp (DVector (t:.Int) a) -> Exp (DVector t a) 
 minReduce (E lev) (E vec) = 
   E $ Op MinReduce [vec,lev]
 
 -- | reduce along a specified level 
-andReduce ::  Exp USize -> Exp (DVector (t:.Int) Boolean) -> Exp (DVector t Boolean) 
+andReduce ::  Exp Word32 -> Exp (DVector (t:.Int) Bool) -> Exp (DVector t Bool) 
 andReduce (E lev) (E vec) = 
   E $ Op AndReduce [vec,lev]
 
 -- | reduce along a specified level 
-iorReduce :: Exp USize-> Exp (DVector (t:.Int) Boolean) -> Exp (DVector t Boolean) 
+iorReduce :: Exp Word32-> Exp (DVector (t:.Int) Bool) -> Exp (DVector t Bool) 
 iorReduce (E lev) (E vec) = 
   E $ Op IorReduce [vec,lev]
 
 -- | reduce along a specified level 
-xorReduce :: Exp USize -> Exp (DVector (t:.Int) Boolean) -> Exp (DVector t Boolean) 
+xorReduce :: Exp Word32 -> Exp (DVector (t:.Int) Bool) -> Exp (DVector t Bool) 
 xorReduce (E lev) (E vec) = 
   E $ Op XorReduce [vec,lev]
 
 -- | maxReduceLoc computes maximas as well as their locations in the source Vector.
-maxReduceLoc :: Ord a => Exp USize -> Exp (DVector (t:.Int) a) -> (Exp (DVector t a), Exp (DVector t USize)) 
+maxReduceLoc :: Ord a => Exp Word32 -> Exp (DVector (t:.Int) a) -> (Exp (DVector t a), Exp (DVector t Word32)) 
 maxReduceLoc (E lev) (E vec) = (fstPair res, sndPair res) 
     where 
       res = E $ Op MaxReduceLoc [vec,lev]
 -- | minReduceLoc computes minimas as well as their locations in the source Vector.
-minReduceLoc :: Ord a => Exp USize -> Exp (DVector (t:.Int) a) -> (Exp (DVector t a), Exp (DVector t USize)) 
+minReduceLoc :: Ord a => Exp Word32 -> Exp (DVector (t:.Int) a) -> (Exp (DVector t a), Exp (DVector t Word32)) 
 minReduceLoc (E lev) (E vec) = (fstPair res, sndPair res) 
     where 
       res = E $ Op MinReduceLoc [vec,lev]
@@ -199,7 +197,7 @@ minReduceLoc (E lev) (E vec) = (fstPair res, sndPair res)
 ---------------------------------------------------------------------------- 
 -- Add Merge
 -- | Add merge..  
-addMerge :: Exp (DVector (t:.Int) USize) -> Exp USize -> Exp (DVector (t:.Int) a) -> Exp (DVector (t:.Int) a) 
+addMerge :: Exp (DVector (t:.Int) Word32) -> Exp Word32 -> Exp (DVector (t:.Int) a) -> Exp (DVector (t:.Int) a) 
 addMerge (E b) (E u) (E v) = 
   E $ Op AddMerge [v,b,u]
 
@@ -210,17 +208,17 @@ index0 :: Exp (DVector Z a) -> Exp a
 index0 (E vec) = E $ Index0  vec 
 
 -- | Index into a 1D vector
-index1D :: Exp USize -> Exp (DVector Dim1 a) ->  Exp a 
+index1D :: Exp Word32 -> Exp (DVector Dim1 a) ->  Exp a 
 index1D (E ix) (E vec) = 
   E $ Op Extract [vec,ix] 
 
 -- | Index into a 2D vector
-index2D :: Exp USize -> Exp USize -> Exp (DVector Dim2 a) -> Exp a 
+index2D :: Exp Word32 -> Exp Word32 -> Exp (DVector Dim2 a) -> Exp a 
 index2D (E ix1) (E ix2) (E vec) = 
   E $ Op Extract [vec,ix1,ix2]  
 
 -- | Index into a 3D vector 
-index3D :: Exp USize -> Exp USize -> Exp USize -> Exp (DVector Dim2 a) -> Exp a 
+index3D :: Exp Word32 -> Exp Word32 -> Exp Word32 -> Exp (DVector Dim2 a) -> Exp a 
 index3D (E ix1) (E ix2) (E ix3) (E vec) = 
   E $ Op Extract [vec,ix1,ix2,ix3]
   
@@ -228,7 +226,7 @@ index3D (E ix1) (E ix2) (E ix3) (E vec) =
 -- generate arrays of indices. 
 ----------------------------------------------------------------------------
 -- generalise to other types 
-indices :: Exp Int32 -> Exp USize -> Exp Int32 -> Exp (DVector Dim1 Int32)
+indices :: Exp Int32 -> Exp Word32 -> Exp Int32 -> Exp (DVector Dim1 Int32)
 indices (E start) (E num) (E stride) =
   E $ Op Index [start,num,stride]
 
@@ -239,41 +237,41 @@ indices (E start) (E num) (E stride) =
 
 
 -- | Extract a row from a 2D vector 
-extractRow :: Exp USize -> Exp (DVector Dim2 a) -> Exp (Vector a) 
+extractRow :: Exp Word32 -> Exp (DVector Dim2 a) -> Exp (Vector a) 
 extractRow (E row) (E vec) = E $ Op ExtractRow [vec,row]
 
 -- | Extract a column from a 2D vector 
-extractCol :: Exp USize -> Exp (DVector Dim2 a) -> Exp (Vector a) 
+extractCol :: Exp Word32 -> Exp (DVector Dim2 a) -> Exp (Vector a) 
 extractCol (E col) (E vec) = E $ Op ExtractCol [vec,col]
 
 -- | Extract a page from a 3D vector 
-extractPage :: Exp USize -> Exp (DVector Dim3 a) -> Exp (DVector Dim2 a) 
+extractPage :: Exp Word32 -> Exp (DVector Dim3 a) -> Exp (DVector Dim2 a) 
 extractPage (E page) (E vec) = E $ Op ExtractPage [vec,page]
 
 ----------------------------------------------------------------------------
 -- Repeat, Replace
 
-repeatRow :: Exp USize -> Exp (DVector Dim1 a) -> Exp (DVector Dim2 a) 
+repeatRow :: Exp Word32 -> Exp (DVector Dim1 a) -> Exp (DVector Dim2 a) 
 repeatRow (E u) (E vec) = E $ Op RepeatRow [vec,u]
 
-repeatPage :: Exp USize -> Exp (DVector Dim2 a) -> Exp (DVector Dim3 a) 
+repeatPage :: Exp Word32 -> Exp (DVector Dim2 a) -> Exp (DVector Dim3 a) 
 repeatPage (E u) (E vec) = E $ Op RepeatPage [vec,u]
 
-replaceCol :: Exp USize -> Exp (DVector Dim1 a) -> Exp (DVector Dim2 a) -> Exp (DVector Dim2 a) 
+replaceCol :: Exp Word32 -> Exp (DVector Dim1 a) -> Exp (DVector Dim2 a) -> Exp (DVector Dim2 a) 
 replaceCol (E u) (E v) (E m) = 
   E $ Op ReplaceCol [m,u,v]
 
-replaceRow :: Exp USize -> Exp (DVector Dim1 a) -> Exp (DVector Dim2 a) -> Exp (DVector Dim2 a) 
+replaceRow :: Exp Word32 -> Exp (DVector Dim1 a) -> Exp (DVector Dim2 a) -> Exp (DVector Dim2 a) 
 replaceRow (E u) (E v) (E m) = 
   E $ Op ReplaceRow [m,u,v]
 
-replacePage :: Exp USize -> Exp (DVector Dim2 a) -> Exp (DVector Dim3 a) -> Exp (DVector Dim3 a) 
+replacePage :: Exp Word32 -> Exp (DVector Dim2 a) -> Exp (DVector Dim3 a) -> Exp (DVector Dim3 a) 
 replacePage (E u) (E v) (E m) = 
   E $ Op ReplacePage [m,u,v]
 
-replace1D :: Exp USize 
-          -> Exp USize 
-          -> Exp USize 
+replace1D :: Exp Word32 
+          -> Exp Word32 
+          -> Exp Word32 
           -> Exp (DVector Dim1 a) 
           -> Exp (DVector Dim1 a) 
           -> Exp (DVector Dim1 a) 
@@ -281,8 +279,8 @@ replace1D (E first) (E n) (E stride) (E src) (E dst) =
     E $ Op Replace [dst,first,n,stride,src] 
 
 fill :: Exp a -- fill value 
-     -> Exp USize -- start 
-     -> Exp USize -- end 
+     -> Exp Word32 -- start 
+     -> Exp Word32 -- end 
      -> Exp (DVector Dim1 a) -- dst
      -> Exp (DVector Dim1 a) 
 fill val start end dst = 
@@ -296,8 +294,8 @@ fill val start end dst =
 -- Scans 
 -- | Scan across a specified level and direction over a dense container
 addScan :: Num a 
-           => Exp USize
-           -> Exp USize 
+           => Exp Word32
+           -> Exp Word32 
            -> Exp (DVector t a)
            -> Exp (DVector t a)
 addScan  (E dir) (E lev) (E vec) = 
@@ -306,8 +304,8 @@ addScan  (E dir) (E lev) (E vec) =
 
 -- | Scan across a specified level and direction over a dense container
 mulScan :: Num a 
-           =>  Exp USize 
-           -> Exp USize 
+           =>  Exp Word32 
+           -> Exp Word32 
            -> Exp (DVector t a) 
            -> Exp (DVector t a)
 mulScan (E dir) (E lev) (E vec) = 
@@ -315,8 +313,8 @@ mulScan (E dir) (E lev) (E vec) =
 
 -- | Scan across a specified level and direction over a dense container
 maxScan :: Num a 
-           => Exp USize 
-           -> Exp USize 
+           => Exp Word32 
+           -> Exp Word32 
            -> Exp (DVector t a)
            -> Exp (DVector t a)
 maxScan (E dir) (E lev) (E vec) = 
@@ -324,8 +322,8 @@ maxScan (E dir) (E lev) (E vec) =
   
 -- | Scan across a specified level and direction over a dense container
 minScan :: Num a 
-           => Exp USize 
-           -> Exp USize 
+           => Exp Word32 
+           -> Exp Word32 
            -> Exp (DVector t a)
            -> Exp (DVector t a)
 minScan (E dir) (E lev) (E vec) = 
@@ -333,26 +331,26 @@ minScan (E dir) (E lev) (E vec) =
   
 
 -- | Scan across a specified level and direction over a dense container
-andScan :: Exp USize 
-           -> Exp USize 
-           -> Exp (DVector t Boolean)
-           -> Exp (DVector t Boolean)
+andScan :: Exp Word32 
+           -> Exp Word32 
+           -> Exp (DVector t Bool)
+           -> Exp (DVector t Bool)
 andScan (E dir) (E lev) (E vec) = 
   E $ Op AndScan [vec,dir,lev] 
   
 -- | Scan across a specified level and direction over a dense container
-iorScan :: Exp USize 
-           -> Exp USize 
-           -> Exp (DVector t Boolean)
-           -> Exp (DVector t Boolean)
+iorScan :: Exp Word32 
+           -> Exp Word32 
+           -> Exp (DVector t Bool)
+           -> Exp (DVector t Bool)
 iorScan (E vec) (E dir) (E lev) = 
   E $ Op IorScan [vec,dir,lev] 
   
 -- | Scan across a specified level and direction over a dense container
-xorScan :: Exp USize 
-           -> Exp USize 
-           -> Exp (DVector t Boolean) 
-           -> Exp (DVector t Boolean)
+xorScan :: Exp Word32 
+           -> Exp Word32 
+           -> Exp (DVector t Bool) 
+           -> Exp (DVector t Bool)
 xorScan (E vec) (E dir) (E lev) = 
   E $ Op XorScan [vec,dir,lev] 
 
@@ -361,13 +359,13 @@ xorScan (E vec) (E dir) (E lev) =
 ----------------------------------------------------------------------------
 -- | Rotate the contents of a dense container.
 -- Example: {1,2,3} -> {2,3,1}
-rotate :: Exp (DVector (Int:.t) a) -> Exp ISize -> Exp (DVector (Int:.t) a) 
+rotate :: Exp (DVector (Int:.t) a) -> Exp Int32 -> Exp (DVector (Int:.t) a) 
 rotate (E vec) (E steps) = 
   E $ Op Rotate [vec,steps]  
 
 -- | Rotate the contents of a dense container in the reversedirection
 -- Example: {1,2,3} -> {3,1,2} 
-rotateRev :: Exp (DVector (t:.Int) a) -> Exp ISize -> Exp (DVector (t:.Int) a) 
+rotateRev :: Exp (DVector (t:.Int) a) -> Exp Int32 -> Exp (DVector (t:.Int) a) 
 rotateRev (E vec) (E steps) = 
   E $ Op RotateRev [vec,steps]  
 
@@ -381,53 +379,53 @@ transpose (E vec) = E $ Op Transpose [vec]
 
 -- | Sort the contents of a dense 1D container. Also returns 
 -- a dense container of indices describing from where elements where moved
-sortRank ::  Exp USize -> Exp (Vector a) -> (Exp (Vector a), Exp (Vector USize)) 
+sortRank ::  Exp Word32 -> Exp (Vector a) -> (Exp (Vector a), Exp (Vector Word32)) 
 sortRank (E us) (E vec)   = (fstPair s, sndPair s)
   where s = E $ Op SortRank [vec,us]
 
-sortRank' :: Exp USize -> Exp (Vector a) -> (Exp (Vector a, Vector USize)) 
+sortRank' :: Exp Word32 -> Exp (Vector a) -> (Exp (Vector a, Vector Word32)) 
 sortRank' (E us) (E vec) = 
   E $ Op SortRank [vec,us]
 
 -- | Sort the contents of a dense 1D container. 
-sort ::  Exp USize -> Exp (Vector a) -> Exp (Vector a) 
+sort ::  Exp Word32 -> Exp (Vector a) -> Exp (Vector a) 
 sort  (E us) (E vec) = 
   E $ Op Sort [vec,us] 
 
 -- | interleave elements from different dense containers
-shuffle :: Exp (DVector t a) -> Exp (DVector t a) -> Exp USize -> Exp (DVector t a) 
+shuffle :: Exp (DVector t a) -> Exp (DVector t a) -> Exp Word32 -> Exp (DVector t a) 
 shuffle (E v1) (E v2) (E u) = E $ Op Shuffle [v1,v2,u,zero]
-    where (E zero) = 0 :: Exp USize 
+    where (E zero) = 0 :: Exp Word32 
 
 -- Shows an inconsistency. Here both Nested and Dense require the same number of arguemnts 
 -- So the the zero is just a dummy (not used in the dense case) 
 
 -- | the inverse of shuffle 
-unshuffle :: Exp (DVector t a) -> Exp USize -> Exp (DVector t a) 
+unshuffle :: Exp (DVector t a) -> Exp Word32 -> Exp (DVector t a) 
 unshuffle (E v) (E u) = E $ Op Unshuffle [v,u,zero]
-    where (E zero) = 0 :: Exp USize 
+    where (E zero) = 0 :: Exp Word32 
 
 --Another inconsistency. Other ArBB ops have two outputs. This one concatenates its
 -- two output vectors..
 
 -- | Gather 
-gather1D :: Exp (DVector Dim1 USize) 
+gather1D :: Exp (DVector Dim1 Word32) 
           -> Exp a 
           -> Exp (DVector Dim1 a) 
           -> Exp (DVector Dim1 a) 
 gather1D (E cols) (E a) (E v) = E $ Op Gather [v,cols,a] 
 
-gather2D :: Exp (DVector Dim2 USize) 
-          -> Exp (DVector Dim2 USize) 
+gather2D :: Exp (DVector Dim2 Word32) 
+          -> Exp (DVector Dim2 Word32) 
           -> Exp a 
           -> Exp (DVector Dim2 a) 
           -> Exp (DVector Dim2 a) 
 gather2D (E rows) (E cols) (E a) (E v) = E $ Op Gather [v,rows,cols,a] 
 
 
-gather3D :: Exp (DVector Dim3 USize) 
-          -> Exp (DVector Dim3 USize) 
-          -> Exp (DVector Dim3 USize) 
+gather3D :: Exp (DVector Dim3 Word32) 
+          -> Exp (DVector Dim3 Word32) 
+          -> Exp (DVector Dim3 Word32) 
           -> Exp a 
           -> Exp (DVector Dim3 a) 
           -> Exp (DVector Dim3 a) 
@@ -435,22 +433,22 @@ gather3D (E pages) (E rows) (E cols) (E a) (E v) = E $ Op Gather [v,pages,rows,c
 
 -- | Scatter
 scatter1D :: Exp (DVector Dim1 a) 
-           -> Exp (DVector Dim1 USize) 
+           -> Exp (DVector Dim1 Word32) 
            -> Exp (DVector Dim1 a) 
            -> Exp (DVector Dim1 a) 
 scatter1D (E inp) (E cols) (E into) = E $ Op Scatter [inp,cols,into] 
 
 scatter2D :: Exp (DVector Dim2 a) 
-           -> Exp (DVector Dim2 USize) 
-           -> Exp (DVector Dim2 USize) 
+           -> Exp (DVector Dim2 Word32) 
+           -> Exp (DVector Dim2 Word32) 
            -> Exp (DVector Dim2 a) 
            -> Exp (DVector Dim2 a) 
 scatter2D (E inp) (E rows) (E cols) (E into) = E $ Op Scatter [inp,rows,cols,into] 
 
 scatter3D :: Exp (DVector Dim3 a) 
-           -> Exp (DVector Dim3 USize) 
-           -> Exp (DVector Dim3 USize) 
-           -> Exp (DVector Dim3 USize) 
+           -> Exp (DVector Dim3 Word32) 
+           -> Exp (DVector Dim3 Word32) 
+           -> Exp (DVector Dim3 Word32) 
            -> Exp (DVector Dim3 a) 
            -> Exp (DVector Dim3 a) 
 scatter3D (E inp) (E pages) (E rows) (E cols) (E into) 
@@ -458,80 +456,80 @@ scatter3D (E inp) (E pages) (E rows) (E cols) (E into)
 
 -- | compacts data in a container using a mask container. 
 --   Works for nested and dense containers.
-pack :: (IsVector v a, IsVector v Boolean) 
-      => Exp (v a) -> Exp (v Boolean) -> Exp (v a) 
+pack :: (IsVector v a, IsVector v Bool) 
+      => Exp (v a) -> Exp (v Bool) -> Exp (v a) 
 pack (E v) (E b) = E $ Op Pack [v,b]
 
 -- | unpack a vector. 
-unpack :: (IsVector v a, IsVector v Boolean) 
-        => Exp (v a) -> Exp (v Boolean) -> Exp a -> Exp (v a) 
+unpack :: (IsVector v a, IsVector v Bool) 
+        => Exp (v a) -> Exp (v Bool) -> Exp a -> Exp (v a) 
 unpack (E v) (E b) (E a) = E $ Op Unpack [v,b,a]
 
 -- | repeat elements of a container
-stretch :: Exp (DVector (t:.Int) a) -> Exp USize -> Exp (DVector (t:.Int) a) 
+stretch :: Exp (DVector (t:.Int) a) -> Exp Word32 -> Exp (DVector (t:.Int) a) 
 stretch (E v) (E u) = E $ Op Distribute [v,u,zero] 
-    where (E zero) = 0 :: Exp USize         
+    where (E zero) = 0 :: Exp Word32         
 
 -- TODO: rename this once you figure out what it does. 
 stretchBy :: Exp (DVector (t:.Int) a) 
-             -> Exp (DVector (t:.Int) USize) 
+             -> Exp (DVector (t:.Int) Word32) 
              -> Exp (DVector (t:.Int) a) 
 stretchBy (E v) (E us) = E $ Op Distribute [v,us,zero] 
-    where (E zero) = 0 :: Exp USize                           
+    where (E zero) = 0 :: Exp Word32                           
              
 
-swapRow :: Exp USize 
-         -> Exp USize 
+swapRow :: Exp Word32 
+         -> Exp Word32 
          -> Exp (DVector (t:.Int:.Int) a) 
          -> Exp (DVector (t:.Int:.Int) a)
 swapRow (E i) (E j) (E v) = E $ Op SwapRow [v,i,j]
 
-swapCol ::  Exp USize 
-         -> Exp USize 
+swapCol ::  Exp Word32 
+         -> Exp Word32 
          -> Exp (DVector (t:.Int:.Int) a) 
          -> Exp (DVector (t:.Int:.Int) a) 
 swapCol (E i) (E j) (E v) = E $ Op SwapCol [v,i,j]
 
-swapPage :: Exp USize 
-          -> Exp USize 
+swapPage :: Exp Word32 
+          -> Exp Word32 
           -> Exp (DVector Dim3 a) 
           -> Exp (DVector Dim3 a) 
 swapPage (E i) (E j) (E v) = E $ Op SwapPage [v,i,j]
 
-shift1D :: Exp ISize -> Exp (DVector Dim1 a) ->  Exp (DVector Dim1 a) 
+shift1D :: Exp Int32 -> Exp (DVector Dim1 a) ->  Exp (DVector Dim1 a) 
 shift1D (E i) (E v)  = E $ Op ShiftConst [v,i]
 
-shift2D :: Exp ISize -> Exp ISize -> Exp (DVector Dim2 a) -> Exp (DVector Dim2 a) 
+shift2D :: Exp Int32 -> Exp Int32 -> Exp (DVector Dim2 a) -> Exp (DVector Dim2 a) 
 shift2D (E i) (E j) (E v) = E $ Op ShiftConst [v,i,j]
 
-shift3D :: Exp ISize -> Exp ISize -> Exp ISize -> Exp (DVector Dim3 a) -> Exp (DVector Dim3 a) 
+shift3D :: Exp Int32 -> Exp Int32 -> Exp Int32 -> Exp (DVector Dim3 a) -> Exp (DVector Dim3 a) 
 shift3D  (E i) (E j) (E k) (E v) = E $ Op ShiftConst [v,i,j,k]
 
-shiftRev1D :: Exp ISize -> Exp (DVector Dim1 a) -> Exp (DVector Dim1 a) 
+shiftRev1D :: Exp Int32 -> Exp (DVector Dim1 a) -> Exp (DVector Dim1 a) 
 shiftRev1D (E i) (E v) = E $ Op ShiftConstRev [v,i]
 
-shiftRev2D :: Exp ISize -> Exp ISize -> Exp (DVector Dim2 a) -> Exp (DVector Dim2 a) 
+shiftRev2D :: Exp Int32 -> Exp Int32 -> Exp (DVector Dim2 a) -> Exp (DVector Dim2 a) 
 shiftRev2D (E i) (E j) (E v) = E $ Op ShiftConstRev [v,i,j]
 
-shiftRev3D :: Exp ISize -> Exp ISize -> Exp ISize -> Exp (DVector Dim3 a) -> Exp (DVector Dim3 a) 
+shiftRev3D :: Exp Int32 -> Exp Int32 -> Exp Int32 -> Exp (DVector Dim3 a) -> Exp (DVector Dim3 a) 
 shiftRev3D (E i) (E j) (E k) (E v) = E $ Op ShiftConstRev [v,i,j,k]
 
-shiftClamp1D :: Exp (DVector Dim1 a) -> Exp ISize -> Exp (DVector Dim1 a) 
+shiftClamp1D :: Exp (DVector Dim1 a) -> Exp Int32 -> Exp (DVector Dim1 a) 
 shiftClamp1D (E i) (E v) = E $ Op ShiftClamp [v,i]
 
-shiftClamp2D :: Exp ISize -> Exp ISize -> Exp (DVector Dim2 a) -> Exp (DVector Dim2 a) 
+shiftClamp2D :: Exp Int32 -> Exp Int32 -> Exp (DVector Dim2 a) -> Exp (DVector Dim2 a) 
 shiftClamp2D (E i) (E j) (E v) = E $ Op ShiftClamp [v,i,j]
 
-shiftClamp3D :: Exp ISize -> Exp ISize -> Exp ISize -> Exp (DVector Dim3 a) ->  Exp (DVector Dim3 a) 
+shiftClamp3D :: Exp Int32 -> Exp Int32 -> Exp Int32 -> Exp (DVector Dim3 a) ->  Exp (DVector Dim3 a) 
 shiftClamp3D (E i) (E j) (E k) (E v) = E $ Op ShiftClamp [v,i,j,k]
 
-shiftClampRev1D :: Exp ISize -> Exp (DVector Dim1 a) ->  Exp (DVector Dim1 a) 
+shiftClampRev1D :: Exp Int32 -> Exp (DVector Dim1 a) ->  Exp (DVector Dim1 a) 
 shiftClampRev1D (E i) (E v) = E $ Op ShiftClampRev [v,i]
 
-shiftClampRev2D :: Exp ISize -> Exp ISize -> Exp (DVector Dim2 a) -> Exp (DVector Dim2 a) 
+shiftClampRev2D :: Exp Int32 -> Exp Int32 -> Exp (DVector Dim2 a) -> Exp (DVector Dim2 a) 
 shiftClampRev2D (E i) (E j) (E v) = E $ Op ShiftClampRev [v,i,j]
 
-shiftClampRev3D :: Exp ISize -> Exp ISize -> Exp ISize -> Exp (DVector Dim3 a) -> Exp (DVector Dim3 a) 
+shiftClampRev3D :: Exp Int32 -> Exp Int32 -> Exp Int32 -> Exp (DVector Dim3 a) -> Exp (DVector Dim3 a) 
 shiftClampRev3D (E i) (E j) (E k) (E v) = E $ Op ShiftClampRev [v,i,j,k]
 
 -- Clarify this. It only works for 1D Dense or nested! 
@@ -542,16 +540,16 @@ cat (E v1) (E v2) = E $ Op Cat [v1,v2]
 -- get sizes of vectors 
 
 -- | get the length (total size) of a 1,2,3D vector 
-length :: Exp (DVector (t:.Int) a) -> Exp USize 
+length :: Exp (DVector (t:.Int) a) -> Exp Word32 
 length (E vec) = E $ Op Length [vec]
 
-getNRows :: Exp (DVector (t:.Int:.Int) a) -> Exp USize 
+getNRows :: Exp (DVector (t:.Int:.Int) a) -> Exp Word32 
 getNRows (E vec) = E $ Op GetNRows [vec]
   
-getNCols :: Exp (DVector (t:.Int:.Int) a) -> Exp USize 
+getNCols :: Exp (DVector (t:.Int:.Int) a) -> Exp Word32 
 getNCols (E vec) = E $ Op GetNCols [vec]
 
-getNPages :: Exp (DVector Dim3 a) -> Exp USize 
+getNPages :: Exp (DVector Dim3 a) -> Exp Word32 
 getNPages (E vec) = E $ Op GetNPages [vec]
 
 
@@ -559,24 +557,24 @@ getNPages (E vec) = E $ Op GetNPages [vec]
 -- Section. 
 
 section1D :: Exp (DVector Dim1 a) 
-           -> Exp USize 
-           -> Exp USize 
-           -> Exp USize 
+           -> Exp Word32 
+           -> Exp Word32 
+           -> Exp Word32 
            -> Exp (DVector Dim1 a) 
 section1D (E v) (E offs) (E len) (E stride) = E $ Op Section [v,offs,len,stride] 
 
 section2D :: Exp (DVector Dim2 a) 
-          -> Exp USize -> Exp USize -> Exp USize 
-          -> Exp USize -> Exp USize -> Exp USize 
+          -> Exp Word32 -> Exp Word32 -> Exp Word32 
+          -> Exp Word32 -> Exp Word32 -> Exp Word32 
           -> Exp (DVector Dim2 a)
 section2D (E v) (E ro) (E nr) (E rs) (E co) (E nc) (E cs) = 
     E $ Op Section [v,ro,nr,rs,co,nc,cs]
 
 
 section3D :: Exp (DVector Dim3 a) 
-          -> Exp USize -> Exp USize -> Exp USize 
-          -> Exp USize -> Exp USize -> Exp USize 
-          -> Exp USize -> Exp USize -> Exp USize 
+          -> Exp Word32 -> Exp Word32 -> Exp Word32 
+          -> Exp Word32 -> Exp Word32 -> Exp Word32 
+          -> Exp Word32 -> Exp Word32 -> Exp Word32 
           -> Exp (DVector Dim3 a)
 section3D (E v) (E pr) (E np) (E ps) (E ro) (E nr) (E rs) (E co) (E nc) (E cs) = 
     E $ Op Section [v,pr,np,ps,ro,nr,rs,co,nc,cs]
@@ -584,17 +582,17 @@ section3D (E v) (E pr) (E np) (E ps) (E ro) (E nr) (E rs) (E co) (E nc) (E cs) =
 ----------------------------------------------------------------------------
 -- NESTED OPS 
 
---split :: Exp (DVector t a) -> Exp (DVector t ISize) -> Exp (NVector a) 
+--split :: Exp (DVector t a) -> Exp (DVector t Int32) -> Exp (NVector a) 
 -- | split a Dense or Nested vector given a vector of integers (-1,0 or 1) 
-split :: (IsVector t e) => Exp (t e) -> Exp (t ISize) -> Exp (NVector a)
+split :: (IsVector t e) => Exp (t e) -> Exp (t Int32) -> Exp (NVector a)
 split (E a) (E i) = E $ Op Split [a,i] 
 
 -- | unsplit 
-unsplit :: (IsVector t ISize) => Exp (NVector e) -> Exp (t ISize) -> Exp (NVector a) 
+unsplit :: (IsVector t Int32) => Exp (NVector e) -> Exp (t Int32) -> Exp (NVector a) 
 unsplit (E n) (E i) = E $ Op Unsplit [n,i]
 
 -- | segment extracts a segment from a nested vector. 
-segment :: Exp (NVector a) -> Exp USize -> Exp (DVector Dim1 a) 
+segment :: Exp (NVector a) -> Exp Word32 -> Exp (DVector Dim1 a) 
 segment (E a) (E u) = E $ Op Segment [a,u]
 
 -- would want to require that t is either nested, or of dim2  or higher. 
@@ -607,126 +605,126 @@ flattenDense (E a) = E $ Op Flatten [a]
 flattenSeg :: Exp (NVector a) -> Exp (DVector Dim1 a) 
 flattenSeg (E a) = E $ Op Flatten [a]  
 
-replaceSeg :: Exp (NVector a) -> Exp USize -> Exp (DVector Dim1 a) -> Exp (NVector a) 
+replaceSeg :: Exp (NVector a) -> Exp Word32 -> Exp (DVector Dim1 a) -> Exp (NVector a) 
 replaceSeg (E n) (E u) (E d) = E $ Op ReplaceSegment [n,u,d]
 
-indexSeg :: Exp (NVector a) -> Exp USize -> Exp USize -> Exp a 
+indexSeg :: Exp (NVector a) -> Exp Word32 -> Exp Word32 -> Exp a 
 indexSeg (E n) (E s) (E i) = E $ Op Extract [n,s,i] 
 
 -- | interleave segments from different nested containers
-shuffleSegments :: Exp (NVector a) -> Exp (NVector a) -> Exp USize -> Exp (NVector a) 
+shuffleSegments :: Exp (NVector a) -> Exp (NVector a) -> Exp Word32 -> Exp (NVector a) 
 shuffleSegments (E n1) (E n2) (E u) = E $ Op Shuffle [n1,n2,u,one]
-    where (E one) = 1 :: Exp USize
+    where (E one) = 1 :: Exp Word32
 
 -- | interleave elements from different nested containers
-shuffleSeg :: Exp (NVector a) -> Exp (NVector a) -> Exp USize -> Exp (NVector a) 
+shuffleSeg :: Exp (NVector a) -> Exp (NVector a) -> Exp Word32 -> Exp (NVector a) 
 shuffleSeg (E n1) (E n2) (E u) = E $ Op Shuffle [n1,n2,u,zero] 
-    where (E zero) = 0 :: Exp USize 
+    where (E zero) = 0 :: Exp Word32 
 
 -- | unshuffles on a per segment basis 
-unshuffleSegments :: Exp (NVector a) -> Exp USize -> Exp (NVector a) 
+unshuffleSegments :: Exp (NVector a) -> Exp Word32 -> Exp (NVector a) 
 unshuffleSegments (E n) (E u) = E $ Op Unshuffle [n,u,one] 
-    where (E one) = 1 :: Exp USize
+    where (E one) = 1 :: Exp Word32
 
 -- | ushuffles on a per element basis
-unshuffleSeg :: Exp (NVector a) -> Exp USize -> Exp (NVector a) 
+unshuffleSeg :: Exp (NVector a) -> Exp Word32 -> Exp (NVector a) 
 unshuffleSeg (E n) (E u) = E $ Op Unshuffle [n,u,zero]
-    where (E zero) = 0 :: Exp USize 
+    where (E zero) = 0 :: Exp Word32 
 
 -- TODO: Something may be broken when it comes to setRegularNesting. 
 --       Figure out what and where.. 
 -- | apply regular nesting to a container 
-setRegularNesting2D :: Exp USize -> Exp USize -> Exp (DVector Dim1 a) ->  Exp (DVector Dim2 a)
+setRegularNesting2D :: Exp Word32 -> Exp Word32 -> Exp (DVector Dim1 a) ->  Exp (DVector Dim2 a)
 setRegularNesting2D (E h) (E w) (E v) = E $ Op SetRegularNesting [v,h,w]
 
-setRegularNesting3D :: Exp USize -> Exp USize -> Exp USize -> Exp (DVector Dim1 a) ->  Exp (DVector Dim3 a) 
+setRegularNesting3D :: Exp Word32 -> Exp Word32 -> Exp Word32 -> Exp (DVector Dim1 a) ->  Exp (DVector Dim3 a) 
 setRegularNesting3D (E h) (E w) (E p) (E v) = E $ Op SetRegularNesting [v,h,w,p] 
 
 ----------------------------------------------------------------------------
-lengths = 1 :: Exp USize  
-offsets = 2 :: Exp USize
+lengths = 1 :: Exp Word32  
+offsets = 2 :: Exp Word32
 ----------------------------------------------------------------------------
 
--- Will only support the USize nesting descriptors for now. 
-applyNesting :: Exp USize
-              -> Exp (DVector Dim1 USize) 
+-- Will only support the Word32 nesting descriptors for now. 
+applyNesting :: Exp Word32
+              -> Exp (DVector Dim1 Word32) 
               -> Exp (DVector Dim1 a) 
               -> Exp (NVector a)
 applyNesting (E nd) (E u) (E v) = E $ Op ApplyNesting [v,u,nd] 
 
-getNesting :: Exp USize -> Exp (NVector a) -> Exp (DVector Dim1 USize) 
+getNesting :: Exp Word32 -> Exp (NVector a) -> Exp (DVector Dim1 Word32) 
 getNesting (E nd) (E v)  = E $ Op GetNesting [v,nd]
 
 copyNesting :: Exp (DVector Dim1 a) -> Exp (NVector b) -> Exp (NVector a) 
 copyNesting (E v) (E n) = E $ Op CopyNesting [v,n]
 
-replaceSegment :: Exp (NVector a) -> Exp USize -> Exp (DVector Dim1 a) -> Exp (NVector a) 
+replaceSegment :: Exp (NVector a) -> Exp Word32 -> Exp (DVector Dim1 a) -> Exp (NVector a) 
 replaceSegment (E n) (E u) (E d) = E $ Op ReplaceSegment [n,u,d]
 
 addReduceSeg :: Num a => Exp (NVector a) -> Exp (DVector Dim1 a)
 addReduceSeg (E v) = E $ Op AddReduce [v,zero]
-    where (E zero) = 0 :: Exp USize
+    where (E zero) = 0 :: Exp Word32
 
 mulReduceSeg:: Num a => Exp (NVector a) -> Exp (DVector Dim1 a)
 mulReduceSeg (E v) = E $ Op MulReduce [v,zero]
-    where (E zero) = 0 :: Exp USize
+    where (E zero) = 0 :: Exp Word32
 
 maxReduceSeg:: Num a => Exp (NVector a) -> Exp (DVector Dim1 a)
 maxReduceSeg (E v) = E $ Op MaxReduce [v,zero]
-    where (E zero) = 0 :: Exp USize
+    where (E zero) = 0 :: Exp Word32
 
 minReduceSeg:: Num a => Exp (NVector a) -> Exp (DVector Dim1 a)
 minReduceSeg (E v) = E $ Op MinReduce [v,zero]
-    where (E zero) = 0 :: Exp USize
+    where (E zero) = 0 :: Exp Word32
 
-andReduceSeg :: Exp (NVector Boolean) -> Exp (DVector Dim1 Boolean)
+andReduceSeg :: Exp (NVector Bool) -> Exp (DVector Dim1 Bool)
 andReduceSeg (E v) = E $ Op AndReduce [v,zero]
-    where (E zero) = 0 :: Exp USize
+    where (E zero) = 0 :: Exp Word32
 
-iorReduceSeg :: Exp (NVector Boolean) -> Exp (DVector Dim1 Boolean)
+iorReduceSeg :: Exp (NVector Bool) -> Exp (DVector Dim1 Bool)
 iorReduceSeg (E v) = E $ Op IorReduce [v,zero]
-    where (E zero) = 0 :: Exp USize
+    where (E zero) = 0 :: Exp Word32
 
-xorReduceSeg :: Exp (NVector Boolean) -> Exp (DVector Dim1 Boolean)
+xorReduceSeg :: Exp (NVector Bool) -> Exp (DVector Dim1 Bool)
 xorReduceSeg (E v) = E $ Op XorReduce [v,zero]
-    where (E zero) = 0 :: Exp USize
+    where (E zero) = 0 :: Exp Word32
 
 addScanSeg :: Num a => Exp (NVector a) -> Exp (NVector a) 
 addScanSeg (E v) = E $ Op AddScan [v,zero,zero]
-    where (E zero) = 0 :: Exp USize
+    where (E zero) = 0 :: Exp Word32
 
 mulScanSeg :: Num a => Exp (NVector a) -> Exp (NVector a) 
 mulScanSeg (E v) = E $ Op MulScan [v,zero,zero]
-    where (E zero) = 0 :: Exp USize
+    where (E zero) = 0 :: Exp Word32
 
 maxScanSeg :: Num a => Exp (NVector a) -> Exp (NVector a) 
 maxScanSeg (E v) = E $ Op MaxScan [v,zero,zero]
-    where (E zero) = 0 :: Exp USize
+    where (E zero) = 0 :: Exp Word32
 
 minScanSeg :: Num a => Exp (NVector a) -> Exp (NVector a) 
 minScanSeg (E v) = E $ Op MinScan [v,zero,zero]
-    where (E zero) = 0 :: Exp USize
+    where (E zero) = 0 :: Exp Word32
 
-andScanSeg :: Exp (NVector Boolean) -> Exp (NVector Boolean) 
+andScanSeg :: Exp (NVector Bool) -> Exp (NVector Bool) 
 andScanSeg (E v) = E $ Op AndScan [v,zero,zero]
-    where (E zero) = 0 :: Exp USize
+    where (E zero) = 0 :: Exp Word32
 
-iorScanSeg :: Exp (NVector Boolean) -> Exp (NVector Boolean) 
+iorScanSeg :: Exp (NVector Bool) -> Exp (NVector Bool) 
 iorScanSeg (E v) = E $ Op IorScan [v,zero,zero]
-    where (E zero) = 0 :: Exp USize
+    where (E zero) = 0 :: Exp Word32
 
-xorScanSeg :: Exp (NVector Boolean) -> Exp (NVector Boolean) 
+xorScanSeg :: Exp (NVector Bool) -> Exp (NVector Bool) 
 xorScanSeg (E v) = E $ Op XorScan [v,zero,zero]
-    where (E zero) = 0 :: Exp USize
+    where (E zero) = 0 :: Exp Word32
  
 
-distributeSeg :: Exp (NVector a) -> Exp USize -> Exp (NVector a) 
+distributeSeg :: Exp (NVector a) -> Exp Word32 -> Exp (NVector a) 
 distributeSeg (E v) (E u) = E $ Op Distribute [v,u,zero] 
-    where (E zero) = 0 :: Exp USize 
+    where (E zero) = 0 :: Exp Word32 
 
-distributeSegment :: Exp (NVector a) -> Exp USize -> Exp (NVector a) 
+distributeSegment :: Exp (NVector a) -> Exp Word32 -> Exp (NVector a) 
 distributeSegment (E v) (E u) = E $ Op Distribute [v,u,one]
-    where (E one) = 1 :: Exp USize 
+    where (E one) = 1 :: Exp Word32 
 
 
 transposeSeg :: Exp (NVector a) -> Exp (NVector a) 
@@ -857,19 +855,19 @@ trd3 (E a) = E $ ResIndex a 2
 ----------------------------------------------------------------------------
 -- Stencil (inside map) useful ops 
 
-getNeighbor :: Exp t -> Exp ISize -> Exp ISize -> Exp ISize -> Exp t
+getNeighbor :: Exp t -> Exp Int32 -> Exp Int32 -> Exp Int32 -> Exp t
 getNeighbor (E v) (E p) (E r) (E c) =
     E $ Op GetNeighbor [v,p,r,c]
 
-getNeighbor2D :: Exp t -> Exp ISize -> Exp ISize -> Exp t
+getNeighbor2D :: Exp t -> Exp Int32 -> Exp Int32 -> Exp t
 getNeighbor2D (E v) (E r) (E c) =
     E $ Op GetNeighbor [v,p,r,c]
-  where (E p) = (0 :: Exp ISize) 
+  where (E p) = (0 :: Exp Int32) 
 
-eltCoord1D :: () -> Exp USize 
+eltCoord1D :: () -> Exp Word32 
 eltCoord1D () = (\(x,y,z) -> z) (getEltCoord ())
 
-eltCoord2D :: () -> (Exp USize, Exp USize) 
+eltCoord2D :: () -> (Exp Word32, Exp Word32) 
 eltCoord2D () = (\(p,r,c) -> (r,c)) coord 
     where  
       coord = (getEltCoord ())
@@ -877,7 +875,7 @@ eltCoord2D () = (\(p,r,c) -> (r,c)) coord
 
 eltCoord3D = getEltCoord
 
-getEltCoord :: () -> (Exp USize, Exp USize, Exp USize) 
+getEltCoord :: () -> (Exp Word32, Exp Word32, Exp Word32) 
 getEltCoord () = (fst3 e, snd3 e, trd3 e) 
     where e = E $ Op GetEltCoord [] 
 
@@ -886,14 +884,14 @@ getEltCoord () = (fst3 e, snd3 e, trd3 e)
 ----------------------------------------------------------------------------
 -- conditional 
 
-ifThenElse :: (Exp Boolean) -> (Exp a) -> (Exp a) -> (Exp a)
+ifThenElse :: (Exp Bool) -> (Exp a) -> (Exp a) -> (Exp a)
 ifThenElse (E b) (E e1) (E e2) = E $ If b e1 e2
 
 
 ----------------------------------------------------------------------------
 --  While Loops 
 while :: LoopState state 
-          => (state -> Exp Boolean)    
+          => (state -> Exp Bool)    
           -> (state -> state) 
           -> state 
           -> state 
@@ -909,7 +907,7 @@ while cond f state = loopFinalState loop
 --       Then [LExp] will not cut it anymore.
 class LoopState a where 
   loopState :: a -> [Expr]           -- TODO: Again. will structure be needed?
-  loopCond :: (a -> Exp Boolean) -> [Expr] -> Expr
+  loopCond :: (a -> Exp Bool) -> [Expr] -> Expr
   loopBody :: (a -> a) -> [Expr] -> [Expr] 
 --   loopVars :: a -> (a,[Variable])
   loopFinalState :: Exp s -> a 
@@ -991,8 +989,8 @@ NumScal((Exp Word16),LitWord16)
 NumScal((Exp Word32),LitWord32)
 NumScal((Exp Word64),LitWord64)
 
-NumScal((Exp ISize),LitISize)
-NumScal((Exp USize),LitUSize)
+--NumScal((Exp Int32),LitInt32)
+--NumScal((Exp Word32),LitWord32)
 
 NumScal((Exp Float),LitFloat) 
 
@@ -1078,10 +1076,10 @@ instance (Num (Exp a), Bits a) => Bits (Exp a) where
 ---------------------------------------------------------------------------- 
 -- boolean ops 
 
-(<*) :: Ord a => Exp a -> Exp a -> Exp Boolean
+(<*) :: Ord a => Exp a -> Exp a -> Exp Bool
 (<*) (E a) (E b) = E $ Op Less [a,b]
 
-(==*) :: Eq a => Exp a -> Exp a -> Exp Boolean
+(==*) :: Eq a => Exp a -> Exp a -> Exp Bool
 (==*) (E a) (E b) = E $ Op Equal [a,b]
 
 ----------------------------------------------------------------------------
@@ -1129,6 +1127,6 @@ instance Ord (Exp Word32) where
   min (E a) (E b) = E $ Op Min [a,b]
   max (E a) (E b) = E $ Op Max [a,b]
 
-instance Ord (Exp USize) where 
-  min (E a) (E b) = E $ Op Min [a,b]
-  max (E a) (E b) = E $ Op Max [a,b]
+--instance Ord (Exp Word32) where 
+--  min (E a) (E b) = E $ Op Min [a,b]
+--  max (E a) (E b) = E $ Op Max [a,b]

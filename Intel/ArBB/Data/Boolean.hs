@@ -10,25 +10,9 @@ import Foreign.Storable
 import Data.Int
 
 import Intel.ArBB.IsScalar 
-import Intel.ArBB.Types 
+import Intel.ArBB.Types
 -- import qualified Intel.ArbbVM as VM
 
-newtype Boolean = B {unBoolean :: Bool}
-    deriving (Eq, Ord)
-
-instance Show Boolean where
-  show (B True) = "T"
-  show (B False) = "F"
-
-instance Storable Boolean where
-   sizeOf _          = sizeOf (undefined::Int8)
-   alignment _       = alignment (undefined::Int8)
-   peekElemOff p i   = liftM B $ liftM (/= (0::Int8)) $ peekElemOff (castPtr p) i
-   pokeElemOff p i x = pokeElemOff (castPtr p) i (if unBoolean x then 1 else 0::Int8)
 
 
-
-instance IsScalar Boolean where 
-    scalarType _ = Scalar Boolean 
-    scalarSize _ = scalarSize (undefined :: Int8) 
 

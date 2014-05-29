@@ -1,7 +1,8 @@
 {-# language CPP #-} 
 module Intel.ArBB.IsScalar where 
 
-import Intel.ArBB.Types 
+import Intel.ArBB.Types
+import Intel.ArBB.Syntax
 -- import qualified Intel.ArbbVM as VM
 
 import Data.Int
@@ -58,3 +59,18 @@ instance IsScalar Bool where
   scalarType a = 
     Scalar Boolean
   scalarSize a = S.sizeOf (undefined :: Int)
+
+
+
+-- instance IsScalar ISize where 
+--   scalarType _ = Scalar ISize 
+--   scalarSize _ = scalarSize (undefined :: Int)
+
+-- instance IsScalar USize where 
+--   scalarType _ = Scalar USize 
+--   scalarSize _ = scalarSize (undefined :: Word) 
+
+
+-- instance IsScalar Boolean where 
+--     scalarType _ = Scalar Boolean 
+--     scalarSize _ = scalarSize (undefined :: Int8) 

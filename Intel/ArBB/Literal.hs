@@ -1,8 +1,8 @@
 module Intel.ArBB.Literal where 
 
 import Data.Int
-import Data.Word 
-import Intel.ArBB.Data.Int 
+import Data.Word
+
 
 data Literal = LitInt    Int
              | LitInt8   Int8  
@@ -17,8 +17,8 @@ data Literal = LitInt    Int
              | LitFloat  Float 
              | LitDouble Double
 
-             | LitISize  ISize
-             | LitUSize  USize 
+             | LitISize  Int32 -- ISize
+             | LitUSize  Word32 -- USize 
                
              | LitBool   Bool 
                deriving (Eq,Show)

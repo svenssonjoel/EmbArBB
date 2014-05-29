@@ -17,6 +17,8 @@ import Intel.ArBB.Types
 import Intel.ArBB.Syntax 
 import Intel.ArBB.IsScalar
 
+import Data.Int
+import Data.Word
 
 ----------------------------------------------------------------------------
 -- Dense Vectors
@@ -25,8 +27,6 @@ data DVector d a = DVector { dVectorData  :: V.Vector a  -- dVectorID :: Integer
 
 mkDVector :: Dimensions t => V.Vector a -> t -> DVector t a 
 mkDVector v d = DVector v d  
-
-data Dim = Dim {dimList :: [Int]}
 
 dimensions = length . dimList
 
@@ -70,7 +70,7 @@ type Vector3D = DVector Dim3
 ----------------------------------------------------------------------------
 -- Nested Vectors 
 data NVector a = NVector { nVectorData     :: V.Vector a
-                         , nVectorNesting  :: V.Vector USize } 
+                         , nVectorNesting  :: V.Vector Word32 } 
  
 
 ----------------------------------------------------------------------------

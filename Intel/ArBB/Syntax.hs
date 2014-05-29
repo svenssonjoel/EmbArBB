@@ -3,6 +3,8 @@
 {-# LANGUAGE DeriveDataTypeable #-} 
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE CPP #-} 
 
 {- 2012 Joel Svensson -} 
 
@@ -20,13 +22,26 @@ import Intel.ArBB.Op
 
 -- import Intel.ArBB.MonadReify
 -- import Intel.ArBB.GenRecord
+-- import Foreign.Storable hiding (sizeOf)
+-- import qualified Foreign.Storable as S 
+import Foreign.Ptr
+import qualified Data.Vector.Storable as V
 
-import Data.Typeable
+import Data.Typeable hiding (typeOf)
 import Data.Supply 
 import qualified Data.Set as S
 
 import Control.Monad.State
 import Control.Monad.Writer
+
+import Data.Int
+import Data.Word
+
+import Intel.ArBB.Types as T 
+
+---------------------------------------------------------------------------
+-- Moved here 
+data Dim = Dim {dimList :: [Int]}
 ----------------------------------------------------------------------------
 -- Structure 
 
@@ -99,7 +114,8 @@ freeVarsExp (Op _ es) = S.unions (map freeVarsExp es)
 --   Will try to discover the sharing using the 
 --   StableName method. (System.Mem.StableName)
 data Expr = Lit Literal
-          | Var Variable 
+          | Var Variable
+          | forall a . (V.Storable a, Data a, Show a) =>  Use Dim (V.Vector a) 
             
           | Index0 Expr 
             -- ArBB Functions may compute several results 
@@ -135,7 +151,11 @@ data Expr = Lit Literal
           | Op Op [Expr]   
 
 
-            deriving (Show,Typeable)
+            deriving (Typeable)
+
+instance Show Expr where
+  show e = "Expression" 
+
 
 instance Show (a -> b) where 
     show a = "FUNC" 
@@ -146,3 +166,55 @@ instance Show (a -> b) where
 -- add a layer of types 
 
 data Exp a = E {unE :: Expr}
+
+
+---------------------------------------------------------------------------
+-- Data 
+
+class Data a where 
+  typeOf :: a -> Type 
+  sizeOf :: a -> Int
+  
+
+----------------------------------------------------------------------------
+-- Base Data Types  
+  
+
+#define ScalarData(ht,arbbt,s)   \
+  instance Data (ht) where    {  \
+     typeOf _ = Scalar arbbt; \
+     sizeOf _ = s}
+
+
+
+ScalarData(Int,I64,4)
+ScalarData(Int8,I8,1) 
+ScalarData(Int16,I16,2) 
+ScalarData(Int32,I32,4) 
+ScalarData(Int64,I64,8) 
+ScalarData(Word,U64,8);
+ScalarData(Word8,U8,1) 
+ScalarData(Word16,U16,2) 
+ScalarData(Word32,U32,4) 
+ScalarData(Word64,U64,8)
+ScalarData(Float,F32,4)
+ScalarData(Double,F64,8)
+ScalarData(Bool,Boolean,4)
+--ScalarData(USize,T.USize,(sizeOf (undefined :: Word32)))
+--ScalarData(ISize,T.ISize,(sizeOf (undefined :: Int32)))
+--ScalarData(Boolean,Boolean,4) -- ensure size is right
+
+----------------------------------------------------------------------------
+-- Data pairs 
+
+instance (Data a, Data b) => Data (a,b) where 
+  typeOf (e1,e2) = Tuple [typeOf e1 ,typeOf e2] 
+  sizeOf (e1,e2) = sizeOf e1 + sizeOf e2
+
+-- TODO: Issue here. Pairs of things are not supported very well anywhere.
+--        look into that. 
+
+
+
+
+
